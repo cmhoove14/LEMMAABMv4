@@ -1,0 +1,10 @@
+package_update.R
+^.*\.Rproj$
+^\.Rproj\.user$
+scratch
+Admin
+Archive
+Analysis/Outputs
+Plots
+data/CA_SF_data*
+data/secure
