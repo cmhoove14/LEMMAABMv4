@@ -1,6 +1,7 @@
-# User-specified
+# User-specified (ignore data file for now due to large files)
 Scratch
 Admin
+data
 
 # History files
 .Rhistory
