@@ -123,7 +123,7 @@ agents$age[agents$age_code == 9] <- 85
 # 23	Material moving occupations
 
 # Numeric codes for essential occupations
-essentials <- c(6,12:14,18:23) # Not including healthcare workers (10/11) assuming access to PPE etc. Not ideal, but different kind of risk than what we intend to capture with essential worker label
+essentials <- c(12:14,18:23) # Not including healthcare workers (10/11) assuming access to PPE etc. Not ideal, but different kind of risk than what we intend to capture with essential worker label
 agents$essential <- 0
 agents$essential[agents$occp %in% essentials] <- 1
 sum(agents$essential)/nrow(agents) # Results in ~17% essential workers
