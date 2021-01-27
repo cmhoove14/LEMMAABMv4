@@ -1,30 +1,18 @@
 #-------------------------
 # Testing functions
 #-------------------------
-#' @title Delay between getting tested and getting results
-#' 
-#' @description Function to generate random number of days from tested to test result
-#' 
-#' @param n_agents number of agents to generate test delays for
-#' 
-#' @return vector of length n_agents with randomly generated time delay between test and result
-#' @export
-
-test_delay_fx <- function(n_agents){
-  rgamma(n_agents, 4, 2)
-}
 
 #' @title Test Probability function for public tests
 #' 
 #' @description Function to generate probability of getting tested based on income, race, symptoms, and known contacts
 #' 
-#' @param income vector of agent income
+#' @param income vector of agent income (1 = <50k ; 2 = 50-100k per year ; 3 = >100k per year)
 #' @param race vector of agent races
 #' @param essential binary of whether agent is an essential worker
 #' @param t_symptoms vector of time experiencing symptoms
+#' @param state disease state
 #' @param t_since_contact vector of time left that person with known contact will consider contact a factor in testing decision
 #' @param res_inf Number of identified infectious individuals in residence
-#' @param res_type vector of residence types, "H", "N", "P"
 #' @param adapt_site binary of whether there's a test site in this census tract
 #' @param adapt_site_mult multiplier of test probability for having adaptive test site in residence census tract
 #' @param tests_avail number of tests available - creates multiplier to serve as proxy for how good identification of infected individuals is
@@ -87,7 +75,7 @@ test_probs_pub_fx <- function(income, race, essential, t_symptoms, state, t_sinc
 #' 
 #' @description Function to generate probability of getting tested based on income, race, symptoms, and known contacts
 #' 
-#' @param income vector of agent income brackets (in quartiles)
+#' @param income vector of agent income (1 = <50k ; 2 = 50-100k per year ; 3 = >100k per year)
 #' @param race vector of agent races
 #' @param essential binary of whether agent is an essential worker
 #' @param t_symptoms vector of time experiencing symptoms
@@ -148,9 +136,9 @@ test_probs_pvt_fx <- function(income, race, essential, t_symptoms, state, t_sinc
 #' @param test_reports previous testing data to base adaptive decision on
 #' @param adapt_freq timeframe to look back at test reports to make decision
 #' @param n_sites number of adaptive sites to add
-#' @param t0 start time of simulation as a date
 #' @param site_geo geography to place tests by. either `cbg`, `ct`, `zip`, or `nbhd`
 #' @param geo_pops data.table of site geo ids/names and their population, necessary if using `wper_pos` as testing criteria
+#' @param t0 start time of simulation as a date
 #' @param date_now current date of simulation
 #' @param test_criteria either `per_pos` to place sites based on areas with highest percent positivity, `n_pos` to place sites based on areas with highest raw number of positive cases, `wper_pos` for percent positive times the site geo population (weighted percent positive), or `n_tests` to place sites based on areas with least number of tests conducted
 #' 
