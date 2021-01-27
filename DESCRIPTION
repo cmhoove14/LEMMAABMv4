@@ -21,6 +21,9 @@ Depends:
     dqrng,
     fastmatch,
     here,
+    parallel,
+    doParallel,
+    doRNG,
     matrixStats
 LinkingTo: Rcpp, RcppEigen, RcppNumerical, RcppParallel
 Imports: 
