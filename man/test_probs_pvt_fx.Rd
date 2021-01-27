@@ -32,6 +32,8 @@ test_probs_pvt_fx(
 
 \item{t_symptoms}{vector of time experiencing symptoms}
 
+\item{state}{infectious state}
+
 \item{t_since_contact}{vector of time left that person with known contact will consider contact a factor in testing decision}
 
 \item{res_inf}{Number of identified infectious individuals in residence}

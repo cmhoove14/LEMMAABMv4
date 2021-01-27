@@ -52,7 +52,7 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
   vax_phase_dates <- vax_phases$dates
   
   # Extract parameter inputs
-  list2env()
+  unpack_list(input_pars)
   
   # Convert bta_parameters into function returning baseline transmission probability on each day
   bta_change_df <- data.frame(dates = c(t0, SiP.start, t.end),
@@ -62,9 +62,9 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
   
   bta_change_df$btas[is.na(bta_change_df$btas) & bta_change_df$dates < SiP.start] <- bta_base
   bta_change_df$btas[is.na(bta_change_df$btas) & bta_change_df$dates > SiP.start] <- bta_base*bta_sip_red
-
-  bta_change_fx <- approxfun(bta_change_df$date_num,
-                             bta_change_df$btas)
+  
+  bta_fx <- approxfun(bta_change_df$date_num,
+                      bta_change_df$btas)
   
   
   # Extract Initial conditions ----------------
@@ -127,7 +127,7 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
   } else if (adaptive){
     adapt_days <- seq(t0+adapt_start, t0+t.tot, by = adapt_freq)
   } else {
-    NULL
+    adapt_days <- NA_real_
   }
   
   # Get populations by geographies for use in adaptive testing site placement
@@ -175,7 +175,6 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
     day_week <- day_of_week_fx[t]
     time_day <- time_of_day_fx[t]
     SiP.active <- ifelse(date_now > SiP.start, 1, 0)
-    Reopen <- ifelse(date_now > reopen.start, 1, 0)
     mask.mandate <- ifelse(date_now > mask.start, 1, 0)
     
     if(verbose){cat(as.character(date_now), time_day, "------------------------------------\n\n")}
@@ -254,12 +253,13 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
                test_prob:=test_probs_pub_fx(hhincome, race, essential, t_symptoms,  
                                             state, t_since_contact, res_inf,  
                                             adapt_site, adapt_site_mult, n_tests_pub,
-                                            race_test_mults, cont_mult, res_mult, nosymp_state_mult, symp_state_mult, hosp_mult)]
+                                            symp_mult, race_test_mults, cont_mult, res_mult, nosymp_state_mult, symp_state_mult, hosp_mult)]
         
         agents[id %in% pvt_eligible_ids,
-               test_prob:=test_probs_pvt_fx(hhincome, race, essential, t_symptoms,  
-                                            state, t_since_contact, res_inf, n_tests_pvt, 
-                                            race_test_mults, cont_mult, res_mult, nosymp_state_mult, symp_state_mult, hosp_mult)]
+               test_prob:=test_probs_pvt_fx(income = hhincome, race = race, essential = essential, t_symptoms = t_symptoms,  
+                                            state = state, t_since_contact = t_since_contact, res_inf = res_inf, tests_avail = n_tests_pvt, 
+                                            symp_mult = symp_mult, race_mult = race_test_mults, cont_mult = cont_mult, 
+                                            res_mult = res_mult, nosymp_state_mult = nosymp_state_mult, symp_state_mult = symp_state_mult, hosp_mult = hosp_mult)]
         
         eligible_probs <- agents[id %in% eligible_ids, 
                                  test_prob]
@@ -280,7 +280,7 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
                  test_prob:=test_probs_pub_fx(income_bracket, race, essential, t_symptoms,  
                                               state, t_since_contact, res_inf, 
                                               adapt_site, adapt_site_mult, n_tests_pub, 
-                                              race_test_mults, cont_mult, res_mult, nosymp_state_mult, symp_state_mult, hosp_mult)]
+                                              symp_mult, race_test_mults, cont_mult, res_mult, nosymp_state_mult, symp_state_mult, hosp_mult)]
           
           eligible_probs <- agents[id %in% eligible_ids, 
                                    test_prob]
@@ -350,12 +350,12 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
     }
     
     # Implement vaccination only in the morning for simplicity and speed -----------------
-    # TODO: Incorporate adaptive functionality so only essential workers in high risk areas eligible
+    # TODO: Incorporate adaptive functionality so only essential workers in high risk areas eligible?
     if(vaccination & time_day == "M" & date_now >= vax_start){
       vax_avail <- vax_fx(date_num)
       
-    # Identify and label eligible agents by phase 
-    # TODO: Make this more efficient  
+      # Identify and label eligible agents by phase 
+      # TODO: Make this more efficient  
       active_phases <- vax_phase_dates[which(vax_phase_dates <= date_now)]
       
       for(v in 1:length(active_phases)){
@@ -377,15 +377,16 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
       agents[id %in% vax_ids, t_til_dose2:=vax2_delay]
       
       if(verbose){ cat(vax_avail,"Vaccinations administered\n") } 
-   }
+    }
     
     # Simulate infection --------------------
     # If noone transmitting, skip. Assume agents inactive at night
     if(nrow(agents[state %!in% c("S", "E", "D", "R")])>0 & time_day != "N"){
       
       # Determine locations ---------------
-      # Reset residence infection and pct_home then get Get CBG-based stay at home compliance 
+      # Reset residence infection and pct_home then get Get CT-based stay at home compliance 
       agents[, c("res_inf", "pct_home"):=NULL]
+      agents[, ct:=as.numeric(ct)] # Make sure ct is numeric for matching
       
       home.today <- stay_home_dt[Date == as.character(date_now),]
       home.today[,ct:=as.numeric(CT)]
@@ -404,7 +405,7 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
       # Agents that are workers
       agents[occp != 0 & mobile == 1, 
              location:=worker_location(state, 
-                                       SiP.active, Reopen, pct_home, time_day, day_week,
+                                       SiP.active, pct_home, time_day, day_week,
                                        age, essential, sociality,
                                        hhid, work, ct)]
       
@@ -454,15 +455,15 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
       } 
       
       agents[infector == 1, 
-             trans_prob := beta_today*(1-mask.red*wear.mask)*(1-test.red*tested)]
+             trans_prob := beta_today*(1-mask_red*wear.mask)*(1-test.red*tested)]
       
       agents[infector == 1 & location == hhid, 
-             trans_prob := beta_today*bta_hh*q_bta_red*(1-mask.red*wear.mask*tested)*(1-test.red*tested)] # Assume no mask wearing at home unless confirmed positive, reduction in transmission if quarantining based on income (assigned below in qurantine determination)
+             trans_prob := beta_today*bta_hh*q_bta_red*(1-mask_red*wear.mask*tested)*(1-test.red*tested)] # Assume no mask wearing at home unless confirmed positive, reduction in transmission if quarantining based on income (assigned below in qurantine determination)
       
       agents[infector == 1 & location == work, 
-             trans_prob := beta_today*bta_work*(1-mask.red*wear.mask*tested)*(1-test.red*tested)] 
+             trans_prob := beta_today*bta_work*(1-mask_red*wear.mask*tested)*(1-test.red*tested)] 
       
-    # Get FOI for all agents  
+      # Get FOI for all agents  
       agents[, FOI:=sum(trans_prob*infector/n_present, na.rm = T), by = location]
       
       # Reduce probability of infection for vaccinated agents
@@ -524,7 +525,7 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
       # Assign isolation duration and reduction in transmission if quarantining at home based on income bracket 
       agents[quarantine == 1 & q_duration == 0, 
              q_duration:=q_dur_fx(.N)]
-      agents[quarantine == 1, q_bta_red:=(1-1/res_size)**2]
+      agents[quarantine == 1, q_bta_red:=(1-1/hhsize)**2]
       
       
       if(verbose){
@@ -546,7 +547,7 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
       
       # Remove visiting agents
       if(visitors){
-        agents <- na.omit(agents, "hhid") 
+        agents <- agents[1:N,]
       }  
       
       
@@ -569,6 +570,7 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
   fin_out[["epi_curve"]] <- epi_curve
   fin_out[["infections"]] <- rbindlist(infection_reports,fill=TRUE)
   fin_out[["linelist_tests"]] <- rbindlist(test_reports,fill = TRUE)
+  fin_out[["agents"]] <- agents
   
   if(store_extra){
     fin_out[["stay_home"]] <- stay_home

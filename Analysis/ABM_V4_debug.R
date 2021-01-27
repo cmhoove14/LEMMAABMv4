@@ -1,17 +1,7 @@
-library(tidyverse)
-library(data.table)
-library(wrswoR)
-library(dqrng)
-library(fitdistrplus)
-library(matrixStats)
-library(lubridate)
-library(fastmatch)
-library(parallel)
-library(here)
-#library(LEMMAABMv3)
 
-# ABM functions
-devtools::load_all()
+
+# ABM functions and libraries
+devtools::load_all() # library(LEMMAABMv4)
 
 input_pars  <- readRDS(here::here("data/processed/input_pars.rds"))
 data_inputs <- readRDS(here::here("data/processed/data_inputs.rds"))
@@ -258,9 +248,10 @@ for(t in 2:(t.tot/dt)){
                                           symp_mult, race_test_mults, cont_mult, res_mult, nosymp_state_mult, symp_state_mult, hosp_mult)]
       
       agents[id %in% pvt_eligible_ids,
-             test_prob:=test_probs_pvt_fx(hhincome, race, essential, t_symptoms,  
-                                          state, t_since_contact, res_inf, n_tests_pvt, 
-                                          symp_mult, race_test_mults, cont_mult, res_mult, nosymp_state_mult, symp_state_mult, hosp_mult)]
+             test_prob:=test_probs_pvt_fx(income = hhincome, race = race, essential = essential, t_symptoms = t_symptoms,  
+                                          state = state, t_since_contact = t_since_contact, res_inf = res_inf, tests_avail = n_tests_pvt, 
+                                          symp_mult = symp_mult, race_mult = race_test_mults, cont_mult = cont_mult, 
+                                          res_mult = res_mult, nosymp_state_mult = nosymp_state_mult, symp_state_mult = symp_state_mult, hosp_mult = hosp_mult)]
       
       eligible_probs <- agents[id %in% eligible_ids, 
                                test_prob]
@@ -351,7 +342,7 @@ for(t in 2:(t.tot/dt)){
   }
   
   # Implement vaccination only in the morning for simplicity and speed -----------------
-  # TODO: Incorporate adaptive functionality so only essential workers in high risk areas eligible
+  # TODO: Incorporate adaptive functionality so only essential workers in high risk areas eligible?
   if(vaccination & time_day == "M" & date_now >= vax_start){
     vax_avail <- vax_fx(date_num)
     
@@ -385,8 +376,9 @@ for(t in 2:(t.tot/dt)){
   if(nrow(agents[state %!in% c("S", "E", "D", "R")])>0 & time_day != "N"){
     
     # Determine locations ---------------
-    # Reset residence infection and pct_home then get Get CBG-based stay at home compliance 
+    # Reset residence infection and pct_home then get Get CT-based stay at home compliance 
     agents[, c("res_inf", "pct_home"):=NULL]
+    agents[, ct:=as.numeric(ct)] # Make sure ct is numeric for matching
     
     home.today <- stay_home_dt[Date == as.character(date_now),]
     home.today[,ct:=as.numeric(CT)]
@@ -547,7 +539,7 @@ for(t in 2:(t.tot/dt)){
     
     # Remove visiting agents
     if(visitors){
-      agents <- na.omit(agents, "hhid") 
+      agents <- agents[1:N,]
     }  
     
     

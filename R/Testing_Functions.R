@@ -17,8 +17,8 @@
 #' @param adapt_site_mult multiplier of test probability for having adaptive test site in residence census tract
 #' @param tests_avail number of tests available - creates multiplier to serve as proxy for how good identification of infected individuals is
 #' @param symp_mult multiplier for test probability for agents with symptoms. Acts on a per-day with symptoms basis, so 2 days with symptoms * `symp_mult=10` would lead to 20x increase in test prob
-#' @param cont_mult multiplier for test probability for agents with suspeceted contact
 #' @param race_mult vector with same length as number of race groups with change in baseline probability of being tested
+#' @param cont_mult multiplier for test probability for agents with suspeceted contact
 #' @param res_mult multiplier for test probability for agents with known infection in their residence
 #' @param nosymp_state_mult multiplier for test probability for agents who are infected but not shopwing symptoms (Ia or Ip)
 #' @param symp_state_mult multiplier for test probability for agents who are infected andshowing symptoms (Im or Imh)
@@ -76,6 +76,7 @@ test_probs_pub_fx <- function(income, race, essential, t_symptoms, state, t_sinc
 #' @param race vector of agent races
 #' @param essential binary of whether agent is an essential worker
 #' @param t_symptoms vector of time experiencing symptoms
+#' @param state infectious state 
 #' @param t_since_contact vector of time left that person with known contact will consider contact a factor in testing decision
 #' @param res_inf Number of identified infectious individuals in residence
 #' @param res_type vector of residence types, "H", "N", "P"
@@ -98,6 +99,8 @@ test_probs_pvt_fx <- function(income, race, essential, t_symptoms, state, t_sinc
   income_prob <- income^2 # Stronger influence of income on private testing
   
   ess_prob <- (1+essential*-0.5)^2 # Stronger influence of essential worker status on private testing
+  
+  race_prob <- rep(1,n)
   
   race_prob[race == 1] <- race_mult[1]
   race_prob[race == 2] <- race_mult[2]

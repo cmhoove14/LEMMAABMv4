@@ -22,7 +22,7 @@ holidays     <- c(seq.Date(as.Date("2020-05-23"), as.Date("2020-05-25"), by = "d
                   seq.Date(as.Date("2020-11-26"), as.Date("2020-11-29"), by = "day"), # Thanksgiving
                   seq.Date(as.Date("2020-12-24"), as.Date("2020-12-26"), by = "day"), # Christmas 
                   seq.Date(as.Date("2020-12-31"), as.Date("2021-01-01"), by = "day")) # New Years
-t.end        <- as.Date("2020-12-31")       # Simulation end date
+t.end        <- as.Date("2020-12-15")       # Simulation end date
 
 t.tot        <- as.numeric(t.end - t0)
 
