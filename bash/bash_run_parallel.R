@@ -45,9 +45,9 @@ bta_sweeps <- rep(c(0.15, 0.175, 0.2, 0.225, 0.25, 0.275), each = n_sims_per_par
 cl <- parallel::makeCluster(n_cores)
 doParallel::registerDoParallel(cl)
 
-clusterExport(cl, c("bta_sweeps", "bta_hh", "bta_work", "bta_sip_red",
-                    "data_inputs", "input_pars", "vax_phases",
-                    "visitors", "testing", "adaptive", "vaccination", "verbose", "store_extra"))
+parallel::clusterExport(cl, c("bta_sweeps", "bta_hh", "bta_work", "bta_sip_red",
+                              "data_inputs", "input_pars", "vax_phases",
+                              "visitors", "testing", "adaptive", "vaccination", "verbose", "store_extra"))
 
 sim_results <- foreach(x=bta_sweeps, 
                        .packages = c("data.table", "wrswoR", "dqrng", "matrixStats", "fastmatch", "lubridate", "LEMMAABMv4"),
