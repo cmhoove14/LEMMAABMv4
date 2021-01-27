@@ -1,32 +1,121 @@
 #-------------------------
 # Network/movement functions
 #-------------------------
+#' @title Sample location
+#'  
+#' @description Function to determine agent's location given present model conditions. Works for agents with 3 possible locations residence/home, community and either work or school. Function passes location ids plus probability of home and community, with probability work/ school then implied
+#' 
+#' @param l_res residence location id
+#' @param l_com community location id
+#' @param l_scl work/school location id
+#' @param p_res probability of being at residence
+#' @param p_com probability of being in community
+#' 
+#' @return vector of location ids
+#' @export
+#' 
+scl_wrk_loc <- function(l_res, l_com, l_scl_wrk, p_res, p_com){
+  n <- length(l_res)
+  #print(n)
+  u <- dqrunif(n)
+  samp <- l_com
+  index <- u < p_res
+  samp[index] <- l_res[index]
+  index <- u > (p_res + p_com)
+  samp[index] <- l_scl_wrk[index]
+  return(samp)
+  
+}
+
+
+#' @title Simulate school-aged children location
+#'  
+#' @description Simulate location of school-aged children depending on agent characteristics, NPIs, and time of day
+#' 
+#' @param inf.state Infection state, one of S, E, Ip, Ia, Im, Imh, Ih, R
+#' @param scl schools closed? 1/0
+#' @param SiP shelter in place active? 1/0
+#' @param time_day time of day (night or day)
+#' @param day_week day of the week (U, M, T, W, R, F, or S)
+#' @param age age of person
+#' @param sociality agent sociality
+#' @param res_id id of this individual's residence
+#' @param scl_id id of this individual's school
+#' @param comm_id id of this individual's community
+#'  
+#' @return location of this individual in the time step with options being the id corresponding to their home (H), school (S), or community (C)
+#' @export
+#'        
+sac_location <- function(inf.state, 
+                         scl, SiP, home_prob, time_day, day_week,
+                         age, sociality,
+                         res_id, scl_id, comm_id){
+  
+  n <- length(inf.state)
+  
+  # Children always at home at night and in the mornings  
+  if(time_day == "M"){
+    probs <- cbind(rep(1,n), rep(0,n))
+    
+    # Children are in school during the day if it's open and it's a weekday    
+  } else if(scl == 0 & time_day == "D" & day_week %in% c("M", "T", "W", "R", "F")){
+    probs <- cbind(rep(0,n), rep(0,n))
+    
+    # Children are randomly either still at school, in the community or at home in the evening during the week if schools are open  
+  } else if(scl == 0 & time_day == "E" & day_week %in% c("M", "T", "W", "R", "F")){
+    probs <- cbind(rep(0.33333,n), rep(0.33333,n))
+    
+    # Weekend-like dynamics if school is closed, but SiP not in effect or if it's the weekend: children can be at home or in the community during the day and evening
+  } else if((scl == 1 & SiP == 0) | (day_week %in% c("S", "U") & SiP == 0)){
+    probs <- cbind(rep(0.5,n), rep(0.5,n))
+    
+    # Shelter in place, sac most likely at home, but age and community dependent chance of being in community    
+  } else if(SiP == 1){
+    age_prob <- 1/(20-age) # More likely to be in community if older
+    
+    prob_home <- (1-age_prob)*(1-sociality)
+    prob_home <- scale(prob_home)*sd(prob_home)+home_prob
+    
+    probs <- cbind(prob_home, 1-prob_home)
+    
+  } else {
+    stop("Situation not recognized for School agent")
+  }
+  
+  # School agents who are sick stay home
+  at.home <- inf.state %in% c("Im", "Imh")
+  location <- rep(NA_real_, n)
+  location[at.home] <- res_id[at.home]
+  location[!at.home] <- scl_wrk_loc(res_id[!at.home],comm_id[!at.home], scl_id[!at.home],  probs[!at.home, 1], probs[!at.home, 2])
+  
+  return(location)
+}
+
 #' @title Simulate worker locations
 #'  
-#' @description Simulate location of workers depending on agent characteristics, NPIs, and time of day
+#' @description Simulate location of school-aged children depending on agent characteristics, NPIs, and time of day
 #' 
 #' @param inf.state Infection state, one of S, E, Ip, Ia, Im, Imh, Ih, R
 #' @param SiP shelter in place active? 1/0
-#' @param reopen whether partial reopen is in effect
-#' @param home_prob CT-based probability of being at home
+#' @param home_prob probability agent in ct is at home from safegraph metrics
 #' @param time_day time of day (night or day)
 #' @param day_week day of the week (U, M, T, W, R, F, or S)
 #' @param age age of person
 #' @param essential is the individual in an essential workforce? 1/0
 #' @param sociality agent sociality
-#' @param hhid id of this individual's residence
-#' @param ct id of this individual's community
+#' @param res_id id of this individual's residence
+#' @param work_id id of this individual's workplace
+#' @param comm_id id of this individual's community
 #'  
-#' @return location of this individual in the time step with options being the id corresponding to their home (H) or community (C)
+#' @return location of this individual in the time step with options being the id corresponding to their home (H), work (W), or community (C)
 #' @export
 #'        
 worker_location <- function(inf.state, 
-                            SiP, reopen, home_prob, time_day, day_week,
+                            SiP, home_prob, time_day, day_week,
                             age, essential, sociality,
-                            hhid, ct){
+                            res_id, work_id, comm_id){
   
   n <- length(inf.state)
-  rn <- dqrunif(n)
   
   # home probability adjusted for age: older age groups more likely to be at home
   prob_home <- (age/100)*(1-sociality)
@@ -36,37 +125,32 @@ worker_location <- function(inf.state,
   # Workers location community or home during the week in the morning/evening
   if(SiP == 0 & time_day %in% c("M", "E") & day_week %in% c("M", "T", "W", "R", "F")){
     
-    p_home = prob_home
+    probs = cbind(prob_home, 1-prob_home)
     
     # Workers at work during the weekday outside of shelter in place
   } else if(SiP == 0 & time_day == "D" & day_week %in% c("M", "T", "W", "R", "F")){
     
-    p_home = 0
+    probs = cbind(rep(0,n), rep(0,n))
     
     # Workers location (community, home, or work) during the weekend, non-night
   } else if(SiP == 0 & day_week %in% c("S", "U")){
     
-    p_home = prob_home
+    probs = cbind(prob_home, 1-prob_home)
     
     # Workers location during SiP weekday non-nights
   } else if(SiP == 1 & time_day %in% c("M", "E") & day_week %in% c("M", "T", "W", "R", "F")){
     
-    p_home = prob_home
+    probs = cbind(prob_home, 1-prob_home)
     
-    # Workers at work after partial reopening if essential
-  } else if(SiP == 1 & reopen == 1 & time_day == "D" & day_week %in% c("M", "T", "W", "R", "F")){
+    # Workers at work during day during SiP if essential
+  } else if(SiP == 1 & time_day == "D" & day_week %in% c("M", "T", "W", "R", "F")){
     
-    p_home = prob_home*(1-essential)
+    probs = cbind(prob_home*(1-essential), (1-prob_home)*(1-essential))
     
-    # Workers at work after partial reopening if essential
-  } else if(SiP == 1 & reopen == 0 & time_day == "D" & day_week %in% c("M", "T", "W", "R", "F")){
-    
-    p_home = prob_home*(1-essential)
-    
-    # Workers location community or home during the weekend, non-night
+    # Workers location community or home during the weekend, non-night during SiP
   } else if(SiP == 1 & day_week %in% c("S", "U")){
     
-    p_home = prob_home
+    probs = cbind(prob_home, 1-prob_home)
     
   } else {
     stop("Worker situation not recognized")
@@ -74,12 +158,12 @@ worker_location <- function(inf.state,
   
   # Determine locations    
   
-  location <- ct
-  location[rn<p_home] <- hhid
-
+  location <- scl_wrk_loc(res_id, comm_id, work_id, probs[, 1], probs[, 2])
+  
   return(location)
   
 }
+
 
 #' @title Simulate location of individuals who are not workers or school-aged
 #'  
