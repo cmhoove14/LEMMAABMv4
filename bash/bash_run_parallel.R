@@ -1,3 +1,4 @@
+library(doRNG)
 library(LEMMAABMv4)
 
 # Get options passed from BASH -----------------
