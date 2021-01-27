@@ -48,3 +48,19 @@ sum.inf <- function(x){
   return(c(S, E, Ip, Ia, Im, Imh, Ih, D, R))
 }
 
+
+#' @title Unpack elements of list into global environment
+#' 
+#' @description Taken from https://stackoverflow.com/questions/26168592/recursively-send-list-variables-to-the-global-environment and turned quiet
+#' 
+#' @param l list (or list of lists) to unpack
+#' 
+#' @return assigns elements of list(s) to global environment
+#' @export
+
+unpack_list <- function(l) {
+  if(is.list(l)) { 
+    list2env(l, envir = .GlobalEnv)
+    invisible(lapply(l, unpack_list))
+  }
+}

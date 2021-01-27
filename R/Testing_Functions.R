@@ -53,9 +53,6 @@ test_probs_pub_fx <- function(income, race, essential, t_symptoms, state, t_sinc
   state_prob[state == "Ih"] <- hosp_mult*adapt_prob # hospitalized exceedingly likely to be tested if haven't been confirmed already
   
   # Have to get around fact that non-household residers don't have income and race attributes
-  income_prob[res_type != "H"] <- 1
-  race_prob[res_type != "H"] <- 1
-  
   race_prob[race == 1] <- race_mult[1]
   race_prob[race == 2] <- race_mult[2]
   race_prob[race == 3] <- race_mult[3]

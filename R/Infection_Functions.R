@@ -199,20 +199,20 @@ t_til_nxt <- function(pre.status){
 #' @export
 
 next_state <- function(pre.status, age){
-  n <- length(pre.status)
+  n           <- length(pre.status)
   post.status <- rep("R", n)
-  p_symps <- p_symp(age)
-  p_sevsymps <- p_sevsymp(age)
-  p_deads <- p_mort(age)
-  p1 <- dqrunif(n)
-  p2 <- dqrunif(n)
+  p_symps     <- p_symp(age)
+  p_sevsymps  <- p_sevsymp(age)
+  p_deads     <- p_mort(age)
+  p1          <- dqrng::dqrunif(n)
+  p2          <- dqrng::dqrunif(n)
   
-  post.status[pre.status == "E"] <- "Ip"
-  post.status[pre.status == "Ip" & p1>p_symps] <- "Ia"
+  post.status[pre.status == "E"]                               <- "Ip"
+  post.status[pre.status == "Ip" & p1>p_symps]                 <- "Ia"
   post.status[pre.status == "Ip" & p1<p_symps & p2>p_sevsymps] <- "Im"
   post.status[pre.status == "Ip" & p1<p_symps & p2<p_sevsymps] <- "Imh"
-  post.status[pre.status == "Imh"] <- "Ih"
-  post.status[pre.status == "Ih" & p1<p_deads] <- "D"
+  post.status[pre.status == "Imh"]                             <- "Ih"
+  post.status[pre.status == "Ih" & p1<p_deads]                 <- "D"
   
   return(post.status)
 }

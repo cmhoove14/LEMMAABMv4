@@ -11,7 +11,7 @@ agents <- readRDS(here::here("data", "processed", "SF_agents_processed.rds"))
 
 # Add column for use in model
 agents[, state := "S"]
-agents[, nextstate := NA]
+agents[, nextstate := NA_character_]
 agents[, tnext := 0]
 agents[, t_symptoms := 0]
 

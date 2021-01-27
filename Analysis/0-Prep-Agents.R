@@ -158,7 +158,7 @@ sum(agents$essential)/nrow(agents) # Results in ~17% essential workers
   work_rn <- dqrunif(nrow(agents))
   ct_indices <- fmatch(agent_cts, sf_ct_ids)   # Match ct codes to matrix index
   mat_cdf_expand <- sf_cdf_mean[ct_indices,]   # Expand CDF matrix corresponding to residence matrix
-  work_cts <- sf_ct_ids[max.col(work_rn < mat_cdf_expand, "first")] # Probabilistically assign work cts from random numbers and cdf
+  work_cts <- sf_ct_ids[max.col(work_rn < mat_cdf_expand, "first")] # Probabilistically assign work cts from random numbers and cdf of weekday between ct-movement
   
   workers <- which(agents$occp != 0) # Agents who are workers
 

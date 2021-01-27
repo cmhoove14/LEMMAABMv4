@@ -10,176 +10,81 @@ library(parallel)
 library(here)
 #library(LEMMAABMv3)
 
-source(here("data", "get","COVID_CA_get_latest.R"))
-
 # ABM functions
 devtools::load_all()
 
-# synthetic agents from Census/IPUMS data ------------
-agents <- readRDS(here::here("data", "processed", "SF_agents_processed.rds"))
-  setkey(agents, id, hhid)
+input_pars  <- readRDS(here::here("data/processed/input_pars.rds"))
+data_inputs <- readRDS(here::here("data/processed/data_inputs.rds"))
+vax_phases  <- readRDS(here::here("data/processed/vax65p_scenario.rds"))
 
-# Add column(s) for use in model
-  agents[, state := "S"]
-  agents[, nextstate := NA]
-  agents[, tnext := 0]
-  agents[, t_symptoms := 0]
-  
-  
-# UNCOMMENT BELOW/change size of sample TO Subset for development for faster runs/lower memory
-# agents <- agents[agents$residence %in% sample(agents$residence, 2e4, replace = F)]  
-  
-N <- nrow(agents)  
+bta_base    <- 0.25
+bta_hh      <- 1.2
+bta_work    <- 1.2
+bta_sip_red <- 1/3
 
-#Plot tests through time
-#ggplot(data = sf_test) + geom_line(aes(x = Date, y = (tests/9e5)*1e5)) + theme_bw() +scale_x_date(date_breaks = "14 day") +theme(axis.text.x = element_text(angle = 45,hjust = 1))+labs(x="",y="SF Tests per 100k")
-
-# Testing data for sims, blank functions ----------------------
-  tests0 <- function(date_num){
-    return(0)
-  }
-
-sf_test_smooth <- sf_test %>% 
-  mutate(Date = as.Date(substr(specimen_collection_date, 1,10)),
-         date_num = as.numeric(Date-as.Date("2019-12-31")),
-         tests_pp = tests/N) %>% 
-  padr::pad() %>% 
-  padr::fill_by_value(tests_pp, value = 0) %>% 
-  mutate(tests_pp_7day_avg = zoo::rollmean(tests_pp, 7, na.pad = T, align = "center"),
-         tests_pp_7day_avg = case_when(is.na(tests_pp_7day_avg) & Date < as.Date("2020-03-10") ~ 2/N,
-                                       is.na(tests_pp_7day_avg) & Date > as.Date("2020-03-10") ~ 5000/N,
-                                       !is.na(tests_pp_7day_avg) ~ tests_pp_7day_avg)) 
-
-last_sf_test <- max(sf_test_smooth$Date)
-# sf_test_smooth %>%  ggplot() + geom_line(aes(x = Date, y = tests_pp)) + geom_line(aes(x = Date, y = tests_pp_7day_avg), col = "red") + theme_classic()
-
-tests_fx <- approxfun(sf_test_smooth$date_num,
-                      sf_test_smooth$tests_pp_7day_avg)
-
-# Safegraph data UPDATE -------------------------
-#San Francisco cbg mvmt list derived from sfgrph data
-  sf_ct_cdf_ls <- readRDS(here::here("data", "processed", "Safegraph", "safegraph_ct_mvmt_cdf_list_2020processed.rds"))
-  sf_ct_ids <- read_csv(here::here("data", "raw", "Census_2010_Tracts.csv")) %>% pull(GEOID10) %>% as.numeric()
-
-#San francisco stay at home by percent by cbg derived from safegraph
-  sf_sfgrph_pcts <- readRDS(here::here("data", "processed","Safegraph", "sfgrph_devices_pct_home_cts_2020.rds"))
-  
-  sf_sfgrph_pcts %>% 
-    group_by(Date) %>% 
-    summarise(n_devices     = sum(device_count), 
-              n_home        = sum(completely_home_device_count), 
-              n_part_work   = sum(part_time_work_behavior_devices), 
-              n_full_work   = sum(full_time_work_behavior_devices), 
-              per_home      = n_home/n_devices, 
-              per_part_work = n_part_work/n_devices, 
-              per_full_work = n_full_work/n_devices) %>% 
-    ggplot() +
-      geom_line(aes(x = Date, y = per_home), col = "green") +
-      geom_line(aes(x = Date, y = per_part_work), col = "orange") +
-      geom_line(aes(x = Date, y = per_full_work), col = "red") +
-      theme_bw() +
-      labs(y = "Pct device behavior",
-           title = "Safegraph home/work metrics SF County")
-    
-  sf_sfgrph_pct_home <- sf_sfgrph_pcts %>% 
-    dplyr::select(CT, Date, pct_home) %>% 
-    as.data.table()
-
-# Visitors to SF county from other CA counties
-  sf_visitors <- readRDS(here::here("data", "processed", "Safegraph", "SF_visitors_CTs_2020Processed.rds"))
-  
-# ---------------------------------------------------------
-# Pre-process data and sim setup
-# ---------------------------------------------------------
-# Time frame and step
-t0    <- as.Date("2020-02-17")
-today <- Sys.Date()
-
-# Key change dates
-SiP.start    <- as.Date("2020-03-15")  # Shelter in Place started
-mask.start   <- as.Date("2020-04-17")  # Mask mandate initiated
-reopen.start <- as.Date("2020-05-17")  # Start of reopening initiatives in SF
-SiP2.start <- as.Date("2020-12-06")  # Start of reopening initiatives in SF
-holidays     <- c(seq.Date(as.Date("2020-05-23"), as.Date("2020-05-25"), by = "day"), # Memorial Day
-                  seq.Date(as.Date("2020-07-03"), as.Date("2020-07-05"), by = "day"), # 4th of July
-                  seq.Date(as.Date("2020-09-05"), as.Date("2020-09-07"), by = "day"), # Labor day
-                  seq.Date(as.Date("2020-11-26"), as.Date("2020-11-29"), by = "day"), # Thanksgiving
-                  seq.Date(as.Date("2020-12-24"), as.Date("2020-12-26"), by = "day"), # Christmas 
-                  seq.Date(as.Date("2020-12-31"), as.Date("2021-01-01"), by = "day")) # New Years
-t.end        <- as.Date("2020-12-31")       # Simulation end date
-
-t.tot <- as.numeric(t.end - t0)
-dt = 4/24
-
-# Day of week
-day_of_week                                 <- lubridate::wday(seq.Date(t0, t.end, by = "day"))
-day_of_week_expand                          <- rep(day_of_week, each = 1/dt)
-day_of_week_expand[day_of_week_expand == 1] <- "U"
-day_of_week_expand[day_of_week_expand == 2] <- "M"
-day_of_week_expand[day_of_week_expand == 3] <- "T"
-day_of_week_expand[day_of_week_expand == 4] <- "W"
-day_of_week_expand[day_of_week_expand == 5] <- "R"
-day_of_week_expand[day_of_week_expand == 6] <- "F"
-day_of_week_expand[day_of_week_expand == 7] <- "S"
-
-# Break up week into 6 parts, Morning, Dayx2, Evening, Nightx2: SHOULD UPDATE IF timestep!=4/24
-time_of_day <- rep(c("M", "D", "D", "E", "N", "N"), times = t.tot)  
-
-# Transmission probabilities across different edges https://www.medrxiv.org/content/10.1101/2020.05.10.20097469v1.full.pdf
-  #trans.hh <- 0.1
-  #trans.work <- 0.01
-  #trans.school <- 0.02
-  #trans.other <- 0.002
-  
-# Actually don't think this is necessary as the way transmission works by estimating FOI in each location will naturally lead to more transmission in smaller areas (e.g. households, offices, classrooms) than in larger areas  
-  trans.all <- 0.27
-  
-# Beta reduction to account for micro behaviors that are not accounted for in reductions in movement that cause reduction in transmission probability
-  bta_change_df <- data.frame(dates = c(t0, SiP.start, reopen.start, holidays),
-                              btas = c(trans.all, trans.all*(1/3), trans.all*(1/3), rep(trans.all, length(holidays)))) %>% 
-    padr::pad() %>% 
-    mutate(date_num = as.numeric(dates - as.Date("2019-12-31")))
-
-  bta_change_df$btas[is.na(bta_change_df$btas) & bta_change_df$dates < SiP.start] <- trans.all
-  bta_change_df$btas[is.na(bta_change_df$btas) & bta_change_df$dates > SiP.start & bta_change_df$dates < reopen.start] <- trans.all*(1/3)
-  bta_change_df$btas[is.na(bta_change_df$btas) & bta_change_df$dates > SiP.start & bta_change_df$dates > reopen.start] <- trans.all*(1/3)
-  
-  bta_change_fx <- approxfun(bta_change_df$date_num,
-                             bta_change_df$btas)
-  
-  #plot(sapply(1:1000, bta_change_fx), type = "l")
-# ---------------------------------------------------------    
-# Troubleshoot run model
-# ---------------------------------------------------------  
-agents2 <- as.data.frame(agents)
-  
-# Call ABM_V3 function
-#  abm_v3_test_run <- covid_abm_v3(bta_fx = bta_change_fx, bta_hh = 1, bta_scl = 1, bta_work = 1, bta_other = 1, E0 = 5, Ip0 = 2, Ia0 = 1, Im0 = 0, Imh0 = 0, Ih0 = 0, R0 = 0, D0 = 0, agents_dt = agents, cbg_cdf = sf_cbg_cdf_expand, ct_ids = sf_ct_ids, stay_home_dt = sf_sfgrph_pct_home_expand, t0 = t0, t.tot = t.tot, dt = dt, day_of_week_fx = day_of_week_expand, time_of_day_fx = time_of_day, SiP.start = SiP.start, scl.close = scl.close, mask.start = mask.start, mask.red = 0.6, mask_fx = mask_fx, quar_fx = quar_fx, social_fx = social_fx, q_dur_fx = q_dur_fx, init_other = 100, other_bta = 0.75, other_symp_dur_fx  = other_symp_dur_fx, testing = FALSE, test_delay_fx = test_delay_fx, tests_pub_fx = tests0, tests_pvt_fx = tests0, test_probs_fx = test_probs_fx, adaptive = FALSE, adapt_start  = 0, adapt_freq = 7, adapt_site_fx = adapt_site_fx, adapt_site_mult = 3 , adapt_site_delay_fx = test_delay_fx) 
-
-# For troubleshooting ------------------------
-agents <- as.data.table(agents2)
-  
-bta_fx = bta_change_fx ;  bta_hh = 1 ; bta_work = 1 ; E0 = 3 ;  Ip0 = 2 ;  Ia0 = 1 ;  Im0 = 0 ;  Imh0 = 0 ;  Ih0 = 0 ;  R0 = 0 ;  D0 = 0 ; agents_dt = agents ;  ct_cdf_list = sf_ct_cdf_ls;  ct_ids = sf_ct_ids ; stay_home_dt = sf_sfgrph_pct_home ; visitors = TRUE ; visitors_list = sf_visitors; visitor_mult_testing = 10 ; visitor_mult_sfgrph = 100 ; t0 = t0 ;  t.tot = t.tot ;  dt = dt ;  day_of_week_fx = day_of_week_expand ;  time_of_day_fx = time_of_day ; SiP.start = SiP.start ; part.reopen = reopen.start; mask.start = mask.start ;  mask.red = 0.6 ; mask_fx = mask_fx ; social_fx = social_fx ; q_prob_contact = 0.2^4 ; q_prob_resinf = 0.5^4 ; q_prob_symptoms =0.5^4 ; q_prob_testpos = 0.9^4 ; q_dur_fx = q_dur_fx ; known_contact_prob = 9 ; testing = TRUE ; test_start = as.Date("2020-03-01") ; test_delay_fx = test_delay_fx ;  tests_pp_fx = tests_fx ; tests_pub = 0.6 ; tests_wknd = 0.5 ; test_probs_pub_fx = test_probs_pub_fx ; test_probs_pvt_fx = test_probs_pvt_fx ; symp_mult = 10 ; race_test_mults = rep(1,8) ; cont_mult = 10 ; res_mult = 100 ; nosymp_state_mult = 1 ; symp_state_mult = 1000 ; hosp_mult =10000 ; test.red = 0 ; adaptive = FALSE ; adapt_start = as.Date("2020-04-01") ; adapt_freq = 14 ; adapt_site_fx = adapt_site_fx ; adapt_site_geo = "nbhd"; n_adapt_sites = 1 ; adapt_site_test_criteria = "per_pos"; adapt_site_mult = 4 ; adapt_site_delay_fx = test_delay_fx ; verbose = TRUE ; store_extra = TRUE
+visitors <- TRUE 
+testing <- TRUE 
+adaptive <- FALSE 
+vaccination <- FALSE 
+verbose <- TRUE 
+store_extra <- TRUE 
   
 set.seed(430)
   
-# Initial conditions
-agents <- agents_dt
+#Function insides below
+
+#Extract data inputs -------------
+agents        <- data_inputs$agents
+ct_cdf_list   <- data_inputs$ct_cdf_list
+ct_ids        <- data_inputs$ct_ids
+stay_home_dt  <- data_inputs$stay_home_dt
+visitors_list <- data_inputs$visitors_list
+tests_avail   <- data_inputs$tests_avail
+vax_per_day   <- data_inputs$vax_per_day
+
+#Function to return number of tests on day t converted from tests_avail df
+tests_pp_fx <- approxfun(tests_avail$date_num,
+                         tests_avail$tests_pp)
+
+#Function to return number of vaccinations available on day t
+vax_fx <- approxfun(vax_per_day$days,
+                    vax_per_day$vax)
+
+# Get dates of vaccination phases
+vax_phase_dates <- vax_phases$dates
+
+# Extract parameter inputs
+unpack_list(input_pars)
+
+# Convert bta_parameters into function returning baseline transmission probability on each day
+bta_change_df <- data.frame(dates = c(t0, SiP.start, t.end),
+                            btas = c(bta_base, bta_base*bta_sip_red, bta_base*bta_sip_red)) %>% 
+  padr::pad() %>% 
+  mutate(date_num = as.numeric(dates - as.Date("2019-12-31")))
+
+bta_change_df$btas[is.na(bta_change_df$btas) & bta_change_df$dates < SiP.start] <- bta_base
+bta_change_df$btas[is.na(bta_change_df$btas) & bta_change_df$dates > SiP.start] <- bta_base*bta_sip_red
+
+bta_fx <- approxfun(bta_change_df$date_num,
+                    bta_change_df$btas)
+
+
+# Extract Initial conditions ----------------
 N <- nrow(agents)
 
-e.seed   <- E0     #Exposed
-ip.seed  <- Ip0    #infected pre-symptomatic
-ia.seed  <- Ia0    #infected asymptomatic
-im.seed  <- Im0    #infected mildly symptomatic
-imh.seed <- Imh0   #infected mildly symptomatic, will become severe
-ih.seed  <- Ih0    #infected severely symptomatic
-d.seed   <- D0     #dead
-r.seed   <- R0     #removed
+e.seed   <- input_pars$init_states$E0     #Exposed
+ip.seed  <- input_pars$init_states$Ip0    #infected pre-symptomatic
+ia.seed  <- input_pars$init_states$Ia0    #infected asymptomatic
+im.seed  <- input_pars$init_states$Im0    #infected mildly symptomatic
+imh.seed <- input_pars$init_states$Imh0   #infected mildly symptomatic, will become severe
+ih.seed  <- input_pars$init_states$Ih0    #infected severely symptomatic
+d.seed   <- input_pars$init_states$D0     #dead
+r.seed   <- input_pars$init_states$R0     #removed
 non.s    <- e.seed + ip.seed + ia.seed + im.seed + imh.seed + ih.seed + d.seed + r.seed
 s.seed   <- N - non.s
 
 
-# Initial infection allocated among non-children
+# Initial infection allocated randomly among non-children/non-retirees
 init.Es   <- sample(agents[!age %in% c(5,15,65,75,85), id], e.seed)   
 init.Ips  <- sample(agents[!age %in% c(5,15,65,75,85), id], ip.seed)   
 init.Ias  <- sample(agents[!age %in% c(5,15,65,75,85), id], ia.seed)   
@@ -218,13 +123,13 @@ if(store_extra){
   stay_home[1] = quar_iso[1] = inf_quar[1] = mean_FOI[1] = 0
 }  
 
-# Determine adaptive testing days
+# Determine adaptive testing days if adaptive testing ------------------
 if(adaptive & class(adapt_start) == "Date"){
   adapt_days <- seq(adapt_start, t0+t.tot, by = adapt_freq)
 } else if (adaptive){
   adapt_days <- seq(t0+adapt_start, t0+t.tot, by = adapt_freq)
 } else {
-  NULL
+  adapt_days <- NA_real_
 }
 
 # Get populations by geographies for use in adaptive testing site placement
@@ -240,9 +145,9 @@ agents[state %in% c("E", "Ip", "Ia", "Im", "Imh", "Ih"), nextstate:=next_state(s
 #Time initial infections occurred
 agents[state %in% c("E", "Ip", "Ia", "Im", "Imh", "Ih"), t_infection:=dt]
 
-# Add compliance and sociality metrics, start people with no known contacts
-agents[, mask := mask_fx(nrow(agents))] # Probability of wearing a mask
-agents[, sociality := social_fx(nrow(agents))] # Sociality metric
+# Add compliance and sociality metrics, start people with no known contacts -----------------------------
+agents[, mask := mask_fx(.N)] # Probability of wearing a mask
+agents[, sociality := social_fx(.N)] # Sociality metric
 agents[, quarantine := 0] # initial quarantine values
 agents[, q_prob := 0]
 agents[, q_duration := 0]
@@ -256,8 +161,12 @@ agents[, test_pos := 0] # Start everyone off with no postive test status
 agents[, init_test := 0] # Start everyone off eligible for testing
 agents[, t_til_test_note:=0] #nobody tested to start, so nobody waiting on notification
 agents[, adapt_site := 0]   # No adaptive testing sites to start
+agents[, vax_eligible := 0] # Nobody vaccine eligible to start
+agents[, t_til_dose2 := 0] # Nobody waiting on dose 2 to start
+agents[, vax1 := 0] # Received vaccination dose 1?
+agents[, vax2 := 0] # Received vaccination dose 2?
 
-# Run simulation    
+# Run simulation     ---------------------
 for(t in 2:(t.tot/dt)){
   
   # Time step characteristics
@@ -268,12 +177,11 @@ for(t in 2:(t.tot/dt)){
   day_week <- day_of_week_fx[t]
   time_day <- time_of_day_fx[t]
   SiP.active <- ifelse(date_now > SiP.start, 1, 0)
-  Reopen <- ifelse(date_now > reopen.start, 1, 0)
   mask.mandate <- ifelse(date_now > mask.start, 1, 0)
   
   if(verbose){cat(as.character(date_now), time_day, "------------------------------------\n\n")}
   
-  # Advance transition times, time since infection,time since symptoms started, other illness symptoms, quarantine duration, and test notification times
+  # Advance transition times, time since infection,time since symptoms started, quarantine duration, test notification times, vaccination 2nd dose delay
   agents[state %in% c("E", "Ip", "Ia", "Im", "Imh", "Ih"), tnext:=tnext-dt]
   agents[state %in% c("E", "Ip", "Ia", "Im", "Imh", "Ih"), t_infection:=t_infection+dt]
   
@@ -286,7 +194,9 @@ for(t in 2:(t.tot/dt)){
   
   agents[init_test == 1, t_til_test_note:=t_til_test_note-dt]
   
-  # Advance expired states to next state, determine new nextstate and time til next state, reset expired quarantines, test notifications
+  agents[vax1 == 1 & vax2 == 0, t_til_dose2 := t_til_dose2-dt]
+  
+  # Advance expired states to next state, determine new nextstate and time til next state, reset expired quarantines, test notifications, vaccine second dose
   agents[tnext < 0, state:=nextstate]
   agents[tnext < 0 & state %in% c("R", "D"), t_symptoms:=0]
   agents[tnext < 0 & state %in% c("E", "Ip", "Ia", "Im", "Imh", "Ih"), nextstate:=next_state(state, age)]
@@ -299,6 +209,7 @@ for(t in 2:(t.tot/dt)){
   agents[q_duration < 0, q_bta_red:=1]
   agents[q_duration < 0, quarantine:=0]
   agents[t_since_contact > 14, t_since_contact:=0] #Agents stop considering contact relevant after 14 days
+  agents[t_til_dose2 < 0, vax2 := 1]
   
   if(verbose){ cat("Infections advanced\n") } 
   
@@ -439,6 +350,36 @@ for(t in 2:(t.tot/dt)){
     }
   }
   
+  # Implement vaccination only in the morning for simplicity and speed -----------------
+  # TODO: Incorporate adaptive functionality so only essential workers in high risk areas eligible
+  if(vaccination & time_day == "M" & date_now >= vax_start){
+    vax_avail <- vax_fx(date_num)
+    
+    # Identify and label eligible agents by phase 
+    # TODO: Make this more efficient  
+    active_phases <- vax_phase_dates[which(vax_phase_dates <= date_now)]
+    
+    for(v in 1:length(active_phases)){
+      vax_eligible_ages <- vax_phases$ages[[v]]
+      vax_eligible_occps <- vax_phases$occps[[v]]
+      
+      agents[age %in% vax_eligible_ages & occp %in% vax_eligible_occps & vax1 == 0,
+             vax_eligible := 1]
+    }
+    
+    # randomly sample from available agents to vaccinate
+    vax_eligible_ids <- agents[vax_eligible == 1, id]
+    vax_ids <- vax_eligible_ids[wrswoR::sample_int_crank(length(vax_eligible_ids),
+                                                         vax_avail,
+                                                         rep(1, length(vax_eligible_ids)))]
+    
+    # tag agents who are chosen for vaccination and assign delay to second dose
+    agents[id %in% vax_ids, vax1:=1]
+    agents[id %in% vax_ids, t_til_dose2:=vax2_delay]
+    
+    if(verbose){ cat(vax_avail,"Vaccinations administered\n") } 
+  }
+  
   # Simulate infection --------------------
   # If noone transmitting, skip. Assume agents inactive at night
   if(nrow(agents[state %!in% c("S", "E", "D", "R")])>0 & time_day != "N"){
@@ -464,11 +405,11 @@ for(t in 2:(t.tot/dt)){
     # Agents that are workers
     agents[occp != 0 & mobile == 1, 
            location:=worker_location(state, 
-                                     SiP.active, Reopen, pct_home, time_day, day_week,
+                                     SiP.active, pct_home, time_day, day_week,
                                      age, essential, sociality,
-                                     hhid, ct)]
+                                     hhid, work, ct)]
     
-    # Agents that are not working
+    # Agents that are not workers
     agents[occp == 0 & mobile == 1,
            location:=other_location(state, 
                                     SiP.active, pct_home, 
@@ -514,20 +455,25 @@ for(t in 2:(t.tot/dt)){
     } 
     
     agents[infector == 1, 
-           trans_prob := beta_today*(1-mask.red*wear.mask)*(1-test.red*tested)]
+           trans_prob := beta_today*(1-mask_red*wear.mask)*(1-test.red*tested)]
     
     agents[infector == 1 & location == hhid, 
-           trans_prob := beta_today*bta_hh*q_bta_red*(1-mask.red*wear.mask*tested)*(1-test.red*tested)] # Assume no mask wearing at home unless confirmed positive, reduction in transmission if quarantining based on income (assigned below in qurantine determination)
+           trans_prob := beta_today*bta_hh*q_bta_red*(1-mask_red*wear.mask*tested)*(1-test.red*tested)] # Assume no mask wearing at home unless confirmed positive, reduction in transmission if quarantining based on income (assigned below in qurantine determination)
     
-    if(SiP.active == 1){
-      agents[infector == 1 & occp != 1, 
-             trans_prob := beta_today*bta_work*(1-mask.red*wear.mask)*(1-test.red*tested)]
-    } else {
-      agents[infector == 1 & essential == 1, 
-             trans_prob := beta_today*bta_work*(1-mask.red*wear.mask)*(1-test.red*tested)]
-    }
+    agents[infector == 1 & location == work, 
+           trans_prob := beta_today*bta_work*(1-mask_red*wear.mask*tested)*(1-test.red*tested)] 
     
+    # Get FOI for all agents  
     agents[, FOI:=sum(trans_prob*infector/n_present, na.rm = T), by = location]
+    
+    # Reduce probability of infection for vaccinated agents
+    if(vaccination & date_now >= vax_start){
+      agents[vax1 == 1 & vax2 == 0, 
+             FOI:=FOI*(1-vax1_bta_red)]
+      
+      agents[vax2 == 1, 
+             FOI:=FOI*(1-vax2_bta_red)]
+    }
     
     # Generate infections, update their state, sample for their nextstate and time until reaching it, 
     agents[FOI > 0 & state == "S", infect:=foi_infect(FOI)]
@@ -579,7 +525,7 @@ for(t in 2:(t.tot/dt)){
     # Assign isolation duration and reduction in transmission if quarantining at home based on income bracket 
     agents[quarantine == 1 & q_duration == 0, 
            q_duration:=q_dur_fx(.N)]
-    agents[quarantine == 1, q_bta_red:=(1-1/res_size)**2]
+    agents[quarantine == 1, q_bta_red:=(1-1/hhsize)**2]
     
     
     if(verbose){
@@ -599,10 +545,6 @@ for(t in 2:(t.tot/dt)){
       mean_FOI[t] <- mean(agents[, FOI], na.rm = T)
     }  
     
-    if(store_extra & other_ill){
-      other_ill_i[t] <- nrow(agents[other_ill==1,])
-    }
-    
     # Remove visiting agents
     if(visitors){
       agents <- na.omit(agents, "hhid") 
@@ -613,10 +555,6 @@ for(t in 2:(t.tot/dt)){
     agents[, c("location", "mobile", "infector", "res_infector",
                "contact_prob", "contact", "n_present", "wear.mask",
                "trans_prob", "FOI", "infect"):=NULL]
-    
-    if(other_ill){
-      agents[, c("FOI_other", "other_ill_infect", "trans_prob_other"):=NULL]
-    }  
     
   }
   

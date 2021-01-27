@@ -7,9 +7,9 @@ input_pars <- list()
 
 # TIME FRAME, time step, and other temporal characteristics ---------------------
 input_pars$time_pars <- list()
-t0    <- as.Date("2020-02-17")
-dt = 4/24
-today <- Sys.Date()
+t0                   <- as.Date("2020-02-17")
+dt                   <- 4/24
+today                <- Sys.Date()
 
 # Key change dates
 SiP.start    <- as.Date("2020-03-15")  # Shelter in Place started
@@ -42,83 +42,84 @@ time_of_day <- rep(c("M", "D", "D", "E", "N", "N"), times = t.tot)
 
 # Store
 input_pars$time_pars$t0             <- t0
+input_pars$time_pars$t.end          <- t.end
 input_pars$time_pars$t.tot          <- t.tot
 input_pars$time_pars$dt             <- dt
 input_pars$time_pars$day_of_week_fx <- day_of_week_expand
 input_pars$time_pars$SiP.start      <- SiP.start
 input_pars$time_pars$mask.start     <- mask.start
-input_pars$time_pars$test_start     <- test.start
+input_pars$time_pars$time_of_day_fx <- time_of_day
 
 
 # Initial infection characteristics ---------------------
-input_pars$init_states <- list
+input_pars$init_states <- list()
 
-input_pars$init_states$E0   = 3 
-input_pars$init_states$Ip0  = 2
-input_pars$init_states$Ia0  = 0
-input_pars$init_states$Im0  = 0 
-input_pars$init_states$Imh0 = 0 
-input_pars$init_states$Ih0  = 0 
-input_pars$init_states$R0   = 0 
-input_pars$init_states$D0   = 0
+input_pars$init_states$E0   <- 3 
+input_pars$init_states$Ip0  <- 2
+input_pars$init_states$Ia0  <- 0
+input_pars$init_states$Im0  <- 0 
+input_pars$init_states$Imh0 <- 0 
+input_pars$init_states$Ih0  <- 0 
+input_pars$init_states$R0   <- 0 
+input_pars$init_states$D0   <- 0
 
 # Quarantine parameters ---------------------
 input_pars$quar_pars <- list()
 
 # Probabilities of choosing to qurantine given different events (contact, residence infection, symptoms, test positive) all adjusted for 4 decision points per day
-input_pars$quar_pars$q_prob_contact     = 0.2^4 
-input_pars$quar_pars$q_prob_resinf      = 0.5^4
-input_pars$quar_pars$q_prob_symptoms    = 0.5^4 
-input_pars$quar_pars$q_prob_testpos     = 0.9^4
-input_pars$quar_pars$q_prob_adapt       = 0.9^4
+input_pars$quar_pars$q_prob_contact     <- 0.2^4 
+input_pars$quar_pars$q_prob_resinf      <- 0.5^4
+input_pars$quar_pars$q_prob_symptoms    <- 0.5^4 
+input_pars$quar_pars$q_prob_testpos     <- 0.9^4
+input_pars$quar_pars$q_prob_adapt       <- 0.9^4
 
 # Probability of known contact. Multiplier on the location specific FOI that determines if agent is aware of potential exposure
-input_pars$quar_pars$known_contact_prob = 9
+input_pars$quar_pars$known_contact_prob <- 9
 
 # function for length of time quarantining agent remains at home
 q_dur_fx <- function(n_agents){
   rgamma(n_agents, 14, 2)
 }
-input_pars$quar_pars$q_dur_fx           = q_dur_fx 
+input_pars$quar_pars$q_dur_fx           <- q_dur_fx 
 
 # Testing parameters ----------------------------
 input_pars$test_pars <- list()
 
-input_pars$test_pars$test.start        = as.Date("2020-03-01")  # Testing started
-input_pars$test_pars$tests_pub         = 0.6                    # Proportion daily tests that are public (vs private)
-input_pars$test_pars$tests_wknd        = 0.5                    # Proportional reduction in tests conducted on weekend days
-input_pars$test_pars$race_test_mults   = rep(1,8)               # Multipliers for testing probability on race
-input_pars$test_pars$cont_mult         = 10                     # Multiplier for testing probability for agents with known contact
-input_pars$test_pars$symp_mult         = 10                     # Multiplier for testing probability for time experiencing symptoms (increases probability by symp_mult*t_symptoms, e.g. longer period experiencing symptoms increases probability of testing)
-input_pars$test_pars$res_mult          = 100                    # Multiplier for testing probability for agents with known residential infection
-input_pars$test_pars$nosymp_state_mult = 1                      # Multiplier for testing probability for agents infected but not symptomatic (Ia and Ip)
-input_pars$test_pars$symp_state_mult   = 1000                   # Multiplier for testing probability for agents infected with symptoms (Im, Imh, Ih)
-input_pars$test_pars$hosp_mult         = 10000                  # Multiplier for testing probability for hospitalized agents
-input_pars$test_pars$test.red          = 0                      # Reduction in transmissibility for agents who have tested positive
+input_pars$test_pars$test_start        <- as.Date("2020-03-01")  # Testing started
+input_pars$test_pars$tests_pub         <- 0.6                    # Proportion daily tests that are public (vs private)
+input_pars$test_pars$tests_wknd        <- 0.5                    # Proportional reduction in tests conducted on weekend days
+input_pars$test_pars$race_test_mults   <- rep(1,8)               # Multipliers for testing probability on race
+input_pars$test_pars$cont_mult         <- 10                     # Multiplier for testing probability for agents with known contact
+input_pars$test_pars$symp_mult         <- 10                     # Multiplier for testing probability for time experiencing symptoms (increases probability by symp_mult*t_symptoms, e.g. longer period experiencing symptoms increases probability of testing)
+input_pars$test_pars$res_mult          <- 100                    # Multiplier for testing probability for agents with known residential infection
+input_pars$test_pars$nosymp_state_mult <- 1                      # Multiplier for testing probability for agents infected but not symptomatic (Ia and Ip)
+input_pars$test_pars$symp_state_mult   <- 1000                   # Multiplier for testing probability for agents infected with symptoms (Im, Imh, Ih)
+input_pars$test_pars$hosp_mult         <- 10000                  # Multiplier for testing probability for hospitalized agents
+input_pars$test_pars$test.red          <- 0                      # Reduction in transmissibility for agents who have tested positive
 
 # Delay between getting tested and getting results
 test_delay_fx <- function(n_agents){
   rgamma(n_agents, 4, 2)
 }
 
-input_pars$test_pars$test_delay_fx     = test_delay_fx
+input_pars$test_pars$test_delay_fx     <- test_delay_fx
 
 # Adaptive testing parameters ------------------------------
 input_pars$adapt_pars <- list()
 
-input_pars$adapt_pars$adapt_start              = as.Date("2020-04-01")    # When adaptive testing begins
-input_pars$adapt_pars$adapt_freq               = 14                       # How frequently to reassess and place adaptive testing sites
-input_pars$adapt_pars$adapt_site_geo           = "ct"                     # Geography on which to base assessment and site placement (ct only option for now)
-input_pars$adapt_pars$n_adapt_sites            = 1                        # Number of adaptive sites to place
-input_pars$adapt_pars$adapt_site_test_criteria = "per_pos"                # Criteria on which to choose where to place sites
-input_pars$adapt_pars$adapt_site_mult          = 4                        # Multiplier on test probability for everyone in area with an adaptive test site
+input_pars$adapt_pars$adapt_start              <- as.Date("2020-04-01")    # When adaptive testing begins
+input_pars$adapt_pars$adapt_freq               <- 14                       # How frequently to reassess and place adaptive testing sites
+input_pars$adapt_pars$adapt_site_geo           <- "ct"                     # Geography on which to base assessment and site placement (ct only option for now)
+input_pars$adapt_pars$n_adapt_sites            <- 1                        # Number of adaptive sites to place
+input_pars$adapt_pars$adapt_site_test_criteria <- "per_pos"                # Criteria on which to choose where to place sites
+input_pars$adapt_pars$adapt_site_mult          <- 4                        # Multiplier on test probability for everyone in area with an adaptive test site
 
 # Function for delay from test to disclosure for agents tested at adaptive site
 adapt_site_delay_fx <- function(n_agents){
   rep(0.1, n_agents)
 }
 
-input_pars$adapt_pars$adapt_site_delay_fx      = adapt_site_delay_fx            
+input_pars$adapt_pars$adapt_site_delay_fx      <- adapt_site_delay_fx            
 
 # Vaccination parameters ------------------------------------
 input_pars$vax_pars <- list()
