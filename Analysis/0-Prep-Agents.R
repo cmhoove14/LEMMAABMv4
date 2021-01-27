@@ -1,5 +1,7 @@
-# Process synthetic agents database for use in model --------------
-
+# -------------------
+# Process synthetic agents database for use in model 
+# Chris Hoover Jan 2021
+# -------------------
 library(tidyverse)
 library(lubridate)
 library(fastmatch)
@@ -121,7 +123,7 @@ agents$age[agents$age_code == 9] <- 85
 # 23	Material moving occupations
 
 # Numeric codes for essential occupations
-essentials <- c(6,11:14,18:23)
+essentials <- c(6,12:14,18:23) # Not including healthcare workers (10/11) assuming access to PPE etc. Not ideal, but different kind of risk than what we intend to capture with essential worker label
 agents$essential <- 0
 agents$essential[agents$occp %in% essentials] <- 1
 sum(agents$essential)/nrow(agents) # Results in ~17% essential workers
@@ -165,39 +167,51 @@ sum(agents$essential)/nrow(agents) # Results in ~17% essential workers
   agents$work_ct[workers] <- work_cts[workers]
     
 # Next assign workplaces (maybe better to think of them as "offices", closer contacts presumed to be e.g. coworkers) by occupation and ct
-  agents$work_ct_occp <- paste0(agents$ct, "_", agents$occp)
+  agents$work_ct_occp <- paste0(agents$work_ct, "_", agents$occp)
   
   # hist(agents %>% filter(occp!=0) %>% group_by(work_ct_occp) %>% summarise(n_workers = n()) %>% pull(n_workers), breaks = 30)
   # View(agents %>% filter(occp!=0) %>% group_by(work_ct_occp) %>% summarise(n_workers = n()))
-  # High population of management positions in FiDi and Mission Bay, makes sense
 
 # Workplace size taken as poisson distributed with rate 10  
   worksize_rate <- 10
   agents$work <- NA
   ct_occps <- unique(agents$work_ct_occp[which(agents$occp != 0)])
+
   
-  work_nas <- sum(is.na(agents$work[which(agents$occp != 0)]))
-  work_id <- 5000000  # Max hhid is 387386, ct ids start with 6 and are 10 digits long, so start work ids at 5000000 
-  
-# While there are workers that have no assigned workplace, find them, sample a workplace size, then find workers to place in that workplace  
-  #Takes awhile to run ~40 minuts on Linux-based laptop with Ryzen 4000 running MS R open 4.0.2
-  while(work_nas > 0){
-    work_fill <- sample(agents$work_ct_occp[which(is.na(agents$work) & agents$occp > 0)],1)
-    work_size <- rpois(1, worksize_rate)
+# First assign workplaces where there are 5 or fewer workers of the same occupation in the census tract
+  for(i in 1:length(ct_occps)){
+    n_workers <- sum(agents$work_ct_occp == ct_occps[i]) # Workers in this sector
     
-    eligible_workers <- agents$id[which(agents$work_ct_occp == work_fill)]
-    
-    if(work_size > length(eligible_workers)){
-      workers <- eligible_workers
-    } else {
-      workers <- sample(eligible_workers, work_size)
+  # Get offices to assign workers to  
+    office_sizes <- rpois(1, worksize_rate)
+    while(sum(office_sizes) < n_workers){
+      office_sizes <- c(office_sizes, rpois(1, worksize_rate))
     }
     
-    agents$work[which(agents$id %in% workers)] <- work_id
+    # Generates unique office identifiers 
+    offices <- paste0(ct_occps[i], "_", unlist(sapply(1:length(office_sizes), 
+                                                      function(x) rep(x, office_sizes[x]))))
+    # Trims office identifiers to be same length as n_workers
+    offices <- sample(offices, n_workers)
     
-    work_id <- work_id + 1 
-    work_nas <- sum(is.na(agents$work[which(agents$occp != 0)]))# ; cat(work_nas, " workers unassigned")
+  # Assign workers to offices
+    agents$work[which(agents$work_ct_occp == ct_occps[i])] <- offices
+    
+  cat(i, " ")  
   }
+  
+  sum(is.na(agents$work[which(agents$occp != 0)])) # Should be 0
+  
+  #Convert to numeric work id for faster computations/matching
+    agents$work_fac <- as.numeric(factor(agents$work))
+      length(unique(agents$work)) == length(unique(agents$work_fac)) # Check nothing got lost
+      
+  # Convert to numeric      
+    work_id <- 5000000  # Max hhid is 387386, ct ids start with 6 and are 10 digits long, so start work ids at 5000000 (starts with 5, 7 digits long)
+  
+    agents$work <- agents$work_fac + work_id
+    
+  agents$work_ct_occp <- agents$work_fac <- NULL
   
 #Convert to data.table  
 agents <- data.table(agents)
