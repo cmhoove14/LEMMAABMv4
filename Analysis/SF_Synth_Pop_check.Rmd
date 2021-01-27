@@ -1,0 +1,108 @@
+---
+title: "SF Synthetic pop"
+author: "Chris Hoover"
+date: "12/8/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+
+library(tidyverse)
+library(data.table)
+library(tigris)
+library(mapview)
+
+
+```
+
+```{r include=FALSE}
+sf_pop <- readRDS("data/processed/SF_agents_processed.rds")
+  sf_pop$GEOID <- paste0("0",sf_pop$ct) # Add back in GEOID for merges below
+  
+  table(sf_pop$hhsize)
+  table(sf_pop$hhincome)
+  table(sf_pop$sex)
+  table(sf_pop$age)
+  table(sf_pop$occp)
+  table(sf_pop$race)
+        
+  SF_cts <- tigris::tracts("06",
+                           "075",
+                           year = 2018,
+                           class = "sf")
+  
+```
+
+```{r sf_pop_sums}
+sf_pop_sum <- sf_pop %>% 
+  group_by(geoid) %>% 
+  summarise(Pop = n())
+
+
+SF_pop_cts <- SF_cts %>% left_join(sf_pop_sum, by = c("GEOID" = "geoid"))
+  
+  mapview::mapview(SF_pop_cts, zcol = "Pop")
+
+
+```
+
+```{r sf_pct_white}
+sf_pct_white <- sf_pop %>% 
+  group_by(geoid) %>% 
+  summarise(Pop = n(),
+            White = sum(race == 1),
+            pct_wht = White/Pop)
+
+
+SF_pct_wht_cts <- SF_cts %>% left_join(sf_pct_white, by = c("GEOID" = "geoid"))
+  
+  mapview::mapview(SF_pct_wht_cts, zcol = "pct_wht")
+
+
+```
+
+```{r sf_pct_hisp}
+sf_pct_hisp <- sf_pop %>% 
+  group_by(geoid) %>% 
+  summarise(Pop = n(),
+            Hisp = sum(race == 8),
+            pct_hisp = Hisp/Pop)
+
+
+SF_pct_hisp_cts <- SF_cts %>% left_join(sf_pct_hisp, by = c("GEOID" = "geoid"))
+  
+  mapview::mapview(SF_pct_hisp_cts, zcol = "pct_hisp")
+
+
+```
+
+```{r sf_pct_black}
+sf_pct_black <- sf_pop %>% 
+  group_by(geoid) %>% 
+  summarise(Pop = n(),
+            Black = sum(race == 2),
+            pct_black = Black/Pop)
+
+
+SF_pct_black_cts <- SF_cts %>% left_join(sf_pct_black, by = c("GEOID" = "geoid"))
+  
+  mapview::mapview(SF_pct_black_cts, zcol = "pct_black")
+
+
+```
+
+
+```{r sf_mean_income}
+sf_income <- sf_pop %>% 
+  group_by(geoid) %>% 
+  summarise(Mean_Income = mean(hhincome))
+
+
+SF_income_cts <- SF_cts %>% left_join(sf_income, by = c("GEOID" = "geoid"))
+  
+  mapview::mapview(SF_income_cts, zcol = "Mean_Income")
+
+
+```
