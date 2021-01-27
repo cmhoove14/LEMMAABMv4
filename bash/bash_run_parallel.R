@@ -36,14 +36,14 @@ vax_phases  <- readRDS(here::here(vax_phases_path))
 
 # Setup, export everything to cluster, and run in parallel ------------------
 #Setup for running jobs across parallel nodes in cluster
-n_cores <- detectCores()
+n_cores <- parallel::detectCores()
 
 n_sims_per_par <- 4
 
 bta_sweeps <- rep(c(0.15, 0.175, 0.2, 0.225, 0.25, 0.275), each = n_sims_per_par)
 
-cl <- makeCluster(n_cores)
-registerDoParallel(cl)
+cl <- parallel::makeCluster(n_cores)
+doParallel::registerDoParallel(cl)
 
 clusterExport(cl, c("bta_sweeps", "bta_hh", "bta_work", "bta_sip_red",
                     "data_inputs", "input_pars", "vax_phases",
