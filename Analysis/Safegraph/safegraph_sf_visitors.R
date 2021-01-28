@@ -3,6 +3,13 @@ library(readr)
 library(parallel)
 library(jsonlite)
 
+# Get options passed from BASH -----------------
+opts <- commandArgs(TRUE)
+
+# Assign variables from BASH
+year    <- as.character(opts[1])
+
+# Get cbg ids and define a couple util functions (thanks, Josh)
 sf_cbgs <- read_csv(here::here("Census_2010_CBGs_SF.csv"))
   sf_cbgs_dt <- as.data.table(sf_cbgs$GEOID10)
   colnames(sf_cbgs_dt) <- "visits"
@@ -40,7 +47,7 @@ SF_CBG_Visitors <- function(csv){
 
 }
 
-files <- list.files("2020")
+files <- list.files(year)
 csvs <- files[grepl(".csv", files)]
 
 dates <- as.Date(substr(csvs, 1, 10))
@@ -62,7 +69,7 @@ cl <- makeCluster(detectCores())
                            function(t){
                              idate <- dates[t]
                              
-                             ifile <- paste0("2020/", files[grepl(idate, files)])
+                             ifile <- paste0(year, "/", files[grepl(idate, files)])
                              
                              if(length(ifile) == 1){
                                out <- SF_CBG_Visitors(ifile)
