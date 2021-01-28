@@ -59,7 +59,7 @@ ndays <- as.integer(end-start)
 
 cl <- makeCluster(detectCores())
 
-  clusterExport(cl, c("start", "end", "dates", "csvs", "files", "ndays",
+  clusterExport(cl, c("start", "end", "dates", "csvs", "files", "ndays", "year",
                       "SF_CBG_Visitors", "ToCounty", "ToCounty1", "sf_cbgs_dt"))
 
   invisible(clusterEvalQ(cl, lapply(c("data.table", "readr", "jsonlite"), 
@@ -80,5 +80,7 @@ cl <- makeCluster(detectCores())
                              }
                              
                            })
+  
+  parallel::stopCluster(cl)
 
 saveRDS(fill_list, paste0("SF_Visitors", start, "to", end, ".rds"))

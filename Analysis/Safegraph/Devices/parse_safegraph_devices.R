@@ -3,11 +3,17 @@ library(readr)
 library(parallel)
 library(dplyr)
 
+# Get options passed from BASH -----------------
+opts <- commandArgs(TRUE)
+
+# Assign variables from BASH
+year    <- as.character(opts[1])
+
 keep_cols <- c("origin_census_block_group", "device_count",
                "completely_home_device_count", "part_time_work_behavior_devices", "full_time_work_behavior_devices")
 
-sumDevices <- function(csv){
-  sfgrph <- data.table(readr::read_csv(paste0("2020/", csv)))
+sumDevices <- function(csv, YEAR = year){
+  sfgrph <- data.table(readr::read_csv(paste0(YEAR, "/", csv)))
   sfgrph[, state_cnty_fips:=substr(origin_census_block_group, start = 1, stop = 5)]
 
   sfgrph_sf <- sfgrph[state_cnty_fips == "06075"]
@@ -23,18 +29,18 @@ sumDevices <- function(csv){
   return(as.data.frame(out))
 }
 
-files <- list.files("2020")
+files <- list.files(year)
 csvs <- files[grepl(".csv", files)]
 
 n_cores <- detectCores()
 
 cl <- makeCluster(n_cores)
-clusterExport(cl, c("csvs", "sumDevices", "keep_cols"))
+clusterExport(cl, c("csvs", "sumDevices", "keep_cols", "year"))
 invisible(clusterEvalQ(cl, lapply(c("data.table", "readr", "dplyr"), 
                         library, character.only = T)))
 
 
-sfgrph_device_sums <- bind_rows(parLapply(cl, csvs, sumDevices))
+sfgrph_device_sums <- bind_rows(parLapply(cl, csvs, sumDevices, YEAR = year))
 
 stopCluster(cl)
 

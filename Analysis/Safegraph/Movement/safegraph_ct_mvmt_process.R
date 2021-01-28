@@ -1,8 +1,11 @@
 library(parallel)
 library(matrixStats)
 
+sfgrph_files <- list.files(here::here("data", "processed", "Safegraph"))
+sf_ctmv_file <- sfgrph_files[grepl("SFCensTractsMvmt2021", sfgrph_files)]
+
 # Read in data
-ct_mv <- readRDS(here::here("data","processed","Safegraph","SFCensTractsMvmt2020-01-01to2020-12-31.rds"))
+ct_mv <- readRDS(here::here("data","processed","Safegraph",sf_ctmv_file))
 
 n_days <- dim(ct_mv)[3]
 
@@ -39,5 +42,5 @@ for(d in 1:n_days){
   
 }    
   
-  saveRDS(ct_cdf_ls, here::here("data", "processed", "Safegraph", "safegraph_ct_mvmt_cdf_list_2020rocessed.rds"))
+  saveRDS(ct_cdf_ls, here::here("data", "processed", "Safegraph", "safegraph_ct_mvmt_cdf_list_2021processed.rds"))
 
