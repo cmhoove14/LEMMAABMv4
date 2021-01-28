@@ -164,9 +164,17 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
   agents[, vax1 := 0] # Received vaccination dose 1?
   agents[, vax2 := 0] # Received vaccination dose 2?
   
+# Progress bar  
+  pb <- progress_bar$new(
+    format = "  Running simulation [:bar] :percent in :elapsed",
+    total  = t.tot/dt, 
+    clear  = FALSE, 
+    width  = 100
+  )  
+
   # Run simulation     ---------------------
   for(t in 2:(t.tot/dt)){
-    
+
     # Time step characteristics
     date_now <- t0+t*dt
     agents[, Date:=date_now]
@@ -502,19 +510,21 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
       
       # New contact
       agents[contact == 1 & t_since_contact == dt & q_duration == 0,
-             q_prob:=q_prob+q_prob_contact*(1-0.5*essential)]  
+             q_prob:=q_prob+q_prob_contact*(1-q_prob_essential*essential)]  
       # Known residential infection
       agents[res_inf > 0 & q_duration == 0,
-             q_prob:=q_prob+q_prob_resinf*res_inf*(1-0.5*essential)]
+             q_prob:=q_prob+q_prob_resinf*res_inf*(1-q_prob_essential*essential)]
       # Experiencing symptoms plus influence of recent known contact
       agents[t_symptoms > 0 & q_duration == 0,
-             q_prob:=(q_prob+q_prob_symptoms*t_symptoms+q_prob_contact*as.numeric(t_since_contact)>0)*(1-0.5*essential)]  
+             q_prob:=(q_prob+q_prob_symptoms*t_symptoms+q_prob_contact*as.numeric(t_since_contact)>0)*(1-q_prob_essential*essential)]  
       # Tested positive
       agents[tested == 1 & infector == 1 & q_duration == 0,
-             q_prob:=q_prob+q_prob_testpos*(1-0.5*essential)]  
+             q_prob:=q_prob+q_prob_testpos*(1-q_prob_essential*essential)]  
       # Influence of adaptive site
-      agents[adapt_site == 1,
-             q_prob:=q_prob*q_prob_adapt]
+      if(adaptive){
+        agents[adapt_site == 1,
+               q_prob:=q_prob*q_prob_adapt]
+      }
       
       # Quarantine "decisions"
       agents[q_prob > 1, 
@@ -531,9 +541,7 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
       if(verbose){
         
         cat(nrow(agents[quarantine == 1,]), "agents entered isolation\n",
-            nrow(agents[q_duration > 0,]), "agents currently isolating out of",
-            nrow(agents[t_since_contact > 0 | res_inf > 0 | t_symptoms > 0 | (tested == 1 & infector == 1),]), 
-            "with symptoms, suspected contact, residential infection, or positive test\n",
+            nrow(agents[q_duration > 0,]), "agents currently isolating\n",
             nrow(agents[infector == 1 & q_duration>0,])/nrow(agents[infector == 1,])*100, "% of",
             nrow(agents[infector == 1,]), "infectious agents are quarantining\n\n")
       }
@@ -561,6 +569,11 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
     epi_curve[t,] <- sum.inf(agents[,state])
     
     gc()  
+    
+    #Advance progress bar
+    pb$tick()
+    Sys.sleep(1/100)
+    
     # On to the next one  
   }
   

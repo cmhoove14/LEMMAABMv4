@@ -24,7 +24,8 @@ Depends:
     parallel,
     doParallel,
     doRNG,
-    matrixStats
+    matrixStats,
+    progress
 LinkingTo: Rcpp, RcppEigen, RcppNumerical, RcppParallel
 Imports: 
     Rcpp
