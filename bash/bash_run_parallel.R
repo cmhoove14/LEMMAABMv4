@@ -44,9 +44,10 @@ bta_sweeps <- rep(c(0.15, 0.175, 0.2, 0.225, 0.25, 0.275), each = n_sims_per_par
 
 clooster <- parallel::makeCluster(n_cores)
 
-parallel::clusterExport(clooster, c("bta_sweeps", "bta_hh", "bta_work", "bta_sip_red",
-                              "data_inputs", "input_pars", "vax_phases",
-                              "visitors", "testing", "adaptive", "vaccination", "verbose", "store_extra"))
+clusterEvalQ(cl = clooster,
+             expr = lapply(c("data.table", "wrswoR", "dqrng", "matrixStats", "fastmatch", "lubridate", "tidyverse", "LEMMAABMv4"), 
+                           library,
+                           character.only = TRUE))
 
 parallel::clusterExport(cl = clooster, 
                         c("bta_sweeps", "bta_hh", "bta_work", "bta_sip_red",
