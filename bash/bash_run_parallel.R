@@ -1,4 +1,3 @@
-library(doRNG)
 library(LEMMAABMv4)
 
 # Get options passed from BASH -----------------
@@ -54,25 +53,27 @@ parallel::clusterExport(cl = clooster,
                           "data_inputs", "input_pars", "vax_phases",
                           "visitors", "testing", "adaptive", "vaccination", "verbose", "store_extra"))
 
-sim_results <- parLapplyLB(cl = clooster,
-                           X=bta_sweeps, 
-                           fun = function(x){
-                             LEMMAABMv4::covid_abm_v4(bta_base    = x, 
-                                                      bta_hh      = bta_hh, 
-                                                      bta_work    = bta_work, 
-                                                      bta_sip_red = bta_sip_red, 
-                                                      data_inputs = data_inputs, 
-                                                      input_pars  = input_pars, 
-                                                      vax_phases  = vax_phases,
-                                                      visitors    = visitors, 
-                                                      testing     = testing, 
-                                                      adaptive    = adaptive, 
-                                                      vaccination = vaccination,
-                                                      verbose     = verbose, 
-                                                      store_extra = store_extra)
-                           })
+sim_results <- parallel::parLapply(cl = clooster,
+                                   X=bta_sweeps, 
+                                   fun = function(x){
+                                     LEMMAABMv4::covid_abm_v4(bta_base    = x, 
+                                                              bta_hh      = bta_hh, 
+                                                              bta_work    = bta_work, 
+                                                              bta_sip_red = bta_sip_red, 
+                                                              data_inputs = data_inputs, 
+                                                              input_pars  = input_pars, 
+                                                              vax_phases  = vax_phases,
+                                                              visitors    = visitors, 
+                                                              testing     = testing, 
+                                                              adaptive    = adaptive, 
+                                                              vaccination = vaccination,
+                                                              verbose     = verbose, 
+                                                              store_extra = store_extra)
+                                   })
 
 parallel::stopCluster(cl)
 
 saveRDS(sim_results, paste0(here::here("data", "outputs", 
-                                       paste0("ABMv4_bta_calibrate", min(bta_sweeps), "-", max(bta_sweeps), "_", Sys.Date(),".rds"))))
+                                       paste0("ABMv4_bta_calibrate_n", n_sims_per_par,
+                                              "_bta", min(bta_sweeps), "-", max(bta_sweeps), 
+                                              "_", Sys.Date(),".rds"))))
