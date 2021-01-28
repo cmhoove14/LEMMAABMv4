@@ -9,7 +9,7 @@ library(LEMMAABMv4)
 
 agents <- read_csv(here("data", "raw", "total_sf_pop.csv"))
 
-### Household size (house_id)
+### Household size (house_id) -----------------
 # variable house_id is not globally unique, only within census tracts, so need to create new identifier
 agents$ct_hh_id <- paste0(agents$geoid, "_", agents$house_id)  
 agents$hhid     <- as.numeric(factor(agents$ct_hh_id))
@@ -18,7 +18,7 @@ agents$house_id <- agents$ct_hh_id <- NULL # remove superfluous columns
 # Check household sizes by race
 #check_hh_size <- agents %>% group_by(hhid) %>% summarise(n = n(), race = first(race)) ; table(check_hh_size$n, check_hh_size$race)
 
-### Individual id (indiv_id)
+### Individual id (indiv_id) -------------------
 # variable indiv_id is not globally unique, only within census tracts, so need to create new identifier
 agents$ct_indiv_id <- paste0(agents$geoid, "_", agents$indiv_id)  
 agents$id          <- as.numeric(factor(agents$ct_indiv_id))
@@ -27,12 +27,11 @@ agents$indiv_id    <- agents$ct_indiv_id <- NULL # remove superfluous columns
 length(unique(agents$id)) == nrow(agents) # Check everyone has unique id
 
 
-# Agent characteristics
-### Sex
+### Sex --------------
 # 1. Male
 # 2. Female
 
-### Age
+### Age ----------------
 # age group     recode
 # 1 <5          1
 # 2 5-9         1      
@@ -72,7 +71,7 @@ agents$age[agents$age_code == 9] <- 85
 
   agents$age_code <- NULL
   
-### Race
+### Race ----------------------------
 # 1. White alone
 # 2. .Black or African American alone
 # 3. American Indian alone
@@ -84,17 +83,16 @@ agents$age[agents$age_code == 9] <- 85
 # 7. Two or More Races
 # 8. Hispanic/Latinx
 
-### Household income groups
+### Household income groups ------------------------
   # 1 <50k
   # 2 50-100k
   # 3 >100k
   
-### Geoid is the census tract of residents
+### Geoid is the census tract of residents -------------------
   # Convert to numeric (removes leading 0) for faster matching and processing
   agents$ct <- as.numeric(agents$geoid)
-  agents$geoid <- NULL
-  
-### Occupation
+
+### Occupation --------------------
 # 0 None
 # 1	Management occupations
 # 2	Business and financial operations occupations
@@ -132,7 +130,7 @@ sum(agents$essential)/nrow(agents) # Results in ~17% essential workers
 # agents %>% group_by(race) %>% summarise(n=n(), essentials = sum(essential), prop_essential=essentials/n)
 # Latinx has highest rate, checks out  
 
-# Add unique workplaces
+# Add unique workplaces -------------------------
 # Data for between ct movement  
   # List of matrices representing CDFs of between CT movement
   sf_ct_cdf_ls <- readRDS(here::here("data", "processed", "Safegraph", "safegraph_ct_mvmt_cdf_list_2020processed.rds"))
@@ -213,7 +211,24 @@ sum(agents$essential)/nrow(agents) # Results in ~17% essential workers
     
   agents$work_ct_occp <- agents$work_fac <- NULL
   
-#Convert to data.table  
+# Add healthy places index -------------------
+hpi <- readRDS(here::here("data", "processed", "SF_HPI.rds")  )
+  
+# Vis of distribition in SF with those in bottom qurtile highlighted    
+  # hist(hpi$hpi2score, breaks = 30) ; hist(hpi$hpi2score[which(hpi$quartiles == 4)], add = T, col = "red")  
+  
+hpi2 <- hpi %>% 
+    mutate(ct = as.numeric(CensusTract)) %>% 
+    rename("hpi_quartile" = quartiles) %>% 
+    dplyr::select(ct, hpi2score, hpi_quartile)
+  
+# Check to make sure all cts are in both. Should be 195. technically 197 tracts, but two are off the cost and have 0 population  
+  sum(unique(agents$ct) %in% unique(hpi2$ct))
+  
+# merge agents and hpi  
+  agents <- left_join(agents, hpi2, by = "ct")
+  
+#Convert to data.table and save   -------------------------
 agents <- data.table(agents)
   setkey(agents, id, hhid)
   
