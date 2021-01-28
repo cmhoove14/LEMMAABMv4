@@ -48,12 +48,18 @@ last_sf_test <- max(sf_test_smooth$Date)
 
 # Safegraph data -------------------------
 #San Francisco ct mvmt list derived from sfgrph data
-sf_ct_cdf_ls <- readRDS(here::here("data", "processed", "Safegraph", "safegraph_ct_mvmt_cdf_list_2020processed.rds"))
+sf_ct_cdf_ls20 <- readRDS(here::here("data", "processed", "Safegraph", "safegraph_ct_mvmt_cdf_list_2020processed.rds"))
+sf_ct_cdf_ls21 <- readRDS(here::here("data", "processed", "Safegraph", "safegraph_ct_mvmt_cdf_list_2021processed.rds"))
+sf_ct_cdf_ls <- c(sf_ct_cdf_ls20, sf_ct_cdf_ls21)
 sf_ct_ids <- read_csv(here::here("data", "raw", "Census_2010_Tracts.csv")) %>% pull(GEOID10) %>% as.numeric()
 
-#San francisco stay at home by percent by cbg derived from safegraph
-sf_sfgrph_pcts <- readRDS(here::here("data", "processed","Safegraph", "sfgrph_devices_pct_home_cts_2020.rds"))
+#San francisco stay at home by percent by ct derived from safegraph
+sf_sfgrph_pcts20 <- readRDS(here::here("data", "processed","Safegraph", "sfgrph_devices_pct_home_cts_2020.rds"))
+sf_sfgrph_pcts21 <- readRDS(here::here("data", "processed","Safegraph", "sfgrph_devices_pct_home_cts_2021.rds"))
 
+sf_sfgrph_pcts <- rbind(sf_sfgrph_pcts20, sf_sfgrph_pcts21)
+
+last_safegraph <- max(sf_sfgrph_pcts$Date)
 # sf_sfgrph_pcts %>% 
 #   group_by(Date) %>% 
 #   summarise(n_devices     = sum(device_count), 
@@ -76,14 +82,26 @@ sf_sfgrph_pct_home <- sf_sfgrph_pcts %>%
   data.table::as.data.table()
 
 # Visitors to SF county from other CA counties ------------
-sf_visitors <- readRDS(here::here("data", "processed", "Safegraph", "SF_visitors_CTs_2020Processed.rds"))
+sf_visitors20 <- readRDS(here::here("data", "processed", "Safegraph", "SF_visitors_CTs_2020Processed.rds"))
+sf_visitors21 <- readRDS(here::here("data", "processed", "Safegraph", "SF_visitors_CTs_2020Processed.rds"))
 
+sf_visitors <- c(sf_visitors20, sf_visitors21)
 # Vaccination data ------------------
 # Data here but not doanloadable yet https://data.sfgov.org/stories/s/a49y-jeyc
 # Hack to get approximation of vaccines per day so far
 vax_start <- as.Date("2020-12-15")
-vax_per_day <- data.frame(days <- as.numeric(vax_start-as.Date("2019-12-31")+c(0,10,20,30,40)),
-                          vax <- c(1, 800, 800, 2200, 2200))
+vax_last  <- max(sf_sfgrph_pcts$Date) # How far into the future to think about vaccin 
+  vax_days <- as.numeric(vax_start-as.Date("2019-12-31")):as.numeric(vax_last-as.Date("2019-12-31"))
+  
+nvax_last <- 3000
+vax_max   <- 10000 # max vaccines per day to plateau at
+  nvax <- rep(NA_real_, length(vax_days))
+  nvax[1] <- 1
+  nvax[length(vax_days)] <- nvax_last
+  nvax <- round(zoo::na.approx(nvax))
+  
+vax_per_day <- data.frame(days = vax_days ,
+                          vax  = nvax)
 
 # Final object to export
 data_inputs                 <- list()
