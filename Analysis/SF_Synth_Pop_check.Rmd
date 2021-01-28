@@ -19,8 +19,7 @@ library(mapview)
 
 ```{r include=FALSE}
 sf_pop <- readRDS("data/processed/SF_agents_processed.rds")
-  sf_pop$GEOID <- paste0("0",sf_pop$ct) # Add back in GEOID for merges below
-  
+
   table(sf_pop$hhsize)
   table(sf_pop$hhincome)
   table(sf_pop$sex)
