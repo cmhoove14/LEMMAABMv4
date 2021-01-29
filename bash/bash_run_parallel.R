@@ -72,7 +72,7 @@ sim_results <- parallel::parLapply(cl = clooster,
                                                               store_extra = store_extra)
                                    })
 
-parallel::stopCluster(cl)
+parallel::stopCluster(clooster)
 
 saveRDS(sim_results, paste0(here::here("data", "outputs", 
                                        paste0("ABMv4_bta_calibrate_n", n_sims_per_par,
