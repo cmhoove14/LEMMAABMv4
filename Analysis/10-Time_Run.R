@@ -5,7 +5,7 @@ library(tictoc)
 library(progress)
 
 input_pars  <- readRDS(here::here("data/processed/input_pars.rds"))
-data_inputs <- readRDS(here::here("data/processed/data_inputs.rds"))
+data_inputs <- readRDS(here::here("data/processed/data_inputs2020-12-15.rds"))
 vax_phases  <- readRDS(here::here("data/processed/vax65p_scenario.rds"))
 
 bta_base    <- 0.25
