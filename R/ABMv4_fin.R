@@ -20,7 +20,7 @@
 #' 
 #' @details 
 #' `data_inputs` is a list of lists containing `agents_dt`: data.table of agents with necessary characteristics including: "hhsize" "hhincome"   "sex"        "age"        "occp"       "race"       "hhid"       "id" "ct"  "essential"  "work_ct"    "work"    "state"    "nextstate"  "tnext"  "t_symptoms" ;  `ct_cdf_list`: list of matrices of dim cts x cts in which entries represent probabilities of moving from CT i to CT j on day t where t subsets the list to corresponding day (e.g. ct_cdf_list[[t]] = ct x ct matrix). Used in `GetCTVisit`/`GetCTVisit_cpp` function ; `ct_ids` vector relating row numbers of `ct_cdf_list` to actual ct codes ; `stay_home_dt` data table with columns `Date`, `CT`, and `pct_home` (E.g. derived from safegraph data) to use for social distancing/stay at home compliance ; `visitors_list` list of data frames/tables with columns corresponding to census tract, number of external visitors to that ct, county from which they visited, and population and infection characteristics of that county. column inf_prob represents incidence in that county (new cases identified per population) and is used as probability a visiting agent is infectious along with `visitor_mult_testing` to correct for ratio of true incidence to incidence from testing data and `visitor_mult_sfgrph` to correct for ratio of safegraph devices tracked to total population ;  `test_avail` data frame with columns date_num and tests_pp corresponding to number of tests availabe per person on day date_num. Used to generate function returning the number of tests available per agent on day t since test start. 
-#' `input_pars` is a list of lists corresponding to parameters that shouldn't need to be edited frequently e.g. for model calibration or simulations. It includes a LIST `time_pars` containing: `t0`: start date of simulation ;  `t.tot` total time to run simulation (in days) ; `dt` time step (defaults to 4/24, needs editing if otherwise) ; `day_of_week_fx` function which takes t returns character of day of week (U,M,T,W,R,F,S) ; `SiP.start` Date that shelter in place started ; `mask.start` Date that mask mandate was introduced. Another LIST `init_states` containing : `E0` number of initial exposed agents ; `Ip0` number of initial pre-symptomatic infections agents ; `Ia0` number of initial asymptomatic infectious agents ; `Im0` number of initial mildy symptomatic agents ; `Imh0` number of initial mildly symptomatic, will become severely symptomatic agents ; `Ih0` number of initial hospitalized agents ; `R0` number of initial recovered agents ; `D0` number of initial diceased agents. Another LIST `quar_pars` containing: `q_prob_contact` probability an agent will quarantine because of known contact with infectious agent ; `q_prob_resinf` probability an agent will quarantine because of shared residence with infectious agent ; `q_prob_symptoms` probability an agent will quarantine because of symptoms on a per day basis: e.g. one full day of symptoms = q_prob_symptoms probability of isolating. Note that agents will consider this 4 times per day, so probability should adjust for multiple opportunities ; `q_prob_testpos` probability an agent will quarantine because of positive test result ; `q_prob_adapt` probability multiplier agent will quarantine if "exposed" to an adaptive testing site ; `q_dur_fx` function to generate random quarantine durations ; `known_contact_prob` proportional increase in probability that a contact with an infectious individual is known. 0 implies known contact occurs at same rate as FOI, implying very low probability that an infectious contact will be known 1 implies probability is double FOI. Since FOIs will be quite small, larger multipliers are suggested. LIST `test_pars` containing: `test_start` Date at which testing begins ; `test_delay_fx` function to generate time delay from test to notification ; `tests_pub` proportion of tests that are public vs private ; `tests_wknd` percent of weekday tests available on weekends ; `test_probs_pub_fx` function which returns testing probability for individuals to get tested at public site ; `test_probs_pvt_fx` function which returns testing probability for individuals to get tested at prvate site ; `cont_mult` multiplier for test probability for agents with suspeceted contact ; `symp_mult` multiplier for test probability for time exeriencing symptoms; `res_mult` multiplier for test probability for agents with known infection in their residence ; `nosymp_state_mult` multiplier for test probability for agents who are infected but not shopwing symptoms (Ia or Ip) ; `symp_state_mult` multiplier for test probability for agents who are infected andshowing symptoms (Im or Imh) ; `hosp_mult` multiplier for test probability for agents who are infected and hospitalized ; `test.red` reduction in transmission probability if agents has tested positive. LIST `other_pars` containing `visitor_mult_testing` multiplier to adjust probability visiting agent is infected based on ratio of true incidence to incidence identified via testing ; `visitor_mult_sfgrph` multiplier to adjust total number of visitors from safegraph number of visitors based on ratio of tracked safegraph devices to total movement of people ; `mask_fx` a function to return individual agent probabilities of wearing a mask outside the household ; `mask_red` reduction in transmission probability if agent wears mask ; `social_fx` function to generate agent sociality metrics. LIST `adapt_pars` containing: `adapt_start` time point at which to start adaptive testing ; `adapt_freq` frequency with which to check test reports and generate new test site ; `adapt_site_fx` function to determine when and where to place adaptive testing sites ; `adapt_site_geo` geography to base adaptive sites on only option is `ct` for now ; `n_adapt_sites` how many adaptive sites available to place ; `adapt_site_test_criteria` character either `n_pos`or `pct_pos`for whteher targeted sites should be added based on census tract with highest number positive tests or highest percent positive tests ; `adapt_site_mult` increase in testing probability if test site is placed in residence ct ; `adapt_site_delay_fx` function to generate time delay for test conducted to disclosure for agents in cts with  adaptive sites.
+#' `input_pars` is a list of lists corresponding to parameters that shouldn't need to be edited frequently e.g. for model calibration or simulations. It includes a LIST `time_pars` containing: `t0`: start date of simulation ;  `t.tot` total time to run simulation (in days) ; `dt` time step (defaults to 4/24, needs editing if otherwise) ; `day_of_week_fx` function which takes t returns character of day of week (U,M,T,W,R,F,S) ; `SiP.start` Date that shelter in place started ; `mask.start` Date that mask mandate was introduced. Another LIST `init_states` containing : `E0` number of initial exposed agents ; `Ip0` number of initial pre-symptomatic infections agents ; `Ia0` number of initial asymptomatic infectious agents ; `Im0` number of initial mildy symptomatic agents ; `Imh0` number of initial mildly symptomatic, will become severely symptomatic agents ; `Ih0` number of initial hospitalized agents ; `R0` number of initial recovered agents ; `D0` number of initial diceased agents. Another LIST `quar_pars` containing: `q_prob_contact` probability an agent will quarantine because of known contact with infectious agent ; `q_prob_resinf` probability an agent will quarantine because of shared residence with infectious agent ; `q_prob_symptoms` probability an agent will quarantine because of symptoms on a per day basis: e.g. one full day of symptoms = q_prob_symptoms probability of isolating. Note that agents will consider this 4 times per day, so probability should adjust for multiple opportunities ; `q_prob_testpos` probability an agent will quarantine because of positive test result ; `q_prob_adapt` probability multiplier agent will quarantine if "exposed" to an adaptive testing site ; `q_dur_fx` function to generate random quarantine durations ; `known_contact_prob` proportional increase in probability that a contact with an infectious individual is known. 0 implies known contact occurs at same rate as FOI, implying very low probability that an infectious contact will be known 1 implies probability is double FOI. Since FOIs will be quite small, larger multipliers are suggested. LIST `test_pars` containing: `test_start` Date at which testing begins ; `test_delay_fx` function to generate time delay from test to notification ; `tests_wknd` percent of weekday tests available on weekends ; `test_probs_fx` function which returns testing probability for individuals to get tested ; `cont_mult` multiplier for test probability for agents with suspeceted contact ; `symp_mult` multiplier for test probability for time exeriencing symptoms; `res_mult` multiplier for test probability for agents with known infection in their residence ; `nosymp_state_mult` multiplier for test probability for agents who are infected but not shopwing symptoms (Ia or Ip) ; `symp_state_mult` multiplier for test probability for agents who are infected andshowing symptoms (Im or Imh) ; `hosp_mult` multiplier for test probability for agents who are infected and hospitalized ; `test.red` reduction in transmission probability if agents has tested positive. LIST `other_pars` containing `visitor_mult_testing` multiplier to adjust probability visiting agent is infected based on ratio of true incidence to incidence identified via testing ; `visitor_mult_sfgrph` multiplier to adjust total number of visitors from safegraph number of visitors based on ratio of tracked safegraph devices to total movement of people ; `mask_fx` a function to return individual agent probabilities of wearing a mask outside the household ; `mask_red` reduction in transmission probability if agent wears mask ; `social_fx` function to generate agent sociality metrics. LIST `adapt_pars` containing: `adapt_start` time point at which to start adaptive testing ; `adapt_freq` frequency with which to check test reports and generate new test site ; `adapt_site_fx` function to determine when and where to place adaptive testing sites ; `adapt_site_geo` geography to base adaptive sites on only option is `ct` for now ; `n_adapt_sites` how many adaptive sites available to place ; `adapt_site_test_criteria` character either `n_pos`or `pct_pos`for whteher targeted sites should be added based on census tract with highest number positive tests or highest percent positive tests ; `adapt_site_mult` increase in testing probability if test site is placed in residence ct ; `adapt_site_delay_fx` function to generate time delay for test conducted to disclosure for agents in cts with  adaptive sites.
 #' `vax_phases` should contain three lists each of the same length: `dates` containing start dates of new vaccination eligibility phases, `ages` with entries containing ages of eligilibility for vaccination, and `occps` containing numerical codes for occupations eligible for vaccination. All three lists should be same length and are additive, i.e. agents in phase 1 still unvaccinated in phase two will remain eligible for phase 2. agents must also meet both age and occp criteria for eligibility. each entry should define a group eligible for vaccination, so if two groups becoming eligible at same time, separate entries required by replicating date in `dates` and defining separate criteria in `ages` and `occps`. See `Analysis/0-Prep-Agents.R` for occp codes.
 #' 
 #' @return list with two objects: an epi curve with counts of agents in each state through time and a dataframe with infection reports for every new infection (e.g. entry created whenever agent transitions from S to E)
@@ -48,7 +48,7 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
   vax_fx <- approxfun(vax_per_day$days,
                       vax_per_day$vax)
   
-  # Get dates of vaccination phases
+  # Get dates of vaccination phase onsets
   vax_phase_dates <- vax_phases$dates
   
   # Extract parameter inputs
@@ -242,118 +242,107 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
         n_tests <- rpois(1, N*tests_pp_fx(date_num))
       }
       
-      n_tests_pub <- rpois(1, n_tests*tests_pub)
-      n_tests_pvt <- n_tests - n_tests_pub
-      
       if(n_tests > 0){
         
-        # Determine agents who are eligible for each type of testing and get their individual testing probability
-        eligible_ids <- agents[((t_symptoms > 0 | t_since_contact > 0 | essential == 1 | res_inf > 0) & 
-                                  t_since_test > 7 & tested == 0 & init_test == 0 & state!= "D") | 
-                                 (adapt_site == 1 & tested == 0 & init_test == 0 & state!= "D") | 
-                                 (t_symptoms < t_since_test & tested == 0 & init_test == 0 & state!= "D"), 
+        # Determine agents who are eligible for testing and get their individual testing probability
+        eligible_ids <- agents[t_symptoms < t_since_test & tested == 0 & init_test == 0 & state!= "D", 
                                id]
         
-        pvt_eligible_ids <- agents[tested == 0 & init_test ==0 & state!= "D", 
-                                   id]
-        
         agents[id %in% eligible_ids,
-               test_prob:=test_probs_pub_fx(hhincome, race, essential, t_symptoms,  
-                                            state, t_since_contact, res_inf,  
-                                            adapt_site, adapt_site_mult, n_tests_pub,
-                                            symp_mult, race_test_mults, cont_mult, res_mult, nosymp_state_mult, symp_state_mult, hosp_mult)]
-        
-        agents[id %in% pvt_eligible_ids,
-               test_prob:=test_probs_pvt_fx(income = hhincome, race = race, essential = essential, t_symptoms = t_symptoms,  
-                                            state = state, t_since_contact = t_since_contact, res_inf = res_inf, tests_avail = n_tests_pvt, 
-                                            symp_mult = symp_mult, race_mult = race_test_mults, cont_mult = cont_mult, 
-                                            res_mult = res_mult, nosymp_state_mult = nosymp_state_mult, symp_state_mult = symp_state_mult, hosp_mult = hosp_mult)]
+               test_prob:=test_probs_fx(income            = hhincome, 
+                                        income_mult       = income_mult,
+                                        hpi               = hpi_quartile, 
+                                        essential         = essential, 
+                                        essential_prob    = essential_prob,
+                                        t_symptoms        = t_symptoms,  
+                                        state             = state, 
+                                        t_since_contact   = t_since_contact, 
+                                        res_inf           = res_inf,  
+                                        adapt_site        = adapt_site, 
+                                        adapt_site_mult   = adapt_site_mult, 
+                                        tests_avail       = n_tests,
+                                        case_find_mult    = case_find_mult,
+                                        symp_mult         = symp_mult, 
+                                        hpi_mult          = hpi_mult, 
+                                        cont_mult         = cont_mult, 
+                                        res_mult          = res_mult, 
+                                        nosymp_state_mult = nosymp_state_mult, 
+                                        symp_state_mult   = symp_state_mult, 
+                                        hosp_mult         = hosp_mult)]
         
         eligible_probs <- agents[id %in% eligible_ids, 
                                  test_prob]
         
-        pvt_eligible_probs <- agents[id %in% pvt_eligible_ids, 
-                                     test_prob]
-        
-        if((length(eligible_ids)+length(pvt_eligible_ids)) < n_tests){ # Remove t_since_test criteria to create more eleigible agents
-          warning(cat("\nOnly",length(eligible_ids)+length(pvt_eligible_ids)), "eligible agents for testing and",
-                  (n_tests_pub + n_tests_pvt), "tests available\n")
+        if(length(eligible_ids) < n_tests){ # Remove t_since_test criteria to create more eleigible agents
+          warning(cat("\nOnly",length(eligible_ids), "eligible agents for testing and",
+                  (n_tests_pub + n_tests_pvt), "tests available\n"))
           
-          eligible_ids <- agents[((t_symptoms > 0 | t_since_contact > 0 | essential == 1 | res_inf > 0) & 
-                                    tested == 0 & init_test == 0 & state!= "D") | 
-                                   (adapt_site == 1 & tested == 0 & init_test == 0 & state!= "D"), 
+          eligible_ids <- agents[init_test == 0 & state!= "D", 
                                  id]
           
           agents[id %in% eligible_ids,
-                 test_prob:=test_probs_pub_fx(income_bracket, race, essential, t_symptoms,  
-                                              state, t_since_contact, res_inf, 
-                                              adapt_site, adapt_site_mult, n_tests_pub, 
-                                              symp_mult, race_test_mults, cont_mult, res_mult, nosymp_state_mult, symp_state_mult, hosp_mult)]
+                 test_prob:=test_probs_fx(income            = hhincome, 
+                                          income_mult       = income_mult,
+                                          hpi               = hpi_quartile, 
+                                          essential         = essential, 
+                                          essential_prob    = essential_prob,
+                                          t_symptoms        = t_symptoms,  
+                                          state             = state, 
+                                          t_since_contact   = t_since_contact, 
+                                          res_inf           = res_inf,  
+                                          adapt_site        = adapt_site, 
+                                          adapt_site_mult   = adapt_site_mult, 
+                                          tests_avail       = n_tests,
+                                          case_find_mult    = case_find_mult,
+                                          symp_mult         = symp_mult, 
+                                          hpi_mult          = hpi_mult, 
+                                          cont_mult         = cont_mult, 
+                                          res_mult          = res_mult, 
+                                          nosymp_state_mult = nosymp_state_mult, 
+                                          symp_state_mult   = symp_state_mult, 
+                                          hosp_mult         = hosp_mult)]
           
           eligible_probs <- agents[id %in% eligible_ids, 
                                    test_prob]
           
-          
         }
         
-        if(!is.na(n_tests_pub) & n_tests_pub > 0 & n_tests_pub < length(eligible_ids)){
-          # Conduct public testing via sampling
-          pub_test_ids <- eligible_ids[wrswoR::sample_int_crank(length(eligible_ids),
-                                                                n_tests_pub,
-                                                                eligible_probs)]
+        if(!is.na(n_tests) & n_tests > 0 & n_tests < length(eligible_ids)){
+          # Conduct testing via weighted random sampling based on test probabilities
+          test_ids <- eligible_ids[wrswoR::sample_int_crank(length(eligible_ids),
+                                                            n_tests,
+                                                            eligible_probs)]
           
           # tag agents who are tested and sample for delay from test to notification
-          agents[id %in% pub_test_ids, init_test:=1]
-          agents[id %in% pub_test_ids, t_til_test_note:=test_delay_fx(.N)]
-          agents[id %in% pub_test_ids & adapt_site == 1, t_til_test_note:=adapt_site_delay_fx(.N)]
-          agents[id %in% pub_test_ids & state %in% c("Ip", "Ia", "Im", "Imh", "Ih"), test_pos:=1]
+          agents[id %in% test_ids, init_test:=1]
+          agents[id %in% test_ids, t_til_test_note:=test_delay_fx(.N)]
+          agents[id %in% test_ids & adapt_site == 1, t_til_test_note:=adapt_site_delay_fx(.N)]
+          agents[id %in% test_ids & state %in% c("Ip", "Ia", "Im", "Imh", "Ih"), test_pos:=1]
         } else {
-          pub_test_ids = NA
+          test_ids = NA
           warning(cat("\nPublic testing not conducted due to lack of eligible agents\n"))
-        }
-        
-        if(!is.na(n_tests_pvt) & n_tests_pvt > 0){
-          
-          # No testing twice
-          if(!is.na(pub_test_ids)){
-            already_tested <- which(pvt_eligible_ids %in% pub_test_ids)
-            pvt_eligible_ids <- pvt_eligible_ids[-already_tested]
-            pvt_eligible_probs <- pvt_eligible_probs[-already_tested]
-          }  
-          
-          # Conduct private testing via sampling
-          pvt_test_ids <- pvt_eligible_ids[wrswoR::sample_int_crank(length(pvt_eligible_ids),
-                                                                    n_tests_pvt,
-                                                                    pvt_eligible_probs)]
-          
-          agents[id %in% pvt_test_ids, init_test:=1]
-          agents[id %in% pvt_test_ids, t_til_test_note:=test_delay_fx(.N)]
-          agents[id %in% pvt_test_ids & state %in% c("Ip", "Ia", "Im", "Imh", "Ih"), test_pos:=1]
-        } else {
-          pvt_test_ids = NA
         }
         # Tested agents
         # Test results and reset time since last test for those who were tested
         # agents[id %in% testeds, tested:=test_sens(state, t_infection)]
-        test_reports[[as.numeric(date_now-t0)]] <- agents[id %in% c(pub_test_ids, pvt_test_ids),
-                                                          c("id", "age", "race", "state", "nextstate",
+        test_reports[[as.numeric(date_now-t0)]] <- agents[id %in% test_ids,
+                                                          c("id", "age", "sex", "race", "occp", "essential", "work", "state", "nextstate",
                                                             "t_infection", "t_symptoms", "t_since_contact", "res_inf", "test_prob", 
-                                                            "hhid", "hhincome", "ct",
-                                                            "adapt_site", "essential", "Date", "test_pos", "t_til_test_note")]
+                                                            "hhid", "hhincome", "ct", "hpi_quartile", 
+                                                            "adapt_site", "Date", "test_pos", "t_til_test_note")]
         
-        agents[id %in% c(pub_test_ids, pvt_test_ids), t_since_test:=0]
+        agents[id %in% test_ids, t_since_test:=0]
         agents[, test_prob:=NULL]
         
         if(verbose){ cat(n_tests, "tests conducted,",
-                         nrow(agents[id %in% c(pub_test_ids, pvt_test_ids) & test_pos==1,]), "(",
-                         nrow(agents[id %in% c(pub_test_ids, pvt_test_ids) & test_pos==1,])/n_tests*100, 
+                         nrow(agents[id %in% test_ids & test_pos==1,]), "(",
+                         nrow(agents[id %in% test_ids & test_pos==1,])/n_tests*100, 
                          "%) positive\n",
-                         nrow(agents[id %in% c(pub_test_ids, pvt_test_ids) & test_pos==1 & state %in% c("Ip", "Ia")]), "without symptoms,",
-                         nrow(agents[id %in% c(pub_test_ids, pvt_test_ids) & test_pos==1 & state %in% c("Im", "Imh")]), "with mild symptoms, and",
-                         nrow(agents[id %in% c(pub_test_ids, pvt_test_ids) & test_pos==1 & state == "Ih"]), "in hospital\n\n")}
+                         nrow(agents[id %in% test_ids & test_pos==1 & state %in% c("Ip", "Ia")]), "without symptoms,",
+                         nrow(agents[id %in% test_ids & test_pos==1 & state %in% c("Im", "Imh")]), "with mild symptoms, and",
+                         nrow(agents[id %in% test_ids & test_pos==1 & state == "Ih"]), "in hospital\n\n")}
         
-        rm(list = c("n_tests", "n_tests_pub", "n_tests_pvt",
-                    "eligible_ids", "eligible_probs", "pvt_eligible_ids", "pvt_eligible_probs", "pub_test_ids", "pvt_test_ids"))
+        rm(list = c("n_tests", "eligible_ids", "eligible_probs", "test_ids"))
       }
     }
     

@@ -19,9 +19,40 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// test_probs_fx
+NumericVector test_probs_fx(NumericVector income, double income_mult, NumericVector hpi, NumericVector essential, double essential_prob, NumericVector t_symptoms, CharacterVector state, NumericVector t_since_contact, NumericVector res_inf, NumericVector adapt_site, double adapt_site_mult, int tests_avail, double case_find_mult, double symp_mult, double hpi_mult, double cont_mult, double res_mult, double nosymp_state_mult, double symp_state_mult, double hosp_mult);
+RcppExport SEXP _LEMMAABMv4_test_probs_fx(SEXP incomeSEXP, SEXP income_multSEXP, SEXP hpiSEXP, SEXP essentialSEXP, SEXP essential_probSEXP, SEXP t_symptomsSEXP, SEXP stateSEXP, SEXP t_since_contactSEXP, SEXP res_infSEXP, SEXP adapt_siteSEXP, SEXP adapt_site_multSEXP, SEXP tests_availSEXP, SEXP case_find_multSEXP, SEXP symp_multSEXP, SEXP hpi_multSEXP, SEXP cont_multSEXP, SEXP res_multSEXP, SEXP nosymp_state_multSEXP, SEXP symp_state_multSEXP, SEXP hosp_multSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type income(incomeSEXP);
+    Rcpp::traits::input_parameter< double >::type income_mult(income_multSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type hpi(hpiSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type essential(essentialSEXP);
+    Rcpp::traits::input_parameter< double >::type essential_prob(essential_probSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type t_symptoms(t_symptomsSEXP);
+    Rcpp::traits::input_parameter< CharacterVector >::type state(stateSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type t_since_contact(t_since_contactSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type res_inf(res_infSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type adapt_site(adapt_siteSEXP);
+    Rcpp::traits::input_parameter< double >::type adapt_site_mult(adapt_site_multSEXP);
+    Rcpp::traits::input_parameter< int >::type tests_avail(tests_availSEXP);
+    Rcpp::traits::input_parameter< double >::type case_find_mult(case_find_multSEXP);
+    Rcpp::traits::input_parameter< double >::type symp_mult(symp_multSEXP);
+    Rcpp::traits::input_parameter< double >::type hpi_mult(hpi_multSEXP);
+    Rcpp::traits::input_parameter< double >::type cont_mult(cont_multSEXP);
+    Rcpp::traits::input_parameter< double >::type res_mult(res_multSEXP);
+    Rcpp::traits::input_parameter< double >::type nosymp_state_mult(nosymp_state_multSEXP);
+    Rcpp::traits::input_parameter< double >::type symp_state_mult(symp_state_multSEXP);
+    Rcpp::traits::input_parameter< double >::type hosp_mult(hosp_multSEXP);
+    rcpp_result_gen = Rcpp::wrap(test_probs_fx(income, income_mult, hpi, essential, essential_prob, t_symptoms, state, t_since_contact, res_inf, adapt_site, adapt_site_mult, tests_avail, case_find_mult, symp_mult, hpi_mult, cont_mult, res_mult, nosymp_state_mult, symp_state_mult, hosp_mult));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_LEMMAABMv4_GetCTVisit_cpp", (DL_FUNC) &_LEMMAABMv4_GetCTVisit_cpp, 3},
+    {"_LEMMAABMv4_test_probs_fx", (DL_FUNC) &_LEMMAABMv4_test_probs_fx, 20},
     {NULL, NULL, 0}
 };
 
