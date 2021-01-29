@@ -102,8 +102,10 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
   agents[id %in% init.Rs, state:="R"]
   
   # Keep track of everyone's infection status through time   
-  epi_curve <- matrix(NA, nrow = t.tot/dt, ncol = 9)
-  epi_curve[1,] <- sum.inf(agents[,state])
+  #epi_curve <- matrix(NA, nrow = t.tot/dt, ncol = 9)
+  #epi_curve[1,] <- agents[,.N, by = state]$N
+  epi_curve <- list()
+    epi_curve[[1]] <- agents[,.N, by = state]$N
   
   # Keep record of infection events
   infection_reports <- list()
@@ -261,7 +263,7 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
                                         adapt_site        = adapt_site, 
                                         adapt_site_mult   = adapt_site_mult, 
                                         tests_avail       = n_tests,
-                                        case_find_mult    = case_find_mult,
+                                        case_find_mult    = case_finding_mult,
                                         symp_mult         = symp_mult, 
                                         hpi_mult          = hpi_mult, 
                                         cont_mult         = cont_mult, 
@@ -461,7 +463,8 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
              trans_prob := beta_today*bta_work*(1-mask_red*wear.mask*tested)*(1-test.red*tested)] 
       
       # Get FOI for all agents  
-      agents[, FOI:=sum(trans_prob*infector/n_present, na.rm = T), by = location]
+      agents[, FOIi:=trans_prob*infector/n_present]
+      agents[, FOI:=sum(FOIi, na.rm = T), by = location]
       
       # Reduce probability of infection for vaccinated agents
       if(vaccination & date_now >= vax_start){
@@ -555,7 +558,8 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
       
     }
     
-    epi_curve[t,] <- sum.inf(agents[,state])
+    #epi_curve[t,] <- agents[,.N, by = state]$N
+    epi_curve[[t]] <- agents[,.N, by = state]
     
     gc()  
     
@@ -568,8 +572,10 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
   
   gc()  
   
+  #colnames(epi_curve) <- agents[,.N, by = state]$state
+  
   fin_out <- list()
-  fin_out[["epi_curve"]] <- epi_curve
+  fin_out[["epi_curve"]] <- rbindlist(epi_curve, fill=TRUE)
   fin_out[["infections"]] <- rbindlist(infection_reports,fill=TRUE)
   fin_out[["linelist_tests"]] <- rbindlist(test_reports,fill = TRUE)
   fin_out[["agents"]] <- agents
