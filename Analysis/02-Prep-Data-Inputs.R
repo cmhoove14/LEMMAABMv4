@@ -32,15 +32,15 @@ N <- nrow(agents)
 
 # Testing data for sims ----------------------
 source(here::here("data", "get","COVID_CA_get_latest.R"))
-
+  first_ca_case_reports <- as.numeric(as.Date(min(CA_cases$date)) - as.Date("2019-12-31"))
 
 # sf_test is observed testing completed in SF county
 # Must contain columns date_num and tests_pp to convert to testing function in model
 sf_test_smooth <- sf_test %>% 
   mutate(Date = as.Date(substr(specimen_collection_date, 1,10)),
-         date_num = as.numeric(Date-as.Date("2019-12-31")),
          tests_pp = tests/N) %>% 
   padr::pad() %>% 
+  mutate(date_num = as.numeric(Date-as.Date("2019-12-31"))) %>% 
   padr::fill_by_value(tests_pp, value = 0) %>% 
   mutate(tests_pp_7day_avg = zoo::rollmean(tests_pp, 7, na.pad = T, align = "center"),
          tests_pp = case_when(is.na(tests_pp_7day_avg) & Date < as.Date("2020-03-10") ~ 2/N,
@@ -115,9 +115,10 @@ vax_per_day <- data.frame(days = vax_days ,
 
 # Predict/impute into the future if simulation beyond present is desired
 if(t.end > last_sf_test){
+# Determine number of days necessary to "impute" then assign average of same number of days in the past into the future  
   n_add <- as.numeric(t.end - last_sf_test)
-  lookback <- last_sf_test-n_add
-  avg_past <- sf_test_smooth %>% filter(Date > lookback) %>% pull(tests_pp_7day_avg) %>% mean()
+  lookback <- last_sf_test-n_add-7
+  avg_past <- sf_test_smooth %>% filter(Date > lookback) %>% pull(tests_pp) %>% mean()
   tests_pp_pad <- c(sf_test_smooth$tests_pp_7day_avg, rep(avg_past, n_add))
   dates_pad <- c(sf_test_smooth$date_num, 
                  max(sf_test_smooth$date_num, na.rm = T)+c(1:n_add))
@@ -135,12 +136,10 @@ if(t.end > last_sfgrph){
   lookback_week <- lookback-c(1:7)
   lookback_start <- lookback_week[which(wday(lookback_week) == lookback_day)]
   
-  sf_sfgrph_pct_home <- as.data.table(rbind(sf_sfgrph_pct_home,
-                                            sf_sfgrph_pct_home %>% 
-                                              filter(Date >= lookback_start) %>% 
-                                              mutate(Date = Date + 1 + (last_sfgrph-lookback_start))))
-  
-  data.table::setkey(sf_sfgrph_pct_home, origin_census_block_group)
+  sf_sfgrph_pct_home <- rbindlist(list(sf_sfgrph_pct_home,
+                                       sf_sfgrph_pct_home %>% 
+                                         filter(Date >= lookback_start) %>% 
+                                         mutate(Date = Date + 1 + (last_sfgrph-lookback_start))))
   
   sf_cbg_cdf_ls <- c(sf_cbg_cdf_ls, 
                      sf_cbg_cdf_ls[(length(sf_cbg_cdf_ls)-as.numeric(last_sfgrph-lookback_start)):length(sf_cbg_cdf_ls)]) 

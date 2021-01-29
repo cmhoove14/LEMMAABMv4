@@ -265,10 +265,9 @@ visitors_to_agents <- function(visits_dt, visitor_mult_testing, visitor_mult_sfg
     inf_agent_visits$tested <- 0
     inf_agent_visits$mask <- mask_fx(nrow(inf_agent_visits))
     
-    out <- as.data.table(rbind(agent_visits, inf_agent_visits) %>% 
-                           dplyr::select(ct, location, infector, tested, mask))
+    out <- rbindlist(list(agent_visits, inf_agent_visits))[, c("location", "infector", "tested", "mask")]
   }  else {
-    out <- data.frame(location = NA, infector = NA)
+    out <- data.table(location = NA, infector = NA)
   }
   
   return(out)

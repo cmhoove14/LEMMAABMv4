@@ -2,7 +2,10 @@ library(tidyverse)
 library(data.table)
 library(matrixStats)
 
-sf_visitors <- readRDS(here::here("data", "processed", "Safegraph", "SF_Visitors2020-01-01to2020-12-31.rds"))
+sfgrph_files <- list.files(here::here("data", "processed", "Safegraph"))
+sf_visitors_file <- sfgrph_files[grepl("SF_Visitors2020", sfgrph_files)]
+
+sf_visitors <- readRDS(here::here("data", "processed", "Safegraph", sf_visitors_file))
 
 # Get county fips codes ~~~~~~~~~~~~~~~~~~~~~~~~~---------------------------
 temp.file <- paste(tempfile(),".xlsx",sep = "")
@@ -59,6 +62,8 @@ sf_tot_visitors <- lapply(1:length(sf_visitors), function(t){
                all.x = TRUE)
   
   dt2[, inf_prob:=(newcountconfirmed/pops)]
+  
+  dt2 <- dt2[!is.na(Visits) & !is.na(inf_prob)]
 
   return(dt2[, c("fips", "County", "totalcountconfirmed", "totalcountdeaths", "newcountdeaths"):=NULL])  
 })

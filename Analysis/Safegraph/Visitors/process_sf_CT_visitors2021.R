@@ -46,7 +46,7 @@ pops <- readxl::read_excel(temp.file2, skip = 3)
     CA_cases_dt2$date <- as.Date(CA_cases_dt2$date)
   
 # Process visitors file  
-t0 <- as.Date("2019-12-31")  
+t0 <- as.Date("2020-12-31")  
   
 sf_tot_visitors <- lapply(1:length(sf_visitors), function(t){
   dt <- melt(sf_visitors[[t]], "visits")
@@ -63,7 +63,9 @@ sf_tot_visitors <- lapply(1:length(sf_visitors), function(t){
   
   dt2[, inf_prob:=(newcountconfirmed/pops)]
 
-  return(dt2[, c("fips", "County", "totalcountconfirmed", "totalcountdeaths", "newcountdeaths"):=NULL])  
+  dt_out <- dt2[!is.na(Visits) & !is.na(inf_prob)]
+  
+  return(dt_out[, c("fips", "County", "totalcountconfirmed", "totalcountdeaths", "newcountdeaths"):=NULL])  
 })
 
 saveRDS(sf_tot_visitors, here::here("data", "processed", "Safegraph", "SF_visitors_CTs_2021Processed.rds"))
