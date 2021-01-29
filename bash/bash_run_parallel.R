@@ -38,7 +38,7 @@ vax_phases  <- readRDS(here::here(vax_phases_path))
 #Setup for running jobs across parallel nodes in cluster
 n_cores <- parallel::detectCores()
 
-n_sims_per_par <- 2
+n_sims_per_par <- 3
 
 bta_sweeps <- rep(c(0.15, 0.175, 0.2, 0.225, 0.25, 0.275), each = n_sims_per_par)
 
