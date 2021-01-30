@@ -36,11 +36,14 @@ vax_phases  <- readRDS(here::here(vax_phases_path))
 
 # Setup, export everything to cluster, and run in parallel ------------------
 #Setup for running jobs across parallel nodes in cluster
-n_cores <- parallel::detectCores()
+RAM <- as.numeric(system("awk '/MemFree/ {print $2}' /proc/meminfo", intern = T))/1e6
+nworkers <- floor(RAM/6)
 
-n_sims_per_par <- 3
+n_cores <- nworkers
 
-bta_sweeps <- rep(c(0.15, 0.175, 0.2, 0.225, 0.25, 0.275), each = n_sims_per_par)
+n_sims_per_par <- 2
+
+bta_sweeps <- rep(c(0.175, 0.2, 0.225, 0.25, 0.275), each = n_sims_per_par)
 
 clooster <- parallel::makeCluster(n_cores)
 
