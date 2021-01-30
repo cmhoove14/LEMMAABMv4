@@ -145,7 +145,10 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
   #Time initial infections occurred
   agents[state %in% c("E", "Ip", "Ia", "Im", "Imh", "Ih"), t_infection:=dt]
   
-  # Add compliance and sociality metrics, start people with no known contacts -----------------------------
+  # Make sure ct is numeric for matching
+  agents[, ct:=as.numeric(ct)] 
+  
+  # Add compliance and sociality metrics, start people with no known contacts, etc. -----------------------------
   agents[, mask := mask_fx(.N)] # Probability of wearing a mask
   agents[, sociality := social_fx(.N)] # Sociality metric
   agents[, quarantine := 0] # initial quarantine values
@@ -247,65 +250,60 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
       if(n_tests > 0){
         
         # Determine agents who are eligible for testing and get their individual testing probability
-        eligible_ids <- agents[t_symptoms < t_since_test & tested == 0 & init_test == 0 & state!= "D", 
-                               id]
+        eligible_agents <- agents[t_symptoms < t_since_test & tested == 0 & init_test == 0 & state!= "D", ]
         
-        agents[id %in% eligible_ids,
-               test_prob:=test_probs_fx(income            = hhincome, 
-                                        income_mult       = income_mult,
-                                        hpi               = hpi_quartile, 
-                                        essential         = essential, 
-                                        essential_prob    = essential_prob,
-                                        t_symptoms        = t_symptoms,  
-                                        state             = state, 
-                                        t_since_contact   = t_since_contact, 
-                                        res_inf           = res_inf,  
-                                        adapt_site        = adapt_site, 
-                                        adapt_site_mult   = adapt_site_mult, 
-                                        tests_avail       = n_tests,
-                                        case_find_mult    = case_finding_mult,
-                                        symp_mult         = symp_mult, 
-                                        hpi_mult          = hpi_mult, 
-                                        cont_mult         = cont_mult, 
-                                        res_mult          = res_mult, 
-                                        nosymp_state_mult = nosymp_state_mult, 
-                                        symp_state_mult   = symp_state_mult, 
-                                        hosp_mult         = hosp_mult)]
+        eligible_agents[, test_prob:=test_probs_fx(income            = hhincome, 
+                                                   income_mult       = income_mult,
+                                                   hpi               = hpi_quartile, 
+                                                   essential         = essential, 
+                                                   essential_prob    = essential_prob,
+                                                   t_symptoms        = t_symptoms,  
+                                                   state             = state, 
+                                                   t_since_contact   = t_since_contact, 
+                                                   res_inf           = res_inf,  
+                                                   adapt_site        = adapt_site, 
+                                                   adapt_site_mult   = adapt_site_mult, 
+                                                   tests_avail       = n_tests,
+                                                   case_find_mult    = case_finding_mult,
+                                                   symp_mult         = symp_mult, 
+                                                   hpi_mult          = hpi_mult, 
+                                                   cont_mult         = cont_mult, 
+                                                   res_mult          = res_mult, 
+                                                   nosymp_state_mult = nosymp_state_mult, 
+                                                   symp_state_mult   = symp_state_mult, 
+                                                   hosp_mult         = hosp_mult)]
         
-        eligible_probs <- agents[id %in% eligible_ids, 
-                                 test_prob]
+        eligible_ids <- eligible_agents[, id]
+        eligible_probs <- eligible_agents[, test_prob]
         
         if(length(eligible_ids) < n_tests){ # Remove t_since_test criteria to create more eleigible agents
           warning(cat("\nOnly",length(eligible_ids), "eligible agents for testing and",
                   (n_tests_pub + n_tests_pvt), "tests available\n"))
           
-          eligible_ids <- agents[init_test == 0 & state!= "D", 
-                                 id]
+          eligible_agents <- agents[init_test == 0 & state!= "D", ]
           
-          agents[id %in% eligible_ids,
-                 test_prob:=test_probs_fx(income            = hhincome, 
-                                          income_mult       = income_mult,
-                                          hpi               = hpi_quartile, 
-                                          essential         = essential, 
-                                          essential_prob    = essential_prob,
-                                          t_symptoms        = t_symptoms,  
-                                          state             = state, 
-                                          t_since_contact   = t_since_contact, 
-                                          res_inf           = res_inf,  
-                                          adapt_site        = adapt_site, 
-                                          adapt_site_mult   = adapt_site_mult, 
-                                          tests_avail       = n_tests,
-                                          case_find_mult    = case_find_mult,
-                                          symp_mult         = symp_mult, 
-                                          hpi_mult          = hpi_mult, 
-                                          cont_mult         = cont_mult, 
-                                          res_mult          = res_mult, 
-                                          nosymp_state_mult = nosymp_state_mult, 
-                                          symp_state_mult   = symp_state_mult, 
-                                          hosp_mult         = hosp_mult)]
-          
-          eligible_probs <- agents[id %in% eligible_ids, 
-                                   test_prob]
+          eligible_agents[, test_prob:=test_probs_fx(income            = hhincome, 
+                                                     income_mult       = income_mult,
+                                                     hpi               = hpi_quartile, 
+                                                     essential         = essential, 
+                                                     essential_prob    = essential_prob,
+                                                     t_symptoms        = t_symptoms,  
+                                                     state             = state, 
+                                                     t_since_contact   = t_since_contact, 
+                                                     res_inf           = res_inf,  
+                                                     adapt_site        = adapt_site, 
+                                                     adapt_site_mult   = adapt_site_mult, 
+                                                     tests_avail       = n_tests,
+                                                     case_find_mult    = case_find_mult,
+                                                     symp_mult         = symp_mult, 
+                                                     hpi_mult          = hpi_mult, 
+                                                     cont_mult         = cont_mult, 
+                                                     res_mult          = res_mult, 
+                                                     nosymp_state_mult = nosymp_state_mult, 
+                                                     symp_state_mult   = symp_state_mult, 
+                                                     hosp_mult         = hosp_mult)]
+          eligible_ids <- eligible_agents[, id]
+          eligible_probs <- eligible_agents[, test_prob]
           
         }
         
@@ -317,9 +315,9 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
           
           # tag agents who are tested and sample for delay from test to notification
           agents[id %in% test_ids, init_test:=1]
-          agents[id %in% test_ids, t_til_test_note:=test_delay_fx(.N)]
-          agents[id %in% test_ids & adapt_site == 1, t_til_test_note:=adapt_site_delay_fx(.N)]
-          agents[id %in% test_ids & state %in% c("Ip", "Ia", "Im", "Imh", "Ih"), test_pos:=1]
+          agents[init_test==1, t_til_test_note:=test_delay_fx(.N)]
+          agents[init_test==1 & adapt_site == 1, t_til_test_note:=adapt_site_delay_fx(.N)]
+          agents[init_test==1 & state %in% c("Ip", "Ia", "Im", "Imh", "Ih"), test_pos:=1]
         } else {
           test_ids = NA
           warning(cat("\nPublic testing not conducted due to lack of eligible agents\n"))
@@ -327,15 +325,14 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
         # Tested agents
         # Test results and reset time since last test for those who were tested
         # agents[id %in% testeds, tested:=test_sens(state, t_infection)]
-        test_reports[[as.numeric(date_now-t0)]] <- agents[id %in% test_ids,
+        test_reports[[as.numeric(date_now-t0)]] <- agents[init_test==1,
                                                           c("id", "age", "sex", "race", "occp", "essential", "work", "state", "nextstate",
-                                                            "t_infection", "t_symptoms", "t_since_contact", "res_inf", "test_prob", 
+                                                            "t_infection", "t_symptoms", "t_since_contact", "res_inf", 
                                                             "hhid", "hhincome", "ct", "hpi_quartile", 
                                                             "adapt_site", "Date", "test_pos", "t_til_test_note")]
         
         agents[id %in% test_ids, t_since_test:=0]
-        agents[, test_prob:=NULL]
-        
+
         if(verbose){ cat(n_tests, "tests conducted,",
                          nrow(agents[id %in% test_ids & test_pos==1,]), "(",
                          nrow(agents[id %in% test_ids & test_pos==1,])/n_tests*100, 
@@ -344,7 +341,7 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
                          nrow(agents[id %in% test_ids & test_pos==1 & state %in% c("Im", "Imh")]), "with mild symptoms, and",
                          nrow(agents[id %in% test_ids & test_pos==1 & state == "Ih"]), "in hospital\n\n")}
         
-        rm(list = c("n_tests", "eligible_ids", "eligible_probs", "test_ids"))
+        rm(list = c("n_tests", "eligible_agents", "eligible_ids", "eligible_probs", "test_ids"))
       }
     }
     
@@ -380,25 +377,27 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
     
     # Simulate infection --------------------
     # If noone transmitting, skip. Assume agents inactive at night
-    if(nrow(agents[state %!in% c("S", "E", "D", "R")])>0 & time_day != "N"){
+    if(nrow(agents[state %in% c("Ip", "Ia", "Im", "Imh", "Ih")])>0 & time_day != "N"){
       
       # Determine locations ---------------
       # Reset residence infection and pct_home then get Get CT-based stay at home compliance 
-      agents[, c("res_inf", "pct_home"):=NULL]
-      agents[, ct:=as.numeric(ct)] # Make sure ct is numeric for matching
       
-      home.today <- stay_home_dt[Date == as.character(date_now),]
-      home.today[,ct:=as.numeric(CT)]
-      home.today[,pct_home:=pct_home^(1/4)] # Correct stay at home all day percentage for four possible time steps
-      home.today[,c("Date", "CT"):=NULL]
-      home.mean <- mean(home.today$pct_home)
-      agents <- agents[home.today, on = "ct"] # merge to get stay home pct by Ct
-      agents[is.na(pct_home), pct_home:=home.mean]
+      if(time_day == "M" | t==2){ # Update daily stay-at home if new day
+      agents[, c("res_inf", "pct_home"):=NULL]
+      
+        home.today <- stay_home_dt[Date == as.character(date_now),]
+        home.today[,ct:=as.numeric(CT)]
+        home.today[,pct_home:=pct_home^(1/4)] # Correct stay at home all day percentage for four possible time steps
+        home.today[,c("Date", "CT"):=NULL]
+        home.mean <- mean(home.today$pct_home)
+        agents <- agents[home.today, on = "ct"] # merge to get stay home pct by Ct
+        agents[is.na(pct_home), pct_home:=home.mean]
+      }
       
       # Find locations of those not deceased, in the hospital, in group quarters, or quarantining  
       #Agents that are quarantined stay at home, those in hospital considered in hospital, not contributing to infection. Those in prisons or nursing homes stay there. Everyone else is "mobile"
       agents[q_duration > 0, location:=hhid]
-      agents[state %in% c("S", "E", "Ip", "Ia", "Im", "Imh", "R") & q_duration == 0, 
+      agents[state != "Ih" & state != "D" & q_duration == 0, 
              mobile:=1]
       
       # Agents that are workers
@@ -463,8 +462,9 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
              trans_prob := beta_today*bta_work*(1-mask_red*wear.mask*tested)*(1-test.red*tested)] 
       
       # Get FOI for all agents  
-      agents[, FOIi:=trans_prob*infector/n_present]
-      agents[, FOI:=sum(FOIi, na.rm = T), by = location]
+      agents[, FOIi:=0]
+      agents[infector==1, FOIi:=trans_prob*infector/n_present]
+      agents[, FOI:=sum(FOIi), by = location]
       
       # Reduce probability of infection for vaccinated agents
       if(vaccination & date_now >= vax_start){
@@ -497,21 +497,25 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
       agents[, q_prob:=0]
       
       # Determine known residential infections
+      agents[, res_infector := 0]
       agents[state == "Im" | state == "Imh" | (infector == 1 & tested == 1), res_infector:=1]
-      agents[, res_inf:=sum(res_infector, na.rm = T), by = hhid] 
+      agents[res_infector == 1, res_inf:=.N, by=hhid] 
       
       # New contact
       agents[contact == 1 & t_since_contact == dt & q_duration == 0,
-             q_prob:=q_prob+q_prob_contact*(1-q_prob_essential*essential)]  
+             q_prob:=q_prob+q_prob_contact]  
       # Known residential infection
       agents[res_inf > 0 & q_duration == 0,
-             q_prob:=q_prob+q_prob_resinf*res_inf*(1-q_prob_essential*essential)]
-      # Experiencing symptoms plus influence of recent known contact
+             q_prob:=q_prob+q_prob_resinf*res_inf]
+      # Experiencing symptoms 
       agents[t_symptoms > 0 & q_duration == 0,
-             q_prob:=(q_prob+q_prob_symptoms*t_symptoms+q_prob_contact*as.numeric(t_since_contact)>0)*(1-q_prob_essential*essential)]  
+             q_prob:=(q_prob+q_prob_symptoms*t_symptoms)]  
       # Tested positive
       agents[tested == 1 & infector == 1 & q_duration == 0,
-             q_prob:=q_prob+q_prob_testpos*(1-q_prob_essential*essential)]  
+             q_prob:=q_prob+q_prob_testpos]  
+      #Essential workers
+      agents[essential == 1,
+             q_prob:=q_prob*(1-q_prob_essential)]
       # Influence of adaptive site
       if(adaptive){
         agents[adapt_site == 1,
@@ -547,14 +551,14 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
       
       # Remove visiting agents
       if(visitors){
-        agents <- agents[1:N,]
+        agents <- agents[!is.na(hhid),]
       }  
       
       
       # Reset infection & location columns and remove temp quarantine objects
       agents[, c("location", "mobile", "infector", "res_infector",
                  "contact_prob", "contact", "n_present", "wear.mask",
-                 "trans_prob", "FOI", "infect"):=NULL]
+                 "trans_prob", "FOIi", "FOI", "infect"):=NULL]
       
     }
     
