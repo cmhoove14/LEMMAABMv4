@@ -105,7 +105,7 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
   #epi_curve <- matrix(NA, nrow = t.tot/dt, ncol = 9)
   #epi_curve[1,] <- agents[,.N, by = state]$N
   epi_curve <- list()
-    epi_curve[[1]] <- agents[,.N, by = state]$N
+    epi_curve[[1]] <- agents[,.N, by = state] -> epicurve ; epicurve[,date:=t0]
   
   # Keep record of infection events
   infection_reports <- list()
@@ -563,7 +563,9 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
     }
     
     #epi_curve[t,] <- agents[,.N, by = state]$N
-    epi_curve[[t]] <- agents[,.N, by = state]
+    if(time_day == "M"){
+      epi_curve[[t]] <- agents[,.N, by = state] -> epicurve ; epicurve[,date:=t0]
+    }
     
     gc()  
     
