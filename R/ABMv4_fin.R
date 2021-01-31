@@ -170,12 +170,14 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
   agents[, vax2 := 0] # Received vaccination dose 2?
   
 # Progress bar  
-  pb <- progress_bar$new(
-    format = "  Running simulation [:bar] :percent in :elapsed",
-    total  = t.tot/dt, 
-    clear  = FALSE, 
-    width  = 100
-  )  
+  if(!verbose){
+    pb <- progress_bar$new(
+      format = "  Running simulation [:bar] :percent in :elapsed",
+      total  = t.tot/dt, 
+      clear  = FALSE, 
+      width  = 100
+    )  
+  }
 
   # Run simulation     ---------------------
   for(t in 2:(t.tot/dt)){
@@ -570,8 +572,10 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
     gc()  
     
     #Advance progress bar
-    pb$tick()
-    Sys.sleep(1/100)
+    if(!verbose){
+      pb$tick()
+      Sys.sleep(1/100)
+    }    
     
     # On to the next one  
   }
