@@ -44,7 +44,7 @@ vax_phases  <- readRDS(here::here(vax_phases_path))
 # Setup, export everything to cluster, and run in parallel ------------------
 #Setup for running jobs across parallel nodes in cluster
 RAM <- as.numeric(system("awk '/MemFree/ {print $2}' /proc/meminfo", intern = T))/1e6
-nworkers <- round(RAM/6)
+nworkers <- floor(RAM/6)
 
 n_cores <- nworkers
 
