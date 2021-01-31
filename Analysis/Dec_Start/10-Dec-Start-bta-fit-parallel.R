@@ -33,6 +33,9 @@ if(length(opts) > 9){
   store_extra <- TRUE 
 }
 
+cat("\n",opts, visitors, testing, adaptive, vaccination , verbose , store_extra ,"\n")
+
+
 # Load data files from bash paths ---------------------
 input_pars  <- readRDS(here::here(input_pars_path))
 data_inputs <- readRDS(here::here(data_inputs_path))
