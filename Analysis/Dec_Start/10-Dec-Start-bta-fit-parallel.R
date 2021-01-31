@@ -54,7 +54,7 @@ sweep_length <- floor(n_jobs/n_sims_per_par)
 bta_sweeps <- rep(seq(bta_base_lo, bta_base_hi, length.out = sweep_length), each = n_sims_per_par)
 
 cat(RAM, "gb RAM available\n", 
-    nworkers,"deployed to simulate",n_sims_per_par,"simulations per parameter across", sweep_length,"parameter values")
+    nworkers,"workers deployed to simulate",n_sims_per_par,"simulations per parameter across", sweep_length,"parameter values\n")
 
 clooster <- parallel::makeCluster(n_cores)
 
