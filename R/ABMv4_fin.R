@@ -45,8 +45,10 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
                            tests_avail$tests_pp)
   
   #Function to return number of vaccinations available on day t
-  vax_fx <- approxfun(vax_per_day$days,
-                      vax_per_day$vax)
+  if(nrow(vax_per_day > 1)){
+    vax_fx <- approxfun(vax_per_day$days,
+                        vax_per_day$vax)
+  }
   
   # Get dates of vaccination phase onsets
   vax_phase_dates <- vax_phases$dates
