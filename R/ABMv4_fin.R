@@ -151,7 +151,6 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
   # Add compliance and sociality metrics, start people with no known contacts, etc. -----------------------------
   agents[, mask := mask_fx(.N)] # Probability of wearing a mask
   agents[, sociality := social_fx(.N)] # Sociality metric
-  agents[, quarantine := 0] # initial quarantine values
   agents[, q_prob := 0]
   agents[, q_duration := 0]
   agents[, q_bta_red:=1]
@@ -217,10 +216,9 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
     agents[state %in% c("R", "D") & test_pos == 1, test_pos:=0]
     agents[t_til_test_note < 0 & test_pos == 1, tested:= 1]
     agents[t_til_test_note < 0, init_test:= 0]
-    agents[t_til_test_note < 0 & test_pos == 0, q_duration:=0]
+    agents[t_til_test_note < 0 & test_pos == 0, q_duration:=0] # Exit quarantine if test negative
     agents[q_duration < 0, q_duration:=0]
     agents[q_duration < 0, q_bta_red:=1]
-    agents[q_duration < 0, quarantine:=0]
     agents[t_since_contact > 14, t_since_contact:=0] #Agents stop considering contact relevant after 14 days
     agents[t_til_dose2 < 0, vax2 := 1]
     
@@ -526,19 +524,19 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
       
       # Quarantine "decisions"
       agents[q_prob > 1, 
-             quarantine:=1]
+             choose_quar:=1]
       agents[q_prob < 1 & q_prob > 0, 
-             quarantine:=rbinom(.N, 1, q_prob)]
+             choose_quar:=rbinom(.N, 1, q_prob)]
       
       # Assign isolation duration and reduction in transmission if quarantining at home based on income bracket 
-      agents[quarantine == 1 & q_duration == 0, 
+      agents[choose_quar == 1 & q_duration == 0, 
              q_duration:=q_dur_fx(.N)]
-      agents[quarantine == 1, q_bta_red:=(1-1/hhsize)**2]
+      agents[choose_quar == 1, q_bta_red:=(1-1/hhsize)**2]
       
       
       if(verbose){
         
-        cat(nrow(agents[quarantine == 1,]), "agents entered isolation\n",
+        cat(nrow(agents[choose_quar == 1,]), "agents entered isolation\n",
             nrow(agents[q_duration > 0,]), "agents currently isolating\n",
             nrow(agents[infector == 1 & q_duration>0,])/nrow(agents[infector == 1,])*100, "% of",
             nrow(agents[infector == 1,]), "infectious agents are quarantining\n\n")
@@ -560,7 +558,7 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
       # Reset infection & location columns and remove temp quarantine objects
       agents[, c("location", "mobile", "infector", "res_infector",
                  "contact_prob", "contact", "n_present", "wear.mask",
-                 "trans_prob", "FOIi", "FOI", "infect"):=NULL]
+                 "trans_prob", "FOIi", "FOI", "infect", "choose_quar"):=NULL]
       
     }
     
