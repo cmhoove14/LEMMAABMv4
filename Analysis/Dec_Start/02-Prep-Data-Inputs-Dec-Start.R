@@ -10,11 +10,13 @@ library(data.table)
 # Load par inputs to get timeframe ------------------
 input_pars <- readRDS(here::here("data", "processed", "input_pars_Dec_start.rds"))
 
-t0 <- input_pars$time_pars$t0
-t.end <- input_pars$time_pars$t.end
+t0        <- input_pars$time_pars$t0
+t.end     <- input_pars$time_pars$t.end
+ref_date  <- input_pars$time_pars$ref_date
 
+# refereces for safegraph which starts on Jan 1 2020
 start.num <- as.numeric(t0 - as.Date("2019-12-31"))
-end.num <- as.numeric(t.end - as.Date("2019-12-31"))
+end.num   <- as.numeric(t.end - as.Date("2019-12-31"))
 
 # synthetic agents from Census/IPUMS data ------------
 agents <- readRDS(here::here("data", "processed", "SF_agents_processed.rds"))
@@ -37,7 +39,6 @@ N <- nrow(agents)
 
 # Testing data for sims ----------------------
 source(here::here("data", "get","COVID_CA_get_latest.R"))
-  first_ca_case_reports <- as.numeric(as.Date(min(CA_cases$date)) - as.Date("2019-12-31"))
 
 # sf_test is observed testing completed in SF county
 # Must contain columns date_num and tests_pp to convert to testing function in model
@@ -45,31 +46,24 @@ sf_test_smooth <- sf_test %>%
   mutate(Date = as.Date(substr(specimen_collection_date, 1,10)),
          tests_pp = tests/N) %>% 
   padr::pad() %>% 
-  mutate(date_num = as.numeric(Date-as.Date("2019-12-31"))) %>% 
+  mutate(date_num = as.numeric(Date-ref_date)) %>% 
   padr::fill_by_value(tests_pp, value = 0) %>% 
   mutate(tests_pp_7day_avg = zoo::rollmean(tests_pp, 7, na.pad = T, align = "center"),
          tests_pp = case_when(is.na(tests_pp_7day_avg) & Date < as.Date("2020-03-10") ~ 2/N,
                               is.na(tests_pp_7day_avg) & Date > as.Date("2020-03-10") ~ 5000/N,
-                              !is.na(tests_pp_7day_avg) ~ tests_pp_7day_avg)) 
+                              !is.na(tests_pp_7day_avg) ~ tests_pp_7day_avg)) %>% 
+  filter(!is.na(tests_pp_7day_avg))
 
 last_sf_test <- max(sf_test_smooth$Date)
 
 tests_avail <- sf_test_smooth %>% 
+  filter(date_num >= 0) %>% 
   dplyr::select(date_num, tests_pp)
 
 # sf_test_smooth %>%  ggplot() + geom_line(aes(x = Date, y = tests_pp)) + geom_line(aes(x = Date, y = tests_pp_7day_avg), col = "red") + theme_classic()
 
 
 # Safegraph data -------------------------
-#San Francisco ct mvmt list derived from sfgrph data
-sf_ct_cdf_ls20 <- readRDS(here::here("data", "processed", "Safegraph", "safegraph_ct_mvmt_cdf_list_2020processed.rds"))
-sf_ct_cdf_ls21 <- readRDS(here::here("data", "processed", "Safegraph", "safegraph_ct_mvmt_cdf_list_2021processed.rds"))
-sf_ct_cdf_ls <- c(sf_ct_cdf_ls20, sf_ct_cdf_ls21)
-  
-  sf_ct_cdf_ls <- sf_ct_cdf_ls[start.num:end.num] 
-
-sf_ct_ids <- read_csv(here::here("data", "raw", "Census_2010_Tracts.csv")) %>% pull(GEOID10) %>% as.numeric()
-
 #San francisco stay at home by percent by ct derived from safegraph
 sf_sfgrph_pcts20 <- readRDS(here::here("data", "processed","Safegraph", "sfgrph_devices_pct_home_cts_2020.rds"))
 sf_sfgrph_pcts21 <- readRDS(here::here("data", "processed","Safegraph", "sfgrph_devices_pct_home_cts_2021.rds"))
@@ -101,23 +95,35 @@ sf_sfgrph_pct_home <- sf_sfgrph_pcts %>%
   dplyr::select(CT, Date, pct_home) %>% 
   data.table::as.data.table()
 
+#San Francisco ct mvmt list derived from sfgrph data
+sf_ct_cdf_ls20 <- readRDS(here::here("data", "processed", "Safegraph", "safegraph_ct_mvmt_cdf_list_2020processed.rds"))
+sf_ct_cdf_ls21 <- readRDS(here::here("data", "processed", "Safegraph", "safegraph_ct_mvmt_cdf_list_2021processed.rds"))
+sf_ct_cdf_ls <- c(sf_ct_cdf_ls20, sf_ct_cdf_ls21)
+  
+  sf_ct_cdf_ls <- sf_ct_cdf_ls[start.num:length(sf_ct_cdf_ls)] 
+
+sf_ct_ids <- read_csv(here::here("data", "raw", "Census_2010_Tracts.csv")) %>% pull(GEOID10) %>% as.numeric()
+
 # Visitors to SF county from other CA counties ------------
 sf_visitors20 <- readRDS(here::here("data", "processed", "Safegraph", "SF_visitors_CTs_2020Processed.rds"))
 sf_visitors21 <- readRDS(here::here("data", "processed", "Safegraph", "SF_visitors_CTs_2021Processed.rds"))
 
 sf_visitors <- c(sf_visitors20, sf_visitors21)
 
-  sf_visitors <- sf_visitors[start.num:end.num]
+  sf_visitors <- sf_visitors[start.num:length(sf_visitors)]
 
 # Vaccination data ------------------
 # Data here but not downloadable yet https://data.sfgov.org/stories/s/a49y-jeyc
 # Hack to get approximation of vaccines per day so far
-vax_start <- as.Date("2020-12-10")
-vax_last  <- t.end
-  vax_days <- as.numeric(vax_start-as.Date("2019-12-31")):as.numeric(vax_last-as.Date("2019-12-31"))
+vax_start <- as.Date("2020-12-15")
+  vax_last_obs <- as.Date("2021-01-26")
+  vax_last  <- t.end
+  vax_days <- as.numeric(vax_start-ref_date):as.numeric(vax_last-ref_date)
   
-nvax_last <- 3000
-vax_max   <- 10000 # max vaccines per day to plateau at
+nvax_last_obs <- 3000
+nvax_trend <- nvax_last_obs/as.numeric(vax_last_obs-vax_start)
+
+nvax_last   <- round(nvax_last_obs+nvax_trend*as.numeric(vax_last-vax_last_obs)) # max vaccines per day assuming linear trend continues
   nvax <- rep(NA_real_, length(vax_days))
   nvax[1] <- 1
   nvax[length(vax_days)] <- nvax_last
@@ -132,8 +138,9 @@ if(t.end > last_sf_test){
   n_add <- as.numeric(t.end - last_sf_test)
   lookback <- last_sf_test-n_add-7
   avg_past <- sf_test_smooth %>% filter(Date > lookback) %>% pull(tests_pp) %>% mean()
-  tests_pp_pad <- c(sf_test_smooth$tests_pp_7day_avg, rep(avg_past, n_add))
-  dates_pad <- c(sf_test_smooth$date_num, 
+  tests_pp_pad <- c(sf_test_smooth$tests_pp_7day_avg[which(sf_test_smooth$date_num >0)], 
+                    rep(avg_past, n_add))
+  dates_pad <- c(sf_test_smooth$date_num[which(sf_test_smooth$date_num >0)], 
                  max(sf_test_smooth$date_num, na.rm = T)+c(1:n_add))
   
   tests_avail <- data.frame(date_num = dates_pad,
