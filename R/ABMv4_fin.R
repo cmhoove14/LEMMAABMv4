@@ -41,11 +41,13 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
   vax_per_day   <- data_inputs$vax_per_day
   
   #Function to return number of tests on day t converted from tests_avail df
-  tests_pp_fx <- approxfun(tests_avail$date_num,
-                           tests_avail$tests_pp)
+  if(testing){
+    tests_pp_fx <- approxfun(tests_avail$date_num,
+                             tests_avail$tests_pp)
+  }
   
   #Function to return number of vaccinations available on day t
-  if(nrow(vax_per_day > 1)){
+  if(vaccination){
     vax_fx <- approxfun(vax_per_day$days,
                         vax_per_day$vax)
   }
