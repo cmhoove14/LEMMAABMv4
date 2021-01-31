@@ -17,13 +17,13 @@ data_inputs_path <- as.character(opts[7])
 input_pars_path  <- as.character(opts[8])
 vax_phases_path  <- as.character(opts[9])
 
-if(length(opts) > 7){
-  visitors    <- as.logical(opts[8]) 
-  testing     <- as.logical(opts[9])  
-  adaptive    <- as.logical(opts[10])  
-  vaccination <- as.logical(opts[11])  
-  verbose     <- as.logical(opts[12])  
-  store_extra <- as.logical(opts[13])  
+if(length(opts) > 9){
+  visitors    <- as.logical(opts[10]) 
+  testing     <- as.logical(opts[11])  
+  adaptive    <- as.logical(opts[12])  
+  vaccination <- as.logical(opts[13])  
+  verbose     <- as.logical(opts[14])  
+  store_extra <- as.logical(opts[15])  
 } else {
   visitors    <- TRUE 
   testing     <- TRUE 
