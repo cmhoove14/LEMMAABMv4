@@ -12,6 +12,8 @@ input_pars <- readRDS(here::here("data", "processed", "input_pars_Dec_start.rds"
 
 t0 <- input_pars$time_pars$t0
 t.end <- input_pars$time_pars$t.end
+
+start.num <- as.numeric(t0 - as.Date("2019-12-31"))
 end.num <- as.numeric(t.end - as.Date("2019-12-31"))
 
 # synthetic agents from Census/IPUMS data ------------
@@ -64,7 +66,7 @@ sf_ct_cdf_ls20 <- readRDS(here::here("data", "processed", "Safegraph", "safegrap
 sf_ct_cdf_ls21 <- readRDS(here::here("data", "processed", "Safegraph", "safegraph_ct_mvmt_cdf_list_2021processed.rds"))
 sf_ct_cdf_ls <- c(sf_ct_cdf_ls20, sf_ct_cdf_ls21)
   
-  sf_ct_cdf_ls <- sf_ct_cdf_ls[1:end.num] 
+  sf_ct_cdf_ls <- sf_ct_cdf_ls[start.num:end.num] 
 
 sf_ct_ids <- read_csv(here::here("data", "raw", "Census_2010_Tracts.csv")) %>% pull(GEOID10) %>% as.numeric()
 
@@ -105,7 +107,7 @@ sf_visitors21 <- readRDS(here::here("data", "processed", "Safegraph", "SF_visito
 
 sf_visitors <- c(sf_visitors20, sf_visitors21)
 
-  sf_visitors <- sf_visitors[1:end.num]
+  sf_visitors <- sf_visitors[start.num:end.num]
 
 # Vaccination data ------------------
 # Data here but not downloadable yet https://data.sfgov.org/stories/s/a49y-jeyc

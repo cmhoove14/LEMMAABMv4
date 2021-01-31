@@ -58,7 +58,7 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
   bta_change_df <- data.frame(dates = c(t0, SiP.start, t.end),
                               btas = c(bta_base, bta_base*bta_sip_red, bta_base*bta_sip_red)) %>% 
     padr::pad() %>% 
-    mutate(date_num = as.numeric(dates - as.Date("2019-12-31")))
+    mutate(date_num = as.numeric(dates - ref_date))
   
   bta_change_df$btas[is.na(bta_change_df$btas) & bta_change_df$dates < SiP.start] <- bta_base
   bta_change_df$btas[is.na(bta_change_df$btas) & bta_change_df$dates > SiP.start] <- bta_base*bta_sip_red
@@ -183,7 +183,7 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
     # Time step characteristics
     date_now <- t0+t*dt
     agents[, Date:=date_now]
-    date_num <- as.numeric(floor(date_now-as.Date("2019-12-31")))
+    date_num <- as.numeric(floor(date_now-ref_date))
     beta_today <- bta_fx(date_num)
     day_week <- day_of_week_fx[t]
     time_day <- time_of_day_fx[t]

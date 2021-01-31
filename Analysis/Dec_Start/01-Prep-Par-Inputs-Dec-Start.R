@@ -23,6 +23,7 @@ holidays      <- c(seq.Date(as.Date("2020-05-23"), as.Date("2020-05-25"), by = "
                   seq.Date(as.Date("2020-11-26"), as.Date("2020-11-29"), by = "day"), # Thanksgiving
                   seq.Date(as.Date("2020-12-24"), as.Date("2020-12-26"), by = "day"), # Christmas 
                   seq.Date(as.Date("2020-12-31"), as.Date("2021-01-01"), by = "day")) # New Years
+ref_date      <- as.Date(t0-1)
 t.end         <- as.Date("2021-03-01")       # Simulation end date
 
 t.tot         <- as.numeric(t.end - t0)
@@ -45,6 +46,7 @@ time_of_day <- rep(c("M", "D", "D", "E", "N", "N"), times = t.tot)
 input_pars$time_pars$t0             <- t0
 input_pars$time_pars$t.end          <- t.end
 input_pars$time_pars$t.tot          <- t.tot
+input_pars$time_pars$ref_date       <- ref_date
 input_pars$time_pars$dt             <- dt
 input_pars$time_pars$day_of_week_fx <- day_of_week_expand
 input_pars$time_pars$SiP.start      <- SiP.start
