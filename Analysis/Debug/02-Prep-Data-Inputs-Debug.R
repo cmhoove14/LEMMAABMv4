@@ -16,7 +16,6 @@ ref_date  <- input_pars$time_pars$ref_date
 
 # refereces for safegraph which starts on Jan 1 2020
 start.num <- as.numeric(t0 - as.Date("2019-12-31"))
-end.num   <- as.numeric(t.end - as.Date("2019-12-31"))
 
 # synthetic agents from Census/IPUMS data ------------
 agents <- readRDS(here::here("data", "processed", "SF_agents_processed.rds"))

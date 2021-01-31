@@ -110,7 +110,7 @@ input_pars$test_pars$test_start        <- as.Date("2020-03-01")  # Testing start
 input_pars$test_pars$tests_wknd        <- 0.5                    # Proportional reduction in tests conducted on weekend days
 input_pars$test_pars$hpi_mult          <- 1                      # Multiplier for testing probability on hpi quartile (1=lowest, 4 highest), so 1 means highest hpi 4 times more likely to get tested
 input_pars$test_pars$income_mult       <- 1                      # Multiplier for testing probability on income category (1=lowest, 3 highest), so 1 means highest income 3x more likely to get tested
-input_pars$test_pars$case_finding_mult <- 0                      # Per test available improvement in case finding meant to capture test availability, improved case identification, contact tracing, etc.
+input_pars$test_pars$case_finding_mult <- 0.01                      # Per test available improvement in case finding meant to capture test availability, improved case identification, contact tracing, etc.
 input_pars$test_pars$cont_mult         <- 10                     # Multiplier for testing probability for agents with known contact
 input_pars$test_pars$symp_mult         <- 10                     # Multiplier for testing probability for time experiencing symptoms (increases probability by symp_mult*t_symptoms, e.g. longer period experiencing symptoms increases probability of testing)
 input_pars$test_pars$res_mult          <- 100                    # Multiplier for testing probability for agents with known residential infection
