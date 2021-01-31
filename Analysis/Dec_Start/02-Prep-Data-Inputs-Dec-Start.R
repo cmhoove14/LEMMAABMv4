@@ -76,7 +76,7 @@ sf_sfgrph_pcts21 <- readRDS(here::here("data", "processed","Safegraph", "sfgrph_
 
 sf_sfgrph_pcts <- rbind(sf_sfgrph_pcts20, sf_sfgrph_pcts21)
 
-  sf_sfgrph_pcts <- sf_sfgrph_pcts %>% filter(Date <= t.end)
+  sf_sfgrph_pcts <- sf_sfgrph_pcts %>% filter(Date >= t0)
 
 last_sfgrph <- max(sf_sfgrph_pcts$Date)
 
