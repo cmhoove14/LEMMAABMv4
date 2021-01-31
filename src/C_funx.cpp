@@ -52,7 +52,7 @@ NumericVector test_probs_fx(NumericVector income,
   double test_mult = 1+tests_avail*case_find_mult ; // test availability improves case identification, contact tracing, etc.
   
 // Probabilities that are just product of input vectors  
-  NumericVector adapt_prob = adapt_site*adapt_site_mult;
+  NumericVector adapt_prob = 1+adapt_site*adapt_site_mult;
   NumericVector income_prob = income*income_mult;
   NumericVector hpi_prob = hpi*hpi_mult;
   NumericVector symp_prob = 1+t_symptoms*symp_mult*adapt_prob*test_mult ;
