@@ -1,5 +1,7 @@
 library(LEMMAABMv4)
 
+data.table::setDTthreads(1)
+
 # Get options passed from BASH -----------------
 opts <- commandArgs(TRUE)
 
