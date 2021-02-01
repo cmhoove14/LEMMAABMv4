@@ -22,7 +22,7 @@ input_pars <- readRDS(("data/processed/input_pars_Dec_start.rds"))
 # Get sims files-----------------
 vax65p  <- readRDS("data/outputs/ABMv4_Dec_Start__bta0.25_vaxvax65pS_2021-02-01.rds")
 vaxessS <- readRDS("data/outputs/ABMv4_Dec_Start__bta0.25_vaxvaxessS_2021-02-01.rds")
-vaxexxA <- readRDS("data/outputs/ABMv4_Dec_Start__bta0.25_vaxvaxessA_2021-02-01.rds")
+vaxessA <- readRDS("data/outputs/ABMv4_Dec_Start__bta0.25_vaxvaxessA_2021-02-01.rds")
   nsims <- length(vax65p)
   
 # Get observed datasets for comparison --------------
