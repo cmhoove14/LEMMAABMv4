@@ -665,7 +665,7 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
     
     saveRDS(fin_out, here::here(paste0(output_path, 
                                        "ABMv4_bta", bta_base,
-                                       "_SiPred", bta_sip_rd,
+                                       "_SiPred", bta_sip_red,
                                        "_testing", testing,
                                        "_vax", vaccination,
                                        "_", t0,"-", t.end,
