@@ -15,6 +15,7 @@ data/outputs
 # User-specific files
 .Ruserdata
 .here
+.git-credentials
 
 # Example code in package build process
 *-Ex.R
