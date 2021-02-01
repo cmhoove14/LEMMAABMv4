@@ -86,7 +86,7 @@ sf_hosp %>%
     theme_classic() +
     labs(x = "Date", y = "Hospitalizations",
          title = "Hospitalizations across different vaccination strategies",
-         col = expression(beta))
+         col = "Phase 2\n Vax Strategy")
   
 ```
 
@@ -143,7 +143,8 @@ tests_sum_by_date %>%
   geom_line(aes(x = as.Date(Date), y = n_pos, col = factor(vax), group = iter)) +
   theme_classic() +
   labs(y = "Positive Tests",
-       title = "Confirmed cases compared to observed")
+       title = "Confirmed cases compared to observed",
+       col = "Phase 2\n Vax Strategy")
 
 tests_sum_by_date %>% 
   ggplot() +
@@ -152,7 +153,8 @@ tests_sum_by_date %>%
            fill = "grey50", alpha = 0.5) +
   geom_line(aes(x = as.Date(Date), y = per_pos, col = factor(vax), group = iter)) +
   theme_classic() +
-  labs(title = "Percent positive compared to observed")
+  labs(title = "Percent positive compared to observed",
+       col = "Phase 2\n Vax Strategy")
 ```
 
 
