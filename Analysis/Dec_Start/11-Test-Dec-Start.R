@@ -1,9 +1,9 @@
 devtools::load_all()
 library(tictoc)
 
-bta_base    = 0.10 
+bta_base    = 0.20 
 bta_hh      = 1 
-bta_work    = 1 
+bta_wrk    = 1 
 bta_sip_red = 0.33 
 
 data_inputs <- readRDS("data/processed/data_inputs_Dec_Start.rds" )
@@ -14,13 +14,13 @@ visitors    <- TRUE
 testing     <- TRUE 
 adaptive    <- FALSE 
 vaccination <- FALSE 
-verbose     <- TRUE 
+verbose     <- FALSE 
 store_extra <- TRUE 
 
 tic()
 test_Dec_Start <- LEMMAABMv4::covid_abm_v4(bta_base    = bta_base, 
                                            bta_hh      = bta_hh, 
-                                           bta_work    = bta_work, 
+                                           bta_work    = bta_wrk, 
                                            bta_sip_red = bta_sip_red, 
                                            data_inputs = data_inputs, 
                                            input_pars  = input_pars, 
@@ -33,4 +33,4 @@ test_Dec_Start <- LEMMAABMv4::covid_abm_v4(bta_base    = bta_base,
                                            store_extra = store_extra)
 toc()
 
-saveRDS(test_Dec_Start, "data", "outputs", "test_Dec_start.rds")
+saveRDS(test_Dec_Start, here::here("data", "outputs", "test_Dec_start.rds"))
