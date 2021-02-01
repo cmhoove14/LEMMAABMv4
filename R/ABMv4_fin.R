@@ -55,20 +55,28 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
   # Get dates of vaccination phase onsets
   vax_phase_dates <- vax_phases$dates
   
-  # Extract parameter inputs
+  # Extract parameter inputs then store in object for return with sim outputs
   unpack_list(input_pars)
+    input_pars$trans_pars$bta_base   <- bta_base
+    input_pars$trans_pars$bta_hh     <- bta_hh
+    input_pars$trans_pars$bta_wrk    <- bta_wrk
+    input_pars$trans_pars$bta_sip_rd <- bta_sip_red
   
   # Convert bta_parameters into function returning baseline transmission probability on each day
-  bta_change_df <- data.frame(dates = c(t0, SiP.start, t.end),
-                              btas = c(bta_base, bta_base*bta_sip_red, bta_base*bta_sip_red)) %>% 
-    padr::pad() %>% 
-    mutate(date_num = as.numeric(dates - ref_date))
-  
-  bta_change_df$btas[is.na(bta_change_df$btas) & bta_change_df$dates < SiP.start] <- bta_base
-  bta_change_df$btas[is.na(bta_change_df$btas) & bta_change_df$dates > SiP.start] <- bta_base*bta_sip_red
-  
-  bta_fx <- approxfun(bta_change_df$date_num,
-                      bta_change_df$btas)
+  if(t0 > SiP.start){
+    bta_fx <- function(...) return(bta_base*bta_sip_red)
+  } else {
+    bta_change_df <- data.frame(dates = c(t0, SiP.start, t.end),
+                                btas = c(bta_base, bta_base*bta_sip_red, bta_base*bta_sip_red)) %>% 
+      padr::pad() %>% 
+      mutate(date_num = as.numeric(dates - ref_date))
+    
+    bta_change_df$btas[is.na(bta_change_df$btas) & bta_change_df$dates < SiP.start] <- bta_base
+    bta_change_df$btas[is.na(bta_change_df$btas) & bta_change_df$dates > SiP.start] <- bta_base*bta_sip_red
+    
+    bta_fx <- approxfun(bta_change_df$date_num,
+                        bta_change_df$btas)
+  }
   
   
   # Extract Initial conditions ----------------
@@ -568,7 +576,7 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
     
     #epi_curve[t,] <- agents[,.N, by = state]$N
     if(time_day == "M"){
-      epi_curve[[t]] <- agents[,.N, by = state] -> epicurve ; epicurve[,date:=t0]
+      epi_curve[[t]] <- agents[,.N, by = state] -> epicurve ; epicurve[,date:=date_now]
     }
     
     gc()  
@@ -584,18 +592,18 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
   
   gc()  
   
-  #colnames(epi_curve) <- agents[,.N, by = state]$state
-  
-  fin_out <- list()
-  fin_out[["epi_curve"]] <- rbindlist(epi_curve, fill=TRUE)
-  fin_out[["infections"]] <- rbindlist(infection_reports,fill=TRUE)
+# Export sim outputs
+  fin_out                     <- list()
+  fin_out[["epi_curve"]]      <- rbindlist(epi_curve, fill=TRUE)
+  fin_out[["infections"]]     <- rbindlist(infection_reports,fill=TRUE)
   fin_out[["linelist_tests"]] <- rbindlist(test_reports,fill = TRUE)
-  fin_out[["agents"]] <- agents
+  fin_out[["input_pars"]]     <- input_pars
+  fin_out[["agents"]]         <- agents
   
   if(store_extra){
     fin_out[["stay_home"]] <- stay_home
-    fin_out[["quar_iso"]] <- quar_iso
-    fin_out[["inf_quar"]] <- inf_quar
+    fin_out[["quar_iso"]]  <- quar_iso
+    fin_out[["inf_quar"]]  <- inf_quar
   }
   
   return(fin_out)
