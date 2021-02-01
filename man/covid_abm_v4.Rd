@@ -16,7 +16,8 @@ covid_abm_v4(
   testing,
   vaccination,
   verbose,
-  store_extra
+  store_extra,
+  output_path
 )
 }
 \arguments{
@@ -43,6 +44,8 @@ covid_abm_v4(
 \item{verbose}{TRUE/FALSE should detailed info at each time step be printed?}
 
 \item{store_extra}{TRUE/FALSE should extra metrics including % staying home and % isolating be stored and returned? Good for debugging}
+
+\item{output_path}{file path relative to `here::here` root to save outputs}
 }
 \value{
 list with two objects: an epi curve with counts of agents in each state through time and a dataframe with infection reports for every new infection (e.g. entry created whenever agent transitions from S to E)

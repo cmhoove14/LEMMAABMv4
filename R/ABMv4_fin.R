@@ -16,6 +16,7 @@
 #' @param vaccination character in N, S, or A for whether to conduct no vaccination ("N"), standard vaccination with input phases ("S"), or adaptive ("A") vaccination that incorporates high risk cts into vaccination allocation
 #' @param verbose TRUE/FALSE should detailed info at each time step be printed?
 #' @param store_extra TRUE/FALSE should extra metrics including % staying home and % isolating be stored and returned? Good for debugging
+#' @param output_path file path relative to `here::here` root to save outputs
 #' 
 #' @details 
 #' `data_inputs` is a list of lists containing `agents_dt`: data.table of agents with necessary characteristics including: "hhsize" "hhincome"   "sex"        "age"        "occp"       "race"       "hhid"       "id" "ct"  "essential"  "work_ct"    "work"    "state"    "nextstate"  "tnext"  "t_symptoms" ;  `ct_cdf_list`: list of matrices of dim cts x cts in which entries represent probabilities of moving from CT i to CT j on day t where t subsets the list to corresponding day (e.g. ct_cdf_list[[t]] = ct x ct matrix). Used in `GetCTVisit`/`GetCTVisit_cpp` function ; `ct_ids` vector relating row numbers of `ct_cdf_list` to actual ct codes ; `stay_home_dt` data table with columns `Date`, `CT`, and `pct_home` (E.g. derived from safegraph data) to use for social distancing/stay at home compliance ; `visitors_list` list of data frames/tables with columns corresponding to census tract, number of external visitors to that ct, county from which they visited, and population and infection characteristics of that county. column inf_prob represents incidence in that county (new cases identified per population) and is used as probability a visiting agent is infectious along with `visitor_mult_testing` to correct for ratio of true incidence to incidence from testing data and `visitor_mult_sfgrph` to correct for ratio of safegraph devices tracked to total population ;  `test_avail` data frame with columns date_num and tests_pp corresponding to number of tests availabe per person on day date_num. Used to generate function returning the number of tests available per agent on day t since test start. 
@@ -28,7 +29,7 @@
 covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red, 
                          data_inputs, input_pars, vax_phases,
                          visitors, testing, vaccination,
-                         verbose, store_extra){
+                         verbose, store_extra, output_path){
   # Stop messages for invalid inputs -----------------
   if(!testing %in% c("N", "S", "A")){
     stop("Invalid testing scenario, testing must be 'S', 'A', or 'N'")
@@ -640,6 +641,40 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
     fin_out[["inf_quar"]]  <- inf_quar
   }
   
-  return(fin_out)
+  if(!dir.exists(here::here(output_path))){
+    dir.create(here::here(output_path))
+  }
+  
+  sim1_file <- here::here(paste0(output_path, 
+                                 "ABMv4_bta", bta_base,
+                                 "_SiPred", bta_sip_rd,
+                                 "_testing", testing,
+                                 "_vax", vaccination,
+                                 "_", t0,"-", t.end,
+                                 "sim1.rds"))
+  
+  if(!file.exists(sim1_file)){
+    
+    saveRDS(fin_out, sim1_file)
+    
+  } else {
+    past_files <- list.files(output_path)
+    last_sim <- max(unlist(lapply(past_files, function(i){
+      as.numeric(str_match(i, "sim\\s*(.*?)\\s*.rds")[,2])
+    })))
+    
+    saveRDS(fin_out, here::here(paste0(output_path, 
+                                       "ABMv4_bta", bta_base,
+                                       "_SiPred", bta_sip_rd,
+                                       "_testing", testing,
+                                       "_vax", vaccination,
+                                       "_", t0,"-", t.end,
+                                       "sim", last_sim+1, ".rds")))
+  }
+  
+  rm(fin_out)
+  gc()
+  
+  return(NULL)
   
 }

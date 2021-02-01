@@ -18,14 +18,15 @@ max_iters <- as.numeric(opts[6])
 data_inputs_path <- as.character(opts[7])
 input_pars_path  <- as.character(opts[8])
 vax_phases_path  <- as.character(opts[9])
-
+output_path      <- as.character(opts[10])
+  
 if(length(opts) > 9){
-  visitors    <- as.logical(opts[10]) 
-  testing     <- as.logical(opts[11])  
-  adaptive    <- as.logical(opts[12])  
-  vaccination <- as.logical(opts[13])  
-  verbose     <- as.logical(opts[14])  
-  store_extra <- as.logical(opts[15])  
+  visitors    <- as.logical(opts[11]) 
+  testing     <- as.logical(opts[12])  
+  adaptive    <- as.logical(opts[13])  
+  vaccination <- as.logical(opts[14])  
+  verbose     <- as.logical(opts[15])  
+  store_extra <- as.logical(opts[16])  
 } else {
   visitors    <- TRUE 
   testing     <- TRUE 
@@ -46,7 +47,7 @@ vax_phases  <- readRDS(here::here(vax_phases_path))
 # Setup, export everything to cluster, and run in parallel ------------------
 #Setup for running jobs across parallel nodes in cluster
 RAM <- as.numeric(system("awk '/MemFree/ {print $2}' /proc/meminfo", intern = T))/1e6
-nworkers <- floor(RAM/6)
+nworkers <- floor(RAM/5)
 
 n_cores <- nworkers
 
@@ -70,30 +71,26 @@ clusterEvalQ(cl = clooster,
 
 parallel::clusterExport(cl = clooster, 
                         c("bta_sweeps", "bta_hh", "bta_work", "bta_sip_red",
-                          "data_inputs", "input_pars", "vax_phases",
+                          "data_inputs", "input_pars", "vax_phases", "output_path",
                           "visitors", "testing", "adaptive", "vaccination", "verbose", "store_extra"))
 
-sim_results <- parallel::parLapply(cl = clooster,
-                                   X=bta_sweeps, 
-                                   fun = function(x){
-                                     LEMMAABMv4::covid_abm_v4(bta_base    = x, 
-                                                              bta_hh      = bta_hh, 
-                                                              bta_work    = bta_work, 
-                                                              bta_sip_red = bta_sip_red, 
-                                                              data_inputs = data_inputs, 
-                                                              input_pars  = input_pars, 
-                                                              vax_phases  = vax_phases,
-                                                              visitors    = visitors, 
-                                                              testing     = testing, 
-                                                              adaptive    = adaptive, 
-                                                              vaccination = vaccination,
-                                                              verbose     = verbose, 
-                                                              store_extra = store_extra)
-                                   })
+parallel::parLapply(cl = clooster,
+                    X=bta_sweeps, 
+                    fun = function(x){
+                      LEMMAABMv4::covid_abm_v4(bta_base    = x, 
+                                               bta_hh      = bta_hh, 
+                                               bta_work    = bta_work, 
+                                               bta_sip_red = bta_sip_red, 
+                                               data_inputs = data_inputs, 
+                                               input_pars  = input_pars, 
+                                               vax_phases  = vax_phases,
+                                               visitors    = visitors, 
+                                               testing     = testing, 
+                                               adaptive    = adaptive, 
+                                               vaccination = vaccination,
+                                               verbose     = verbose, 
+                                               store_extra = store_extra,
+                                               output_path = output_path)
+                    })
 
 parallel::stopCluster(clooster)
-
-saveRDS(sim_results, paste0(here::here("data", "outputs", 
-                                       paste0("ABMv4_bta_calibrate_Dec_Start_n", n_sims_per_par,
-                                              "_bta", bta_base_lo, "-", bta_base_hi, 
-                                              "_", Sys.Date(),".rds"))))

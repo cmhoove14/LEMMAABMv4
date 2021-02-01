@@ -17,12 +17,13 @@ max_iters <- as.numeric(opts[5])
 data_inputs_path <- as.character(opts[6])
 input_pars_path  <- as.character(opts[7])
 vax_phases_path  <- as.character(opts[8])
+output_path      <- as.character(opts[9])
 
-  visitors    <- as.logical(opts[9]) 
-  testing     <- opts[10]  
-  vaccination <- opts[11]
-  verbose     <- as.logical(opts[12])  
-  store_extra <- as.logical(opts[13])  
+  visitors    <- as.logical(opts[10]) 
+  testing     <- opts[11]  
+  vaccination <- opts[12]
+  verbose     <- as.logical(opts[13])  
+  store_extra <- as.logical(opts[14])  
 
 cat("\n",opts[1:5], visitors, testing, vaccination , verbose , store_extra ,"\n")
 
@@ -36,7 +37,8 @@ vax_phases  <- readRDS(here::here(vax_phases_path))
 
 # Setup, export everything to cluster, and run in parallel ------------------
 #Setup for running jobs across parallel nodes in cluster
-nworkers <- 12
+RAM <- as.numeric(system("awk '/MemFree/ {print $2}' /proc/meminfo", intern = T))/1e6
+  nworkers <- 12
 
 n_cores <- nworkers
 
@@ -51,30 +53,26 @@ clusterEvalQ(cl = clooster,
 
 parallel::clusterExport(cl = clooster, 
                         c("bta_base", "bta_hh", "bta_work", "bta_sip_red",
-                          "data_inputs", "input_pars", "vax_phases", "n_jobs",
+                          "data_inputs", "input_pars", "vax_phases", "n_jobs", "output_path",
                           "visitors", "testing", "vaccination", "verbose", "store_extra"))
 
-sim_results <- parallel::parLapply(cl = clooster,
-                                   X=rep(bta_base,n_jobs), 
-                                   fun = function(x){
-                                     LEMMAABMv4::covid_abm_v4(bta_base    = x, 
-                                                              bta_hh      = bta_hh, 
-                                                              bta_work    = bta_work, 
-                                                              bta_sip_red = bta_sip_red, 
-                                                              data_inputs = data_inputs, 
-                                                              input_pars  = input_pars, 
-                                                              vax_phases  = vax_phases,
-                                                              visitors    = visitors, 
-                                                              testing     = testing, 
-                                                              vaccination = vaccination,
-                                                              verbose     = verbose, 
-                                                              store_extra = store_extra)
-                                   })
+parallel::parLapply(cl = clooster,
+                    X=rep(bta_base,n_jobs), 
+                    fun = function(x){
+                      LEMMAABMv4::covid_abm_v4(bta_base    = x, 
+                                               bta_hh      = bta_hh, 
+                                               bta_work    = bta_work, 
+                                               bta_sip_red = bta_sip_red, 
+                                               data_inputs = data_inputs, 
+                                               input_pars  = input_pars, 
+                                               vax_phases  = vax_phases,
+                                               visitors    = visitors, 
+                                               testing     = testing, 
+                                               vaccination = vaccination,
+                                               verbose     = verbose, 
+                                               store_extra = store_extra,
+                                               output_path = output_path)
+                    })
 
 parallel::stopCluster(clooster)
 
-saveRDS(sim_results, paste0(here::here("data", "outputs", 
-                                       paste0("ABMv4_Dec_Start_", 
-                                              "_bta", bta_base, 
-                                              "_vax", vax_filename, vaccination, 
-                                              "_", Sys.Date(),".rds"))))
