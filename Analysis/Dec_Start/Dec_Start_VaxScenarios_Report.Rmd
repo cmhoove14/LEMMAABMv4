@@ -124,7 +124,7 @@ vaxessA_cases <- rbindlist(lapply(1:nsims, FUN = function(s){
 vax_cases <- bind_rows(vax65p_cases,vaxessS_cases,vaxessA_cases)
 
 tests_sum_by_date <- 
-  sim_cases %>% 
+  vax_cases %>% 
   group_by(iter, Date, vax) %>% 
   summarise(n_tests = n(),
             n_pos = sum(test_pos),
