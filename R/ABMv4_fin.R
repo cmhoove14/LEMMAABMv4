@@ -67,7 +67,7 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
   unpack_list(input_pars)
     input_pars$trans_pars$bta_base   <- bta_base
     input_pars$trans_pars$bta_hh     <- bta_hh
-    input_pars$trans_pars$bta_wrk    <- bta_wrk
+    input_pars$trans_pars$bta_work   <- bta_work
     input_pars$trans_pars$bta_sip_rd <- bta_sip_red
   
   # Convert bta_parameters into function returning baseline transmission probability on each day
