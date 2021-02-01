@@ -14,6 +14,11 @@ devtools::load_all()
 ```
 
 ```{r get_inputs}
+# Get pars
+input_pars <- readRDS(("data/processed/input_pars_Dec_start.rds"))
+
+  unpack_list(input_pars)
+
 # Get sims file-----------------
 sim_output <- readRDS("data/outputs/ABMv4_bta_calibrate_Dec_Start_n5_bta0.1-0.3_2021-01-31.rds")
   bta_sweeps <- rep(seq(0.1,0.3,length.out = 6), each = 5)
