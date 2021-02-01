@@ -70,7 +70,7 @@ clusterEvalQ(cl = clooster,
 parallel::clusterExport(cl = clooster, 
                         c("bta_sweeps", "bta_hh", "bta_work", "bta_sip_red",
                           "data_inputs", "input_pars", "vax_phases", "output_path",
-                          "visitors", "testing", "adaptive", "vaccination", "verbose", "store_extra"))
+                          "visitors", "testing", "vaccination", "verbose", "store_extra"))
 
 parallel::parLapply(cl = clooster,
                     X=bta_sweeps, 
