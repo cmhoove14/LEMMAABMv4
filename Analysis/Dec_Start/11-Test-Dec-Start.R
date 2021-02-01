@@ -11,9 +11,8 @@ input_pars  <- readRDS("data/processed/input_pars_Dec_start.rds" )
 vax_phases  <- readRDS("data/processed/vax65p_scenario.rds")
 
 visitors    <- TRUE 
-testing     <- TRUE 
-adaptive    <- FALSE 
-vaccination <- FALSE 
+testing     <- "S" 
+vaccination <- "S" 
 verbose     <- FALSE 
 store_extra <- TRUE 
 
@@ -27,7 +26,6 @@ test_Dec_Start <- LEMMAABMv4::covid_abm_v4(bta_base    = bta_base,
                                            vax_phases  = vax_phases,
                                            visitors    = visitors, 
                                            testing     = testing, 
-                                           adaptive    = adaptive, 
                                            vaccination = vaccination,
                                            verbose     = verbose, 
                                            store_extra = store_extra)

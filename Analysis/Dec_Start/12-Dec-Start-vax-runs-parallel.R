@@ -18,21 +18,13 @@ data_inputs_path <- as.character(opts[6])
 input_pars_path  <- as.character(opts[7])
 vax_phases_path  <- as.character(opts[8])
 
-if(length(opts) > 8){
   visitors    <- as.logical(opts[9]) 
   testing     <- opts[10]  
   vaccination <- opts[11]
   verbose     <- as.logical(opts[12])  
   store_extra <- as.logical(opts[13])  
-} else {
-  visitors    <- TRUE 
-  testing     <- "S" 
-  vaccination <- "N" 
-  verbose     <- FALSE 
-  store_extra <- TRUE 
-}
 
-cat("\n",opts, visitors, testing, vaccination , verbose , store_extra ,"\n")
+cat("\n",opts[1:5], visitors, testing, vaccination , verbose , store_extra ,"\n")
 
 
 # Load data files from bash paths ---------------------

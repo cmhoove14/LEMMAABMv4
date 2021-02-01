@@ -513,7 +513,7 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
       agents[, FOI:=sum(FOIi), by = location]
       
       # Reduce probability of infection for vaccinated agents
-      if(vaccination & date_now >= vax_start){
+      if(vaccination != "N" & date_now >= vax_start){
         agents[vax1 == 1 & vax2 == 0, 
                FOI:=FOI*(1-vax1_bta_red)]
         
