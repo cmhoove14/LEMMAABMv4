@@ -30,7 +30,7 @@ sf_pop <- readRDS("data/processed/SF_agents_processed.rds")
 
 # Observed vs simulated hospitalizations  
 ```{r hosp}
-sim_hosps <- rbindlist(lapply(1:nsims), function(s){
+sim_hosps <- rbindlist(lapply(1:nsims, function(s){
   df <- as.data.frame(sim_output[[s]][["epi_curve"]]) %>% 
     filter(state == "Ih") %>% 
     mutate(ndays = row_number(),
@@ -40,7 +40,7 @@ sim_hosps <- rbindlist(lapply(1:nsims), function(s){
   
   return(df)
   
-})
+}))
 
 sf_hosp %>% 
   filter(Date > ref_date) %>% 
@@ -60,14 +60,14 @@ sf_hosp %>%
 
 # Observed vs simulated detected cases  
 ```{r cases}
-sim_cases <- rbindlist(lapply(1:nsims), function(s){
+sim_cases <- rbindlist(lapply(1:nsims, function(s){
   df <- as.data.frame(sim_output[[s]][["linelist_tests"]]) %>% 
     mutate(iter = s,
            bta = bta_sweeps[s])
   
   return(df)
   
-})
+}))
 
 tests_sum_by_date <- 
   sim_cases %>% 
@@ -86,7 +86,7 @@ tests_sum_by_date %>%
   geom_col(data = sf_test,
            aes(x = Date, y = pos),
            fill = "grey50", alpha = 0.5) +
-  geom_line(aes(x = as.Date(Date), y = n_pos, col = factor(round(bta, 2))), group = iter)) +
+  geom_line(aes(x = as.Date(Date), y = n_pos, col = factor(round(bta, 2)), group = iter)) +
   theme_classic() +
   labs(y = "Positive Tests",
        title = "Confirmed cases compared to observed")
@@ -96,7 +96,7 @@ tests_sum_by_date %>%
   geom_col(data = sf_test,
            aes(x = Date, y = pct),
            fill = "grey50", alpha = 0.5) +
-  geom_line(aes(x = as.Date(Date), y = per_pos, col = factor(round(bta, 2))), group = iter)) +
+  geom_line(aes(x = as.Date(Date), y = per_pos, col = factor(round(bta, 2)), group = iter)) +
   theme_classic() +
   labs(title = "Percent positive compared to observed")
 ```
