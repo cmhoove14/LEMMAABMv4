@@ -27,11 +27,8 @@ sf_pop <- readRDS("data/processed/SF_agents_processed.rds")
   table(sf_pop$occp)
   table(sf_pop$race)
         
-  SF_cts <- tigris::tracts("06",
-                           "075",
-                           year = 2018,
-                           class = "sf")
-  
+  # SF_cts <- tigris::tracts("06", "075", year = 2018, class = "sf")
+  SF_cts <- readRDS("data/processed/SF_cts_sf.rds")
 ```
 
 ```{r sf_pop_sums}
