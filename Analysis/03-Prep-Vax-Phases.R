@@ -18,6 +18,12 @@ vax_65p$occps <- list()
   vax_65p$occps[[2]] <- 0:23
   vax_65p$occps[[3]] <- 0:23
   
+vax_65p$cts <- list()
+  vax_65p$cts[[1]] <- 
+  vax_65p$cts[[2]] <- 
+  vax_65p$cts[[3]] <- 
+  
+  
 saveRDS(vax_65p, here::here("data", "processed", "vax65p_scenario.rds"))  
   
 # Vaccination scenario for healthcare workers followed by 65+ AND essential workers followed by anyone -----------------
@@ -34,6 +40,12 @@ vax_ess$occps <- list()
   vax_ess$occps[[2]] <- 0:23
   vax_ess$occps[[3]] <- c(6,12:14,18:23)
   vax_ess$occps[[4]] <- 0:23
+  
+vax_ess$cts <- list()
+  vax_ess$cts[[1]] <- 
+  vax_ess$cts[[2]] <- 
+  vax_ess$cts[[3]] <- 
+    
   
 saveRDS(vax_ess, here::here("data", "processed", "vaxess_scenario.rds"))  
   
