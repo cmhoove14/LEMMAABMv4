@@ -3,6 +3,7 @@ Scratch
 Admin
 Archive
 data/raw
+data/outputs
 
 # History files
 .Rhistory
