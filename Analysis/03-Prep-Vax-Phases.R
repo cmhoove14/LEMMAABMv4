@@ -5,6 +5,9 @@
 
 vax_start <- as.Date("2020-12-15")
 
+agents <- readRDS(here::here("data", "processed", "SF_agents_processed.rds"))
+  agent_cts <- unique(agents$ct)
+
 # Vaccination scenario for healthcare workers followed by 65+ followed by anyone -----------------
 vax_65p <- list()
 vax_65p$dates <- vax_start + c(0,35,77)
@@ -18,10 +21,11 @@ vax_65p$occps <- list()
   vax_65p$occps[[2]] <- 0:23
   vax_65p$occps[[3]] <- 0:23
   
+# Default to all cts  
 vax_65p$cts <- list()
-  vax_65p$cts[[1]] <- 
-  vax_65p$cts[[2]] <- 
-  vax_65p$cts[[3]] <- 
+  vax_65p$cts[[1]] <- agent_cts
+  vax_65p$cts[[2]] <- agent_cts
+  vax_65p$cts[[3]] <- agent_cts
   
   
 saveRDS(vax_65p, here::here("data", "processed", "vax65p_scenario.rds"))  
@@ -41,11 +45,13 @@ vax_ess$occps <- list()
   vax_ess$occps[[3]] <- c(6,12:14,18:23)
   vax_ess$occps[[4]] <- 0:23
   
+# Default to all cts  
 vax_ess$cts <- list()
-  vax_ess$cts[[1]] <- 
-  vax_ess$cts[[2]] <- 
-  vax_ess$cts[[3]] <- 
-    
+  vax_ess$cts[[1]] <- agent_cts
+  vax_ess$cts[[2]] <- agent_cts
+  vax_ess$cts[[3]] <- agent_cts
+  vax_ess$cts[[4]] <- agent_cts
+  
   
 saveRDS(vax_ess, here::here("data", "processed", "vaxess_scenario.rds"))  
   

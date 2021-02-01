@@ -14,7 +14,6 @@ covid_abm_v4(
   vax_phases,
   visitors,
   testing,
-  adaptive,
   vaccination,
   verbose,
   store_extra
@@ -37,11 +36,9 @@ covid_abm_v4(
 
 \item{visitors}{TRUE/FALSE of whether to model outside visitors}
 
-\item{testing}{TRUE/FALSE for whether to conduct testing}
+\item{testing}{character in N, S, or A for whether to conduct no testing ("N"), standard testing ("S"), or adaptive ("A") testing}
 
-\item{adaptive}{TRUE/FALSE for whether adaptive testing should be implemented with `adapt_site_fx` in simulation}
-
-\item{vaccination}{TRUE/FALSE for whether to model vaccination}
+\item{vaccination}{character in N, S, or A for whether to conduct no vaccination ("N"), standard vaccination with input phases ("S"), or adaptive ("A") vaccination that incorporates high risk cts into vaccination allocation}
 
 \item{verbose}{TRUE/FALSE should detailed info at each time step be printed?}
 
