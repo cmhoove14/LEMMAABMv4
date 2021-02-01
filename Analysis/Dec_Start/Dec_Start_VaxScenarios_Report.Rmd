@@ -10,7 +10,6 @@ knitr::opts_chunk$set(echo = FALSE)
 knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 
 devtools::load_all()
-library(mapview)
 
 ```
 
@@ -22,8 +21,8 @@ input_pars <- readRDS(("data/processed/input_pars_Dec_start.rds"))
   
 # Get sims files-----------------
 vax65p  <- readRDS("data/outputs/ABMv4_Dec_Start__bta0.25_vaxvax65pS_2021-02-01.rds")
-#vaxessS <- readRDS("data/outputs/ABMv4_Dec_Start__bta0.25_vaxvaxessS_2021-02-01.rds")
-#vaxexxA <- readRDS("data/outputs/ABMv4_Dec_Start__bta0.25_vaxvaxessA_2021-02-01.rds")
+vaxessS <- readRDS("data/outputs/ABMv4_Dec_Start__bta0.25_vaxvaxessS_2021-02-01.rds")
+vaxexxA <- readRDS("data/outputs/ABMv4_Dec_Start__bta0.25_vaxvaxessA_2021-02-01.rds")
   nsims <- length(vax65p)
   
 # Get observed datasets for comparison --------------
@@ -93,18 +92,40 @@ sf_hosp %>%
 
 # Observed vs simulated detected cases  
 ```{r cases}
-sim_cases <- rbindlist(lapply(1:nsims), function(s){
-  df <- as.data.frame(sim_output[[i]][["linelist_tests"]]) %>% 
-    mutate(iter = i,
-           bta = bta_sweeps[i])
+vax65p_cases <- rbindlist(lapply(1:nsims, FUN = function(s){
+  df <- as.data.frame(vax65p[[s]][["linelist_tests"]]) %>% 
+    mutate(iter = s,
+           vax = "65pS")
   
   return(df)
   
-})
+}))
+
+vaxessS_cases <- rbindlist(lapply(1:nsims, FUN = function(s){
+  df <- as.data.frame(vaxessS[[s]][["linelist_tests"]]) %>% 
+    mutate(iter = s,
+           vax = "essS")
+  
+  return(df)
+  
+}))
+
+vaxessA_cases <- rbindlist(lapply(1:nsims, FUN = function(s){
+  df <- as.data.frame(vaxessA[[s]][["linelist_tests"]]) %>% 
+    mutate(ndays = row_number(),
+           Date = as.Date(ref_date+ndays),
+           iter = s,
+           vax = "essA")
+  
+  return(df)
+  
+}))
+
+vax_cases <- bind_rows(vax65p_cases,vaxessS_cases,vaxessA_cases)
 
 tests_sum_by_date <- 
   sim_cases %>% 
-  group_by(iter, Date, bta) %>% 
+  group_by(iter, Date, vax) %>% 
   summarise(n_tests = n(),
             n_pos = sum(test_pos),
             n_Ih = sum(state == "Ih"),
@@ -119,7 +140,7 @@ tests_sum_by_date %>%
   geom_col(data = sf_test,
            aes(x = Date, y = pos),
            fill = "grey50", alpha = 0.5) +
-  geom_line(aes(x = as.Date(Date), y = n_pos, col = factor(bta), group = iter)) +
+  geom_line(aes(x = as.Date(Date), y = n_pos, col = factor(vax), group = iter)) +
   theme_classic() +
   labs(y = "Positive Tests",
        title = "Confirmed cases compared to observed")
@@ -129,7 +150,7 @@ tests_sum_by_date %>%
   geom_col(data = sf_test,
            aes(x = Date, y = pct),
            fill = "grey50", alpha = 0.5) +
-  geom_line(aes(x = as.Date(Date), y = per_pos, col = factor(bta), group = iter)) +
+  geom_line(aes(x = as.Date(Date), y = per_pos, col = factor(vax), group = iter)) +
   theme_classic() +
   labs(title = "Percent positive compared to observed")
 ```
