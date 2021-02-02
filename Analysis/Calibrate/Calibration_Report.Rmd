@@ -15,7 +15,7 @@ library(tidyverse)
 
 ```{r get_inputs}
 # Get observed datasets for comparison --------------
-source("data/get/COVID_CA_get_latest.R")
+load("data/get/got/CA_SF_data2021-02-02.Rdata")
 
 # Census tracts and agents
 SF_cts <- readRDS("data/processed/SF_cts_sf.rds")
