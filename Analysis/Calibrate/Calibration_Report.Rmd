@@ -22,6 +22,7 @@ SF_cts <- readRDS("data/processed/SF_cts_sf.rds")
 sf_pop <- readRDS("data/processed/SF_agents_processed.rds")
 
 sim_files <- list.files("data/outputs/Calibration_Sims")
+head(sim_files)
 ```
 
 # Observed vs simulated hospitalizations  
