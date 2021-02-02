@@ -14,6 +14,13 @@ devtools::load_all()
 ```
 
 ```{r get_inputs}
+# Get observed datasets for comparison --------------
+source("data/get/COVID_CA_get_latest.R")
+
+# Census tracts and agents
+SF_cts <- readRDS("data/processed/SF_cts_sf.rds")
+sf_pop <- readRDS("data/processed/SF_agents_processed.rds")
+
 # Get pars
 input_pars <- readRDS(("data/processed/input_pars_Dec_start.rds"))
 
@@ -25,13 +32,6 @@ vaxessS <- readRDS("data/outputs/ABMv4_Dec_Start__bta0.25_vaxvaxessS_2021-02-01.
 vaxessA <- readRDS("data/outputs/ABMv4_Dec_Start__bta0.25_vaxvaxessA_2021-02-01.rds")
   nsims <- length(vax65p)
   
-# Get observed datasets for comparison --------------
-source("data/get/COVID_CA_get_latest.R")
-
-# Census tracts and agents
-SF_cts <- readRDS("data/processed/SF_cts_sf.rds")
-sf_pop <- readRDS("data/processed/SF_agents_processed.rds")
-
 ```
 
 # Observed vs simulated hospitalizations  
