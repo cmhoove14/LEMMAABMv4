@@ -8,4 +8,4 @@
 #$ -m beas
 # 
  
-Rscript Analysis/Dec_Start/12-Dec-Start-vax-runs-parallel.R 0.3 1 1 0.33 1 "data/processed/data_inputs_Dec_Start.rds" "data/processed/input_pars_Dec_start.rds" "data/processed/vaxessS_scenario.rds" "data/processed/Dec_start_vaxessS/" "T" "S" "T" "F" "T"
+Rscript Analysis/Dec_Start/12-Dec-Start-vax-runs-parallel.R 0.3 1 1 0.33 1 "data/processed/data_inputs_Dec_Start.rds" "data/processed/input_pars_Dec_start.rds" "data/processed/vaxessS_scenario.rds" "data/outputs/Dec_start_vaxessS/" "T" "S" "T" "F" "T"
