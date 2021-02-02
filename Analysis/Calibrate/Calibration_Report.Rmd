@@ -1,0 +1,112 @@
+---
+title: "Mod Runs report"
+author: "Chris Hoover"
+date: "1/31/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+
+library(data.table)
+library(tidyverse)
+```
+
+```{r get_inputs}
+# Get observed datasets for comparison --------------
+source("data/get/COVID_CA_get_latest.R")
+
+# Census tracts and agents
+SF_cts <- readRDS("data/processed/SF_cts_sf.rds")
+sf_pop <- readRDS("data/processed/SF_agents_processed.rds")
+
+sim_files <- list.files("data/outputs/Calibration_Sims")
+```
+
+# Observed vs simulated hospitalizations  
+```{r hosp}
+sim_hosps <- rbindlist(lapply(1:sim_files, function(s){
+  sim <- readRDS(paste0("data/outputs/Calibration_Sims/", s))
+  
+  ref_date <- sim[["input_pars"]]$time_pars$ref_date
+  bta_base <- sim[["input_pars"]]$trans_pars$bta_base
+  sip_red  <- sim[["input_pars"]]$trans_pars$bta_sip_rd
+  
+  dt <- sim[["epi_curve"]] %>% 
+  dt_Ih <- dt[state == "Ih",]
+    dt_Ih[,ndays   := 1:nrow(dt_Ih)]
+    dt_Ih[,Date    := as.Date(ref_date+ndays)]
+    dt_Ih[,sip_red := sip_red]
+    dt_Ih[,bta     := bta_base]
+    dt_Ih[,bta_sip := paste0(bta, sip_red)]
+  
+  return(dt_Ih)
+  
+}))
+
+sf_hosp %>% 
+  ggplot() +
+    geom_col(aes(x = Date, y = HOSP_tot), 
+             col = "darkblue", fill = "blue",
+             alpha = 0.4) +
+    geom_line(data = sim_hosps,
+              aes(x = Date, y = N, col = factor(round(bta, 2)), group = bta_sip),
+              alpha = 0.8) +
+    theme_classic() +
+    labs(x = "Date", y = "Hospitalizations",
+         title = "Hospitalizations sim compared to observed",
+         col = expression(beta))
+  
+```
+
+# Observed vs simulated detected cases  
+```{r cases}
+sim_cases <- rbindlist(lapply(1:sim_files, function(s){
+  sim <- readRDS(paste0("data/outputs/Calibration_Sims/", s))
+  
+  bta_base <- sim[["input_pars"]]$trans_pars$bta_base
+  sip_red  <- sim[["input_pars"]]$trans_pars$bta_sip_rd
+  
+  dt <- sim[["linelist_tests"]] %>% 
+    dt[,sip_red := sip_red]
+    dt[,bta     := bta_base]
+    dt[,bta_sip := paste0(bta, sip_red)]
+  
+  return(dt)
+
+}))
+
+tests_sum_by_date <- 
+  sim_cases %>% 
+  group_by(bta_sip, Date, bta) %>% 
+  summarise(n_tests = n(),
+            n_pos = sum(test_pos),
+            n_Ih = sum(state == "Ih"),
+            n_Im = sum(state %in% c("Im", "Imh")),
+            n_Ipa = sum(state %in% c("Ip", "Ia")),
+            per_pos = n_pos/n_tests)
+
+
+# Sums of testing data
+tests_sum_by_date %>% 
+  ggplot() +
+  geom_col(data = sf_test,
+           aes(x = Date, y = pos),
+           fill = "grey50", alpha = 0.5) +
+  geom_line(aes(x = as.Date(Date), y = n_pos, col = factor(round(bta, 2)), group = bta_sip)) +
+  theme_classic() +
+  labs(y = "Positive Tests",
+       title = "Confirmed cases compared to observed")
+
+tests_sum_by_date %>% 
+  ggplot() +
+  geom_col(data = sf_test,
+           aes(x = Date, y = pct),
+           fill = "grey50", alpha = 0.5) +
+  geom_line(aes(x = as.Date(Date), y = per_pos, col = factor(round(bta, 2)), group = bta_sip)) +
+  theme_classic() +
+  labs(title = "Percent positive compared to observed")
+```
+
+
