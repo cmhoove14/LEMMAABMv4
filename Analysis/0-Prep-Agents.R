@@ -228,6 +228,13 @@ hpi2 <- hpi %>%
 # merge agents and hpi  
   agents <- left_join(agents, hpi2, by = "ct")
   
+# Add additional geographies: zip code and sf neighborhood -----------------------  
+SF_geos <- readRDS(here::here("data", "processed", "SF_all_geos_sf.rds")) # See data/get/Get_SF_geos.R
+  agents <- left_join(agents, SF_geos %>% 
+                        mutate(ct = as.numeric(geoid10)) %>% 
+                        dplyr::select(-geoid10) %>% 
+                        sf::st_set_geometry(NULL), by = "ct")
+  
 #Convert to data.table and save   -------------------------
 agents <- data.table(agents)
   setkey(agents, id, hhid)
