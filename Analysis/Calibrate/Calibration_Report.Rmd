@@ -6,7 +6,7 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(echo = FALSE, cache = T)
 knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 
 library(data.table)
@@ -59,11 +59,21 @@ sf_hosp %>%
          title = "Hospitalizations sim compared to observed",
          col = expression(beta))
   
+ggsave(filename = "Plots/Init_Calibrate_Hosps.jpg",
+       units = "in", height = 5, width = 8)
 ```
 
 # Observed vs simulated detected cases  
 ```{r cases}
-sim_cases <- rbindlist(lapply(sim_files, function(s){
+# Base plot add as we go as building one data.table hits memory limits
+
+jpeg("Plots/Init_Calibrate_ConfCases.jpg")
+par(mar = c(3,2,2,1))
+
+plot(sf_test$Date, sf_test$pos, type = "h", col = "grey50",
+     xlab = "Date", ylab = "Confirmed Cases")
+
+for(s in sim_files){
   sim <- readRDS(paste0("data/outputs/Calibration_Sims/", s))
   
   bta_base <- sim[["input_pars"]]$trans_pars$bta_base
@@ -74,10 +84,19 @@ sim_cases <- rbindlist(lapply(sim_files, function(s){
     dt[,bta     := bta_base]
     dt[,bta_sip := paste0(bta, sip_red)]
   
-  return(dt)
+    dt_sum <- dt[, 
+                 .(n_tests = .N, n_pos = sum(test_pos)),
+                 by = Date]
+    
+    lines(dt_sum$Date, dt_sum$n_pos, col = bta_base/0.1)
 
-}))
+}
 
+dev.off()
+
+```
+
+```{r cases_gg, eval = FALSE}
 tests_sum_by_date <- 
   sim_cases %>% 
   group_by(bta_sip, Date, bta) %>% 
@@ -100,6 +119,9 @@ tests_sum_by_date %>%
   labs(y = "Positive Tests",
        title = "Confirmed cases compared to observed")
 
+ggsave(filename = "Plots/Init_Calibrate_ConfCases.jpg",
+       units = "in", height = 5, width = 8)
+
 tests_sum_by_date %>% 
   ggplot() +
   geom_col(data = sf_test,
@@ -108,6 +130,54 @@ tests_sum_by_date %>%
   geom_line(aes(x = as.Date(Date), y = per_pos, col = factor(round(bta, 2)), group = bta_sip)) +
   theme_classic() +
   labs(title = "Percent positive compared to observed")
+
+ggsave(filename = "Plots/Init_Calibrate_PerPos.jpg",
+       units = "in", height = 5, width = 8)
+
 ```
 
+# Cases by Census tract-month  
+```{r case_ct_mnth, eval = FALSE}
+# Get observed case rates by ct by month
+  sf_ct_month <- sf_geo %>% 
+    mutate(
+      month = lubridate::month(Date),
+      year = lubridate::year(Date),
+      month_year = paste0(month, "_", year)
+    ) %>% 
+    group_by(month_year, id) %>% 
+    summarise(pop              = as.numeric(first(acs_population)),
+              new_confirmed    = sum(as.numeric(new_confirmed_cases)),
+              month_rate       = new_confirmed/pop,
+              month_rate_p100k = month_rate*1e5)
 
+# Same for simulated cases by ct by month
+  sim_cases[,month := lubridate::month(Date)]
+  sim_cases[,year := lubridate::year(Date)]
+  sim_cases[,month_year := paste0(month, "_", year)]
+
+  sims_ct_month <- sim_cases[, 
+                             .(n_tests = .N, n_pos = sum(test_pos)),
+                             by = c(bta_sip, Date, bta, ct)]
+  
+  sims_ct_month[, per_pos = n_pos/n_tests]
+  
+    group_by(bta_sip, Date, bta) %>% 
+  
+  
+  sim_ct_month <- 
+sim_tests_by_race <- sim_cases
+test_sim <- readRDS("data/outputs/Test_Run_bta0.25_2021-01-29.rds")
+test_cases <- test_sim[["linelist_tests"]]
+
+
+
+
+
+ggsave(filename = "Plots/Init_Calibrate_PerPos.jpg",
+       units = "in", height = 5, width = 8)
+
+```
+
+# Cases by race/ethnicity  
+*IN DEV*
