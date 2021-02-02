@@ -1,4 +1,5 @@
 library(tidyverse)
+library(geojsonsf)
 
 # Get CA & SF data
 if(sum(grepl(Sys.Date(), list.files(here::here("data", "get", "got")))) == 0){
@@ -28,6 +29,9 @@ if(sum(grepl(Sys.Date(), list.files(here::here("data", "get", "got")))) == 0){
   
   system(paste0("wget -O ", here::here("data", "get", "got", "SF_test"), Sys.Date(), ".csv " ,
                 "https://data.sfgov.org/resource/nfpa-mg4g.csv"))
+  
+  system(paste0("wget -O ", here::here("data", "get", "got", "SF_geo"), Sys.Date(), ".geojson " ,
+                "https://data.sfgov.org/api/views/d2ef-idww/rows.geojson?accessType=DOWNLOAD"))
 
 # Clean SF data ---------------------    
 ### Hospitalizations  
@@ -89,18 +93,34 @@ if(sum(grepl(Sys.Date(), list.files(here::here("data", "get", "got")))) == 0){
     mutate(time = as.integer(Date - as.Date("2020-02-29"))) %>% 
     filter(time >0)
   
+### SF cases by geography
+  sf_geo <- geojson_sf(paste0(here::here("data", "get", "got", "SF_geo"), Sys.Date(), ".geojson")) %>% 
+    filter(area_type == "Census Tract") %>% 
+    mutate(
+      Date = as.Date(specimen_collection_date)
+    ) %>% 
+    dplyr::select(Date, id, acs_population, 
+                  new_confirmed_cases, cumulative_confirmed_cases, rate_of_cumulative_confirmed_case, 
+                  geometry)
+  
 # Save final object  
-  save(list=c("sf_all", "sf_case", "sf_hosp", "sf_test","CA_cases", 
+  save(list=c("sf_all", "sf_case", "sf_hosp", "sf_test", "sf_geo", "CA_cases", 
               "CA_hosp", "CA_tests"), 
        file=here::here("data", "get", "got", paste0("CA_SF_data", Sys.Date(), ".Rdata")))
   
-# Delete csvs  
+# Delete csvs, geojson, and any older data files
   got_files <- list.files(here::here("data", "get", "got"))
   
   lapply(got_files[grepl(".csv", got_files)],
          function(file){
            unlink(paste0(here::here("data", "get", "got"), "/", file))
          })
+  
+  unlink(got_files[grepl(".geojson", got_files)])
+  
+  del_date <- Sys.Date() - 3
+  
+  unlink(got_files[grepl(del_date, got_files)])
   
 } else {
   load(paste0(here::here("data", "get", "got"), "/CA_SF_data", Sys.Date(), ".Rdata"))
