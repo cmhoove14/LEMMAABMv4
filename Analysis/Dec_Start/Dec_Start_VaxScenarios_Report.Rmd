@@ -93,29 +93,31 @@ sf_hosp %>%
 # Observed vs simulated detected cases  
 ```{r cases}
 vax65p_cases <- rbindlist(lapply(1:nsims, FUN = function(s){
-  df <- as.data.frame(vax65p[[s]][["linelist_tests"]]) %>% 
-    mutate(iter = s,
-           vax = "65pS")
+  dt <- vax65p[[s]][["linelist_tests"]]
+    dt[, iter := s]
+    dt[, vax := "65pS"]
   
-  return(df)
+  return(dt)
   
 }))
 
 vaxessS_cases <- rbindlist(lapply(1:nsims, FUN = function(s){
-  df <- as.data.frame(vaxessS[[s]][["linelist_tests"]]) %>% 
-    mutate(iter = s,
-           vax = "essS")
+  dt <- vaxessS[[s]][["linelist_tests"]]
+    dt[, iter := s]
+    dt[, vax := "essS"]
+  
+  return(dt)
   
   return(df)
   
 }))
 
 vaxessA_cases <- rbindlist(lapply(1:nsims, FUN = function(s){
-  df <- as.data.frame(vaxessA[[s]][["linelist_tests"]]) %>% 
-    mutate(ndays = row_number(),
-           Date = as.Date(ref_date+ndays),
-           iter = s,
-           vax = "essA")
+  dt <- vaxessA[[s]][["linelist_tests"]]
+    dt[, iter := s]
+    dt[, vax := "essA"]
+  
+  return(dt)
   
   return(df)
   
