@@ -22,7 +22,7 @@ SF_cts <- readRDS("data/processed/SF_cts_sf.rds")
 sf_pop <- readRDS("data/processed/SF_agents_processed.rds")
 
 sim_files <- list.files("data/outputs/Calibration_Sims")
-head(sim_files)
+cat(head(sim_files))
 ```
 
 # Observed vs simulated hospitalizations  
@@ -34,7 +34,7 @@ sim_hosps <- rbindlist(lapply(sim_files, function(s){
   bta_base <- sim[["input_pars"]]$trans_pars$bta_base
   sip_red  <- sim[["input_pars"]]$trans_pars$bta_sip_rd
   
-  dt <- sim[["epi_curve"]] %>% 
+  dt <- sim[["epi_curve"]]
   dt_Ih <- dt[state == "Ih",]
     dt_Ih[,ndays   := 1:nrow(dt_Ih)]
     dt_Ih[,Date    := as.Date(ref_date+ndays)]
@@ -69,7 +69,7 @@ sim_cases <- rbindlist(lapply(sim_files, function(s){
   bta_base <- sim[["input_pars"]]$trans_pars$bta_base
   sip_red  <- sim[["input_pars"]]$trans_pars$bta_sip_rd
   
-  dt <- sim[["linelist_tests"]] %>% 
+  dt <- sim[["linelist_tests"]]
     dt[,sip_red := sip_red]
     dt[,bta     := bta_base]
     dt[,bta_sip := paste0(bta, sip_red)]
