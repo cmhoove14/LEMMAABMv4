@@ -13,7 +13,7 @@ library(data.table)
 library(tidyverse)
 ```
 
-```{r get_inputs}
+```{r get_inputs, echo = TRUE}
 # Get observed datasets for comparison --------------
 load("data/get/got/CA_SF_data2021-02-02.Rdata")
 
@@ -27,7 +27,7 @@ head(sim_files)
 
 # Observed vs simulated hospitalizations  
 ```{r hosp}
-sim_hosps <- rbindlist(lapply(1:sim_files, function(s){
+sim_hosps <- rbindlist(lapply(sim_files, function(s){
   sim <- readRDS(paste0("data/outputs/Calibration_Sims/", s))
   
   ref_date <- sim[["input_pars"]]$time_pars$ref_date
@@ -63,7 +63,7 @@ sf_hosp %>%
 
 # Observed vs simulated detected cases  
 ```{r cases}
-sim_cases <- rbindlist(lapply(1:sim_files, function(s){
+sim_cases <- rbindlist(lapply(sim_files, function(s){
   sim <- readRDS(paste0("data/outputs/Calibration_Sims/", s))
   
   bta_base <- sim[["input_pars"]]$trans_pars$bta_base
