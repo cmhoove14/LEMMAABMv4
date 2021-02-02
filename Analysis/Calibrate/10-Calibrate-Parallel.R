@@ -23,13 +23,13 @@ output_path      <- as.character(opts[10])
 if(length(opts) > 10){
   visitors    <- as.logical(opts[11]) 
   testing     <- opts[12]  
-  vaccination <- opts[13]
+  vaccination <- as.logical(opts[13])
   verbose     <- as.logical(opts[14])  
   store_extra <- as.logical(opts[15])  
 } else {
   visitors    <- TRUE 
   testing     <- "S" 
-  vaccination <- "N" 
+  vaccination <- FALSE 
   verbose     <- FALSE 
   store_extra <- TRUE 
 }

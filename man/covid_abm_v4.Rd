@@ -39,7 +39,7 @@ covid_abm_v4(
 
 \item{testing}{character in N, S, or A for whether to conduct no testing ("N"), standard testing ("S"), or adaptive ("A") testing}
 
-\item{vaccination}{character in N, S, or A for whether to conduct no vaccination ("N"), standard vaccination with input phases ("S"), or adaptive ("A") vaccination that incorporates high risk cts into vaccination allocation}
+\item{vaccination}{TRUE/FALSE of whether to model vaccination using inputs in `input_pars` and `vax_phases`}
 
 \item{verbose}{TRUE/FALSE should detailed info at each time step be printed?}
 

@@ -21,7 +21,7 @@ output_path      <- as.character(opts[9])
 
   visitors    <- as.logical(opts[10]) 
   testing     <- opts[11]  
-  vaccination <- opts[12]
+  vaccination <- as.logical(opts[12])
   verbose     <- as.logical(opts[13])  
   store_extra <- as.logical(opts[14])  
 

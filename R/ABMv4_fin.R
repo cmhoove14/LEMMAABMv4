@@ -13,7 +13,7 @@
 #' 
 #' @param visitors TRUE/FALSE of whether to model outside visitors
 #' @param testing character in N, S, or A for whether to conduct no testing ("N"), standard testing ("S"), or adaptive ("A") testing
-#' @param vaccination character in N, S, or A for whether to conduct no vaccination ("N"), standard vaccination with input phases ("S"), or adaptive ("A") vaccination that incorporates high risk cts into vaccination allocation
+#' @param vaccination TRUE/FALSE of whether to model vaccination using inputs in `input_pars` and `vax_phases`
 #' @param verbose TRUE/FALSE should detailed info at each time step be printed?
 #' @param store_extra TRUE/FALSE should extra metrics including % staying home and % isolating be stored and returned? Good for debugging
 #' @param output_path file path relative to `here::here` root to save outputs
@@ -35,9 +35,6 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
     stop("Invalid testing scenario, testing must be 'S', 'A', or 'N'")
   }
   
-  if(!vaccination %in% c("N", "S", "A")){
-    stop("Invalid vaccination scenario, vaccination must be 'S', 'A', or 'N'")
-  }
   #Extract data inputs -------------
   agents        <- data_inputs$agents
   ct_cdf_list   <- data_inputs$ct_cdf_list
@@ -54,7 +51,7 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
   }
   
   #Function to return number of vaccinations available on day t
-  if(vaccination != "N"){
+  if(vaccination){
     vax_fx <- approxfun(vax_per_day$days,
                         vax_per_day$vax)
     
@@ -367,8 +364,7 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
     }
     
     # Implement vaccination only in the morning for simplicity and speed -----------------
-    # TODO: Incorporate adaptive functionality so only essential workers in high risk areas eligible?
-    if(vaccination != "N" & time_day == "M" & date_now >= vax_start){
+    if(vaccination & time_day == "M" & date_now >= vax_start){
       vax_avail <- vax_fx(date_num)
       
       # IF new phase started, add new eligibles, else skip over and go straight to vaccination
@@ -379,12 +375,12 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
         
         # Identify and label eligible agents by phase 
         for(v in 1:length(active_phases)){
-          vax_eligible_ages <- vax_phases$ages[[v]]
+          vax_eligible_ages  <- vax_phases$ages[[v]]
           vax_eligible_occps <- vax_phases$occps[[v]]
+          vax_phase_type     <- vax_phases$type[[v]]
           
         #If adapive vaccination targeting essential workers  
-          if(vaccination == "A" & 
-             length(vax_eligible_occps) == sum(vax_eligible_occps == c(6,12:14,18:23))){
+          if(vax_phase_type == "A"){
             
             # Examine past month's testing data to determine where to place site
               start <- as.numeric(date_now-t0)-30
@@ -395,9 +391,10 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
                                          .(n_tests = .N, n_pos = sum(test_pos), per_pos = sum(test_pos)/.N),
                                          by = ct]
             
-            # Make essential workers in 20 CTs (basically 10% of all cts) with highest test percent positive eligible
+            # Make agents in 20 CTs (basically 10% of all cts) with highest test percent positive eligible
               vax_eligible_cts <- test_data_sum$ct[order(-test_data_sum$per_pos)][1:20]
               
+              vax_phases$cts[[v]] <- vax_eligible_cts
           } else {
             
             vax_eligible_cts <- vax_phases$cts[[v]]
@@ -514,7 +511,7 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
       agents[, FOI:=sum(FOIi), by = location]
       
       # Reduce probability of infection for vaccinated agents
-      if(vaccination != "N" & date_now >= vax_start){
+      if(vaccination & date_now >= vax_start){
         agents[vax1 == 1 & vax2 == 0, 
                FOI:=FOI*(1-vax1_bta_red)]
         
@@ -641,13 +638,17 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
     fin_out[["inf_quar"]]  <- inf_quar
   }
   
+  if(vaccination){
+    fin_out[["vax_phases"]] <- vax_phases
+  }
+  
   if(!dir.exists(here::here(output_path))){
     dir.create(here::here(output_path))
   }
   
   sim1_file <- here::here(paste0(output_path, 
                                  "ABMv4_bta", bta_base,
-                                 "_SiPred", bta_sip_rd,
+                                 "_SiPred", bta_sip_red,
                                  "_testing", testing,
                                  "_vax", vaccination,
                                  "_", t0,"-", t.end,
