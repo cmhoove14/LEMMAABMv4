@@ -47,7 +47,7 @@ sim_hosps <- rbindlist(lapply(sim_files, function(s){
   
     
 # Determine "fit"    
-  if(nrow(dt_Ih) < (as.numeric(best_sim[["input_pars"]]$time_pars$t.end- best_sim[["input_pars"]]$time_pars$t0) - 10)){  #Don't count sims where infection dies out
+  if(nrow(dt_Ih) < (as.numeric(sim[["input_pars"]]$time_pars$t.end- sim[["input_pars"]]$time_pars$t0) - 10)){  #Don't count sims where infection dies out
     sim_obs_mrg <- data.table::merge.data.table(dt_Ih, sf_hosp_dt, by = "Date") 
     sim_obs_mrg[, MSE := (N-HOSP_tot)^2]
     
