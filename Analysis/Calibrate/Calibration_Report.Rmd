@@ -117,7 +117,7 @@ best_file <- sim_files[which.min(hosps_fit)]
   
   dt_best <- best_sim[["epi_curve"]]
   dt_best_Ih <- dt_best[state == "Ih",]
-    dt_best_Ih[,ndays   := 1:nrow(dt_Ih)]
+    dt_best_Ih[,ndays   := 1:nrow(dt_best_Ih)]
     dt_best_Ih[,Date    := as.Date(ref_date+ndays)]
     dt_best_Ih[,sip_red := sip_red]
     dt_best_Ih[,bta     := bta_base]
