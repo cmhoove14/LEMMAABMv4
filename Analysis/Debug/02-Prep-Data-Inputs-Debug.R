@@ -50,8 +50,7 @@ sf_test_smooth <- sf_test %>%
   mutate(tests_pp_7day_avg = zoo::rollmean(tests_pp, 7, na.pad = T, align = "center"),
          tests_pp = case_when(is.na(tests_pp_7day_avg) & Date < as.Date("2020-03-10") ~ 2/N,
                               is.na(tests_pp_7day_avg) & Date > as.Date("2020-03-10") ~ 5000/N,
-                              !is.na(tests_pp_7day_avg) ~ tests_pp_7day_avg)) %>% 
-  filter(!is.na(tests_pp_7day_avg))
+                              !is.na(tests_pp_7day_avg) ~ tests_pp_7day_avg)) 
 
 last_sf_test <- max(sf_test_smooth$Date)
 
