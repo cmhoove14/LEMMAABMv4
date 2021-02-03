@@ -34,6 +34,8 @@ sim_hosps <- rbindlist(lapply(sim_files, function(s){
   
   sim_obs_mrg <- data.table::merge.data.table(dt_Ih, sf_hosp_dt, by = "Date") 
   
+  head(sim_obs_mrg)
+  
   # Determine "fit"    
   if(nrow(sim_obs_mrg) >= 100){  #Don't count sims where infection dies out
     sim_obs_mrg[, MSE := (N-HOSP_tot)^2]
@@ -48,7 +50,7 @@ sim_hosps <- rbindlist(lapply(sim_files, function(s){
 
 
 ## Best "fit" hosp  
-cat(hosps_fit)
+cat(hosps_fit,"\n")
 
 best_file <- sim_files[which.min(hosps_fit)]
 
