@@ -30,6 +30,9 @@ if(sum(grepl(Sys.Date(), list.files(here::here("data", "get", "got")))) == 0){
   system(paste0("wget -O ", here::here("data", "get", "got", "SF_test"), Sys.Date(), ".csv " ,
                 "https://data.sfgov.org/resource/nfpa-mg4g.csv"))
   
+  system(paste0("wget -O ", here::here("data", "get", "got", "SF_case_by_race"), Sys.Date(), ".csv " ,
+                "https://data.sfgov.org/api/views/vqqm-nsqg/rows.csv?accessType=DOWNLOAD"))
+  
   system(paste0("wget -O ", here::here("data", "get", "got", "SF_geo"), Sys.Date(), ".geojson " ,
                 "https://data.sfgov.org/api/views/d2ef-idww/rows.geojson?accessType=DOWNLOAD"))
 
@@ -79,6 +82,24 @@ if(sum(grepl(Sys.Date(), list.files(here::here("data", "get", "got")))) == 0){
     mutate(cum_case = cumsum(Cases),
            cum_death = cumsum(Deaths))
   
+### Cases by race   
+  sf_case_race <- read.csv(paste0(here::here("data", "get", "got", "SF_case_by_race"), Sys.Date(), ".csv")) %>% 
+    mutate(
+      Date = as.Date(Specimen.Collection.Date, format = "%Y/%m/%d"),
+      Race = case_when(Race.Ethnicity == "White" ~ 1,
+                       Race.Ethnicity == "Black or African American" ~ 2,
+                       Race.Ethnicity == "Native American" ~ 3,
+                       Race.Ethnicity == "Asian" ~ 4,
+                       Race.Ethnicity == "Native Hawaiian or Other Pacific Islander" ~ 5,
+                       Race.Ethnicity == "Other" ~ 6,
+                       Race.Ethnicity == "Multi-racial" ~ 7,
+                       Race.Ethnicity == "Hispanic or Latino/a, all races" ~ 8,
+                       Race.Ethnicity == "Unknown" ~ NA_real_)
+    ) %>% 
+    rename("New_Cases" = New.Confirmed.Cases,
+           "Cum_Cases" = Cumulative.Confirmed.Cases) %>% 
+    dplyr::select(Date, Race, New_Cases, Cum_Cases)
+    
 ### Tests  
   sf_test <- read.csv(paste0(here::here("data", "get", "got", "SF_test"), Sys.Date(), ".csv")) %>% 
     mutate(Date = as.Date(specimen_collection_date)) %>% 
@@ -104,8 +125,8 @@ if(sum(grepl(Sys.Date(), list.files(here::here("data", "get", "got")))) == 0){
                   geometry)
   
 # Save final object  
-  save(list=c("sf_all", "sf_case", "sf_hosp", "sf_test", "sf_geo", "CA_cases", 
-              "CA_hosp", "CA_tests"), 
+  save(list=c("sf_all", "sf_case", "sf_hosp", "sf_test", "sf_geo", "sf_case_race", 
+              "CA_cases", "CA_hosp", "CA_tests"), 
        file=here::here("data", "get", "got", paste0("CA_SF_data", Sys.Date(), ".Rdata")))
   
 # Delete csvs, geojson, and any older data files
