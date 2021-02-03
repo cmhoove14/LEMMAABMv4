@@ -110,6 +110,8 @@ ggsave(filename = "Plots/Init_Calibrate_Hosps_beta01.jpg",
 
 ## Best "fit" hosp  
 ```{r hosp_best}
+cat(hosps_fit)
+
 best_file <- sim_files[which.min(hosps_fit)]
 
   best_sim <- readRDS(paste0("data/outputs/Calibration_Sims/", best_file))
