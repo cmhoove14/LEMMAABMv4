@@ -13,8 +13,7 @@ bta_work    <- 1.2
 bta_sip_red <- 1/3
 
 visitors <- TRUE 
-testing <- TRUE 
-adaptive <- FALSE 
+testing <- "S" 
 vaccination <- FALSE 
 verbose <- FALSE 
 store_extra <- TRUE 
@@ -33,32 +32,44 @@ tests_avail   <- data_inputs$tests_avail
 vax_per_day   <- data_inputs$vax_per_day
 
 #Function to return number of tests on day t converted from tests_avail df
-tests_pp_fx <- approxfun(tests_avail$date_num,
-                         tests_avail$tests_pp)
+if(testing != "N"){
+  tests_pp_fx <- approxfun(tests_avail$date_num,
+                           tests_avail$tests_pp)
+}
 
 #Function to return number of vaccinations available on day t
 if(vaccination){
   vax_fx <- approxfun(vax_per_day$days,
-                    vax_per_day$vax)
+                      vax_per_day$vax)
+  
+  # Get dates of vaccination phase onsets
+  vax_phase_dates <- vax_phases$dates
+  
+  vax_phases_active <- 0
 }
 
-# Get dates of vaccination phase onsets
-vax_phase_dates <- vax_phases$dates
-
-# Extract parameter inputs
+# Extract parameter inputs then store in object for return with sim outputs
 unpack_list(input_pars)
+input_pars$trans_pars$bta_base   <- bta_base
+input_pars$trans_pars$bta_hh     <- bta_hh
+input_pars$trans_pars$bta_work   <- bta_work
+input_pars$trans_pars$bta_sip_rd <- bta_sip_red
 
 # Convert bta_parameters into function returning baseline transmission probability on each day
-bta_change_df <- data.frame(dates = c(t0, SiP.start, t.end),
-                            btas = c(bta_base, bta_base*bta_sip_red, bta_base*bta_sip_red)) %>% 
-  padr::pad() %>% 
-  mutate(date_num = as.numeric(dates - ref_date))
-
-bta_change_df$btas[is.na(bta_change_df$btas) & bta_change_df$dates < SiP.start] <- bta_base
-bta_change_df$btas[is.na(bta_change_df$btas) & bta_change_df$dates > SiP.start] <- bta_base*bta_sip_red
-
-bta_fx <- approxfun(bta_change_df$date_num,
-                    bta_change_df$btas)
+if(t0 > SiP.start){
+  bta_fx <- function(...) return(bta_base*bta_sip_red)
+} else {
+  bta_change_df <- data.frame(dates = c(t0, SiP.start, t.end),
+                              btas = c(bta_base, bta_base*bta_sip_red, bta_base*bta_sip_red)) %>% 
+    padr::pad() %>% 
+    mutate(date_num = as.numeric(dates - ref_date))
+  
+  bta_change_df$btas[is.na(bta_change_df$btas) & bta_change_df$dates < SiP.start] <- bta_base
+  bta_change_df$btas[is.na(bta_change_df$btas) & bta_change_df$dates > SiP.start] <- bta_base*bta_sip_red
+  
+  bta_fx <- approxfun(bta_change_df$date_num,
+                      bta_change_df$btas)
+}
 
 
 # Extract Initial conditions ----------------
@@ -118,16 +129,16 @@ if(store_extra){
 }  
 
 # Determine adaptive testing days if adaptive testing ------------------
-if(adaptive & class(adapt_start) == "Date"){
+if(testing == "A" & class(adapt_start) == "Date"){
   adapt_days <- seq(adapt_start, t0+t.tot, by = adapt_freq)
-} else if (adaptive){
+} else if (testing == "A"){
   adapt_days <- seq(t0+adapt_start, t0+t.tot, by = adapt_freq)
 } else {
   adapt_days <- NA_real_
 }
 
 # Get populations by geographies for use in adaptive testing site placement
-if(adaptive){
+if(testing == "A"){
   geo_pops <- agents[, .(pop = .N), by = adapt_site_geo]
 }
 
@@ -145,7 +156,6 @@ agents[, ct:=as.numeric(ct)]
 # Add compliance and sociality metrics, start people with no known contacts, etc. -----------------------------
 agents[, mask := mask_fx(.N)] # Probability of wearing a mask
 agents[, sociality := social_fx(.N)] # Sociality metric
-agents[, quarantine := 0] # initial quarantine values
 agents[, q_prob := 0]
 agents[, q_duration := 0]
 agents[, q_bta_red:=1]
@@ -211,19 +221,18 @@ for(t in 2:(t.tot/dt)){
   agents[state %in% c("R", "D") & test_pos == 1, test_pos:=0]
   agents[t_til_test_note < 0 & test_pos == 1, tested:= 1]
   agents[t_til_test_note < 0, init_test:= 0]
-  agents[t_til_test_note < 0 & test_pos == 0, q_duration:=0]
+  agents[t_til_test_note < 0 & test_pos == 0, q_duration:=0] # Exit quarantine if test negative
   agents[q_duration < 0, q_duration:=0]
   agents[q_duration < 0, q_bta_red:=1]
-  agents[q_duration < 0, quarantine:=0]
   agents[t_since_contact > 14, t_since_contact:=0] #Agents stop considering contact relevant after 14 days
   agents[t_til_dose2 < 0, vax2 := 1]
   
   if(verbose){ cat("Infections advanced\n") } 
   
   # Implement testing only in the morning for simplicity and speed ---------------
-  if(testing & time_day == "M" & date_now >= test_start){
+  if(testing != "N" & time_day == "M" & date_now >= test_start){
     # If adaptive design, use test reports to select site for new test site placement  
-    if(adaptive & as.character(date_now) %in% as.character(adapt_days)){
+    if(testing == "A" & as.character(date_now) %in% as.character(adapt_days)){
       
       adapt_sites_add <- adapt_site_fx(test_reports, adapt_freq, n_adapt_sites, adapt_site_geo, geo_pops, 
                                        t0, date_now, adapt_site_test_criteria) # Determine CT receiving new site
@@ -342,22 +351,48 @@ for(t in 2:(t.tot/dt)){
   }
   
   # Implement vaccination only in the morning for simplicity and speed -----------------
-  # TODO: Incorporate adaptive functionality so only essential workers in high risk areas eligible?
   if(vaccination & time_day == "M" & date_now >= vax_start){
     vax_avail <- vax_fx(date_num)
     
-    # Identify and label eligible agents by phase 
-    # TODO: Make this more efficient  
-    active_phases <- vax_phase_dates[which(vax_phase_dates <= date_now)]
-    
-    for(v in 1:length(active_phases)){
-      vax_eligible_ages <- vax_phases$ages[[v]]
-      vax_eligible_occps <- vax_phases$occps[[v]]
+    # IF new phase started, add new eligibles, else skip over and go straight to vaccination
+    if(sum(vax_phase_dates <= date_now) > vax_phases_active){
+      #Update vaccination phases
+      vax_phases_active <- sum(vax_phase_dates <= date_now)
+      active_phases <- vax_phase_dates[1:vax_phases_active]
       
-      agents[age %in% vax_eligible_ages & occp %in% vax_eligible_occps & vax1 == 0,
-             vax_eligible := 1]
-    }
-    
+      # Identify and label eligible agents by phase 
+      for(v in 1:length(active_phases)){
+        vax_eligible_ages  <- vax_phases$ages[[v]]
+        vax_eligible_occps <- vax_phases$occps[[v]]
+        vax_phase_type     <- vax_phases$type[[v]]
+        
+        #If adapive vaccination targeting essential workers  
+        if(vax_phase_type == "A"){
+          
+          # Examine past month's testing data to determine where to place site
+          start <- as.numeric(date_now-t0)-30
+          end <- as.numeric(date_now-t0)
+          
+          test_data <- rbindlist(lapply(start:end, function(d) test_reports[[d]]))
+          test_data_sum <- test_data[, 
+                                     .(n_tests = .N, n_pos = sum(test_pos), per_pos = sum(test_pos)/.N),
+                                     by = ct]
+          
+          # Make agents in 20 CTs (basically 10% of all cts) with highest test percent positive eligible
+          vax_eligible_cts <- test_data_sum$ct[order(-test_data_sum$per_pos)][1:20]
+          
+          vax_phases$cts[[v]] <- vax_eligible_cts
+        } else {
+          
+          vax_eligible_cts <- vax_phases$cts[[v]]
+          
+        }
+        
+        agents[age %in% vax_eligible_ages & occp %in% vax_eligible_occps & ct %in% vax_eligible_cts & vax1 == 0,
+               vax_eligible := 1]
+      }
+      
+    } 
     # randomly sample from available agents to vaccinate
     vax_eligible_ids <- agents[vax_eligible == 1, id]
     vax_ids <- vax_eligible_ids[wrswoR::sample_int_crank(length(vax_eligible_ids),
@@ -513,26 +548,26 @@ for(t in 2:(t.tot/dt)){
     agents[essential == 1,
            q_prob:=q_prob*(1-q_prob_essential)]
     # Influence of adaptive site
-    if(adaptive){
+    if(testing == "A"){
       agents[adapt_site == 1,
              q_prob:=q_prob*q_prob_adapt]
     }
     
     # Quarantine "decisions"
     agents[q_prob > 1, 
-           quarantine:=1]
+           choose_quar:=1]
     agents[q_prob < 1 & q_prob > 0, 
-           quarantine:=rbinom(.N, 1, q_prob)]
+           choose_quar:=rbinom(.N, 1, q_prob)]
     
     # Assign isolation duration and reduction in transmission if quarantining at home based on income bracket 
-    agents[quarantine == 1 & q_duration == 0, 
+    agents[choose_quar == 1 & q_duration == 0, 
            q_duration:=q_dur_fx(.N)]
-    agents[quarantine == 1, q_bta_red:=(1-1/hhsize)**2]
+    agents[choose_quar == 1, q_bta_red:=(1-1/hhsize)**2]
     
     
     if(verbose){
       
-      cat(nrow(agents[quarantine == 1,]), "agents entered isolation\n",
+      cat(nrow(agents[choose_quar == 1,]), "agents entered isolation\n",
           nrow(agents[q_duration > 0,]), "agents currently isolating\n",
           nrow(agents[infector == 1 & q_duration>0,])/nrow(agents[infector == 1,])*100, "% of",
           nrow(agents[infector == 1,]), "infectious agents are quarantining\n\n")
@@ -554,13 +589,13 @@ for(t in 2:(t.tot/dt)){
     # Reset infection & location columns and remove temp quarantine objects
     agents[, c("location", "mobile", "infector", "res_infector",
                "contact_prob", "contact", "n_present", "wear.mask",
-               "trans_prob", "FOIi", "FOI", "infect"):=NULL]
+               "trans_prob", "FOIi", "FOI", "infect", "choose_quar"):=NULL]
     
   }
   
   #epi_curve[t,] <- agents[,.N, by = state]$N
   if(time_day == "M"){
-    epi_curve[[t]] <- agents[,.N, by = state] -> epicurve ; epicurve[,date:=t0]
+    epi_curve[[t]] <- agents[,.N, by = state] -> epicurve ; epicurve[,date:=date_now]
   }
   
   gc()  
@@ -569,9 +604,11 @@ for(t in 2:(t.tot/dt)){
   if(!verbose){
     pb$tick()
     Sys.sleep(1/100)
-  }  
+  }    
+  
   # On to the next one  
 }
+
 
 
 

@@ -14,10 +14,9 @@ bta_work    <- 1
 bta_sip_red <- 1/3
 
 visitors <- TRUE 
-testing <- TRUE 
-adaptive <- FALSE 
+testing <- "S" 
 vaccination <- FALSE 
-verbose <- FALSE 
+verbose <- TRUE 
 store_extra <- TRUE 
 
 set.seed(430)
@@ -33,7 +32,6 @@ time_run <- LEMMAABMv4::covid_abm_v4(bta_base    = bta_base,
                                      vax_phases  = vax_phases,
                                      visitors    = visitors, 
                                      testing     = testing, 
-                                     adaptive    = adaptive, 
                                      vaccination = vaccination,
                                      verbose     = verbose, 
                                      store_extra = store_extra)
