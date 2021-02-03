@@ -46,12 +46,15 @@ sim_hosps <- rbindlist(lapply(sim_files, function(s){
     dt_Ih[,bta_sip := paste0(bta, sip_red)]
   
     
-# Detrmine "fit"    
-  sim_obs_mrg <- data.table::merge.data.table(dt_Ih, sf_hosp_dt, by = "Date")
-  sim_obs_mrg[, MSE := (N-HOSP_tot)^2]
-  
-  hosps_fit[which(s == sim_files)] <- sum(sim_obs_mrg[, MSE], na.rm = T)
+# Determine "fit"    
+  if(nrow(dt_Ih) < (as.numeric(best_sim[["input_pars"]]$time_pars$t.end- best_sim[["input_pars"]]$time_pars$t0) - 10)){  #Don't count sims where infection dies out
+    sim_obs_mrg <- data.table::merge.data.table(dt_Ih, sf_hosp_dt, by = "Date") 
+    sim_obs_mrg[, MSE := (N-HOSP_tot)^2]
     
+    hosps_fit[which(s == sim_files)] <- sum(sim_obs_mrg[, MSE], na.rm = T)
+  } else {
+    hosps_fit[which(s == sim_files)] <- NA_real_
+  }
   return(dt_Ih)
   
 }))
@@ -129,8 +132,9 @@ sf_hosp %>%
              col = "darkblue", fill = "blue",
              alpha = 0.4) +
     geom_line(data = dt_best_Ih,
-              aes(x = Date, y = N, col = "red"),
-              alpha = 0.8) +
+              aes(x = Date, y = N), 
+              col = "red",
+              size = 1.2) +
     theme_classic() +
     labs(x = "Date", y = "Hospitalizations",
          title = "Hospitalizations best sim compared to observed")
