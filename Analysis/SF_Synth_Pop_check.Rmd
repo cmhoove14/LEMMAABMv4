@@ -14,7 +14,6 @@ library(data.table)
 library(tigris)
 library(mapview)
 
-
 ```
 
 ```{r include=FALSE}
@@ -29,6 +28,8 @@ sf_pop <- readRDS("data/processed/SF_agents_processed.rds")
         
   # SF_cts <- tigris::tracts("06", "075", year = 2018, class = "sf")
   SF_cts <- readRDS("data/processed/SF_cts_sf.rds")
+  
+  load("data/get/got/CA_SF_data2021-02-01.Rdata")
 ```
 
 ```{r sf_pop_sums}
