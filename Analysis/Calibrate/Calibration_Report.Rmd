@@ -47,7 +47,7 @@ sim_hosps <- rbindlist(lapply(sim_files, function(s){
   
     
 # Detrmine "fit"    
-  sim_obs_mrg <- best_sim(dt_Ih, sf_hosp_dt, by = "Date")
+  sim_obs_mrg <- data.table::merge.data.table(dt_Ih, sf_hosp_dt, by = "Date")
   sim_obs_mrg[, MSE := (N-HOSP_tot)^2]
   
   hosps_fit[which(s == sim_files)] <- sum(sim_obs_mrg[, MSE], na.rm = T)
