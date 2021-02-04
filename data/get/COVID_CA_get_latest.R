@@ -141,8 +141,9 @@ if(sum(grepl(Sys.Date(), list.files(here::here("data", "get", "got")))) == 0){
   
   del_date <- Sys.Date() - 3
   
-  unlink(paste0(here::here("data", "get", "got"), "/", got_files[grepl(del_date, got_files)]))
-  
+  if(del_date != as.Date("2020-02-02")){ # Keep for sims to run through January so don't have to run entire script each new day
+    unlink(paste0(here::here("data", "get", "got"), "/", got_files[grepl(del_date, got_files)]))
+  }
 } else {
   load(paste0(here::here("data", "get", "got"), "/CA_SF_data", Sys.Date(), ".Rdata"))
 }
