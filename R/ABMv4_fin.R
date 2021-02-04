@@ -312,7 +312,7 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
                                                      adapt_site        = adapt_site, 
                                                      adapt_site_mult   = adapt_site_mult, 
                                                      tests_avail       = n_tests,
-                                                     case_find_mult    = case_find_mult,
+                                                     case_find_mult    = case_finding_mult,
                                                      symp_mult         = symp_mult, 
                                                      hpi_mult          = hpi_mult, 
                                                      cont_mult         = cont_mult, 
@@ -427,7 +427,7 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
       # Reset residence infection and pct_home then get Get CT-based stay at home compliance 
       
       if(time_day == "M" | t==2){ # Update daily stay-at home if new day
-      agents[, c("res_inf", "pct_home"):=NULL]
+      agents[, "pct_home":=NULL]
       
         home.today <- stay_home_dt[Date == as.character(date_now),]
         home.today[,ct:=as.numeric(CT)]
@@ -541,9 +541,10 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
       agents[, q_prob:=0]
       
       # Determine known residential infections
-      agents[, res_infector := 0]
-      agents[state == "Im" | state == "Imh" | (infector == 1 & tested == 1), res_infector:=1]
-      agents[res_infector == 1, res_inf:=.N, by=hhid] 
+      agents[, res_infector := 0] # Reset from previous
+      agents[, res_inf := 0]      # Reset from previous
+      agents[state == "Im" | state == "Imh" | (infector == 1 & tested == 1), res_infector:=1] #Identify known residential infections
+      agents[res_infector == 1, res_inf:=.N, by=hhid]  # Sum residential infectors by household
       
       # New contact
       agents[contact == 1 & t_since_contact == dt & q_duration == 0,
