@@ -219,8 +219,8 @@ hpi <- readRDS(here::here("data", "processed", "SF_HPI.rds")  )
   
 hpi2 <- hpi %>% 
     mutate(ct = as.numeric(CensusTract)) %>% 
-    rename("hpi_quartile" = quartiles) %>% 
-    dplyr::select(ct, hpi2score, hpi_quartile)
+    rename("hpi_quartile" = quartiles,
+           "hpi_quintile" = quintiles)
   
 # Check to make sure all cts are in both. Should be 195. technically 197 tracts, but two are off the cost and have 0 population  
   sum(unique(agents$ct) %in% unique(hpi2$ct))
@@ -236,6 +236,16 @@ SF_geos <- readRDS(here::here("data", "processed", "SF_all_geos_sf.rds")) # See 
                         sf::st_set_geometry(NULL), by = "ct")
   
 #Convert to data.table and save   -------------------------
+agents <- agents %>% 
+    dplyr::select(id, sex, age, race, occp, essential, hhid, hhsize, hhincome,
+                  ct, geoid, pop2010, work_ct, work, ZIP, nhood, 
+                  hpi2score, hpi_quintile, hpi_quartile, 
+                  economic, social, education, transportation, neighborhood, housing, pollution, healthcareaccess)
+  
+rename_cols <- c("economic", "social", "education", "transportation", "neighborhood", "housing", "pollution", "healthcareaccess")
+  
+colnames(agents)[which(colnames(agents) %in% rename_cols)] <- paste0("hpi_", rename_cols)
+  
 agents <- data.table(agents)
   setkey(agents, id, hhid)
   
