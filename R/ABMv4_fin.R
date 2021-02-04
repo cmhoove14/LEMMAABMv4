@@ -2,11 +2,6 @@
 #' 
 #' @description Function to run agent based model
 #' 
-#' @param bta_base baseline transmission probability
-#' @param bta_hh household transmission probability multiplier
-#' @param bta_work work transmission probability multiplier
-#' @param bta_sip_red reduction in transmission probability following SiP to account for microbehaviors such as 6 feet apart, less time indoors, etc.
-#' 
 #' @param data_inputs List of data inputs for model including, see `details`. Compiled in `01-Prep-Data-Inputs.R`
 #' @param input_pars LIST of LISTS containing parameters, dates, functions to support simulation, see `details`.  Compiled in `02-Prep-Par-Inputs.R`
 #' @param vax_phases list with list describing vaccine phases and their eligibility criteria, see `details.  Compiled in `03-Prep-Vax-Phases.R`
@@ -20,7 +15,8 @@
 #' 
 #' @details 
 #' `data_inputs` is a list of lists containing `agents_dt`: data.table of agents with necessary characteristics including: "hhsize" "hhincome"   "sex"        "age"        "occp"       "race"       "hhid"       "id" "ct"  "essential"  "work_ct"    "work"    "state"    "nextstate"  "tnext"  "t_symptoms" ;  `ct_cdf_list`: list of matrices of dim cts x cts in which entries represent probabilities of moving from CT i to CT j on day t where t subsets the list to corresponding day (e.g. ct_cdf_list[[t]] = ct x ct matrix). Used in `GetCTVisit`/`GetCTVisit_cpp` function ; `ct_ids` vector relating row numbers of `ct_cdf_list` to actual ct codes ; `stay_home_dt` data table with columns `Date`, `CT`, and `pct_home` (E.g. derived from safegraph data) to use for social distancing/stay at home compliance ; `visitors_list` list of data frames/tables with columns corresponding to census tract, number of external visitors to that ct, county from which they visited, and population and infection characteristics of that county. column inf_prob represents incidence in that county (new cases identified per population) and is used as probability a visiting agent is infectious along with `visitor_mult_testing` to correct for ratio of true incidence to incidence from testing data and `visitor_mult_sfgrph` to correct for ratio of safegraph devices tracked to total population ;  `test_avail` data frame with columns date_num and tests_pp corresponding to number of tests availabe per person on day date_num. Used to generate function returning the number of tests available per agent on day t since test start. 
-#' `input_pars` is a list of lists corresponding to parameters that shouldn't need to be edited frequently e.g. for model calibration or simulations. It includes a LIST `time_pars` containing: `t0`: start date of simulation ;  `t.tot` total time to run simulation (in days) ; `dt` time step (defaults to 4/24, needs editing if otherwise) ; `day_of_week_fx` function which takes t returns character of day of week (U,M,T,W,R,F,S) ; `SiP.start` Date that shelter in place started ; `mask.start` Date that mask mandate was introduced. Another LIST `init_states` containing : `E0` number of initial exposed agents ; `Ip0` number of initial pre-symptomatic infections agents ; `Ia0` number of initial asymptomatic infectious agents ; `Im0` number of initial mildy symptomatic agents ; `Imh0` number of initial mildly symptomatic, will become severely symptomatic agents ; `Ih0` number of initial hospitalized agents ; `R0` number of initial recovered agents ; `D0` number of initial diceased agents. Another LIST `quar_pars` containing: `q_prob_contact` probability an agent will quarantine because of known contact with infectious agent ; `q_prob_resinf` probability an agent will quarantine because of shared residence with infectious agent ; `q_prob_symptoms` probability an agent will quarantine because of symptoms on a per day basis: e.g. one full day of symptoms = q_prob_symptoms probability of isolating. Note that agents will consider this 4 times per day, so probability should adjust for multiple opportunities ; `q_prob_testpos` probability an agent will quarantine because of positive test result ; `q_prob_adapt` probability multiplier agent will quarantine if "exposed" to an adaptive testing site ; `q_dur_fx` function to generate random quarantine durations ; `known_contact_prob` proportional increase in probability that a contact with an infectious individual is known. 0 implies known contact occurs at same rate as FOI, implying very low probability that an infectious contact will be known 1 implies probability is double FOI. Since FOIs will be quite small, larger multipliers are suggested. LIST `test_pars` containing: `test_start` Date at which testing begins ; `test_delay_fx` function to generate time delay from test to notification ; `tests_wknd` percent of weekday tests available on weekends ; `test_probs_fx` function which returns testing probability for individuals to get tested ; `cont_mult` multiplier for test probability for agents with suspeceted contact ; `symp_mult` multiplier for test probability for time exeriencing symptoms; `res_mult` multiplier for test probability for agents with known infection in their residence ; `nosymp_state_mult` multiplier for test probability for agents who are infected but not shopwing symptoms (Ia or Ip) ; `symp_state_mult` multiplier for test probability for agents who are infected andshowing symptoms (Im or Imh) ; `hosp_mult` multiplier for test probability for agents who are infected and hospitalized ; `test.red` reduction in transmission probability if agents has tested positive. LIST `other_pars` containing `visitor_mult_testing` multiplier to adjust probability visiting agent is infected based on ratio of true incidence to incidence identified via testing ; `visitor_mult_sfgrph` multiplier to adjust total number of visitors from safegraph number of visitors based on ratio of tracked safegraph devices to total movement of people ; `mask_fx` a function to return individual agent probabilities of wearing a mask outside the household ; `mask_red` reduction in transmission probability if agent wears mask ; `social_fx` function to generate agent sociality metrics. LIST `adapt_pars` containing: `adapt_start` time point at which to start adaptive testing ; `adapt_freq` frequency with which to check test reports and generate new test site ; `adapt_site_fx` function to determine when and where to place adaptive testing sites ; `adapt_site_geo` geography to base adaptive sites on only option is `ct` for now ; `n_adapt_sites` how many adaptive sites available to place ; `adapt_site_test_criteria` character either `n_pos`or `pct_pos`for whteher targeted sites should be added based on census tract with highest number positive tests or highest percent positive tests ; `adapt_site_mult` increase in testing probability if test site is placed in residence ct ; `adapt_site_delay_fx` function to generate time delay for test conducted to disclosure for agents in cts with  adaptive sites.
+#' 
+#' `input_pars` is a list of lists corresponding to parameters that shouldn't need to be edited frequently e.g. for model calibration or simulations. It includes a LIST `trans_pars` containing `bta_base` baseline transmission probability `bta_hh` household transmission probability multiplier `bta_work` work transmission probability multiplier `bta_sip_red` reduction in transmission probability following SiP to account for microbehaviors such as 6 feet apart, less time indoors, etc.Another LIST `time_pars` containing: `t0`: start date of simulation ;  `t.tot` total time to run simulation (in days) ; `dt` time step (defaults to 4/24, needs editing if otherwise) ; `day_of_week_fx` function which takes t returns character of day of week (U,M,T,W,R,F,S) ; `SiP.start` Date that shelter in place started ; `mask.start` Date that mask mandate was introduced. Another LIST `init_states` containing : `E0` number of initial exposed agents ; `Ip0` number of initial pre-symptomatic infections agents ; `Ia0` number of initial asymptomatic infectious agents ; `Im0` number of initial mildy symptomatic agents ; `Imh0` number of initial mildly symptomatic, will become severely symptomatic agents ; `Ih0` number of initial hospitalized agents ; `R0` number of initial recovered agents ; `D0` number of initial diceased agents. Another LIST `quar_pars` containing: `q_prob_contact` probability an agent will quarantine because of known contact with infectious agent ; `q_prob_resinf` probability an agent will quarantine because of shared residence with infectious agent ; `q_prob_symptoms` probability an agent will quarantine because of symptoms on a per day basis: e.g. one full day of symptoms = q_prob_symptoms probability of isolating. Note that agents will consider this 4 times per day, so probability should adjust for multiple opportunities ; `q_prob_testpos` probability an agent will quarantine because of positive test result ; `q_prob_adapt` probability multiplier agent will quarantine if "exposed" to an adaptive testing site ; `q_dur_fx` function to generate random quarantine durations ; `known_contact_prob` proportional increase in probability that a contact with an infectious individual is known. 0 implies known contact occurs at same rate as FOI, implying very low probability that an infectious contact will be known 1 implies probability is double FOI. Since FOIs will be quite small, larger multipliers are suggested. LIST `test_pars` containing: `test_start` Date at which testing begins ; `test_delay_fx` function to generate time delay from test to notification ; `tests_wknd` percent of weekday tests available on weekends ; `test_probs_fx` function which returns testing probability for individuals to get tested ; `cont_mult` multiplier for test probability for agents with suspeceted contact ; `symp_mult` multiplier for test probability for time exeriencing symptoms; `res_mult` multiplier for test probability for agents with known infection in their residence ; `nosymp_state_mult` multiplier for test probability for agents who are infected but not shopwing symptoms (Ia or Ip) ; `symp_state_mult` multiplier for test probability for agents who are infected andshowing symptoms (Im or Imh) ; `hosp_mult` multiplier for test probability for agents who are infected and hospitalized ; `test.red` reduction in transmission probability if agents has tested positive. LIST `other_pars` containing `visitor_mult_testing` multiplier to adjust probability visiting agent is infected based on ratio of true incidence to incidence identified via testing ; `visitor_mult_sfgrph` multiplier to adjust total number of visitors from safegraph number of visitors based on ratio of tracked safegraph devices to total movement of people ; `mask_fx` a function to return individual agent probabilities of wearing a mask outside the household ; `mask_red` reduction in transmission probability if agent wears mask ; `social_fx` function to generate agent sociality metrics. LIST `adapt_pars` containing: `adapt_start` time point at which to start adaptive testing ; `adapt_freq` frequency with which to check test reports and generate new test site ; `adapt_site_fx` function to determine when and where to place adaptive testing sites ; `adapt_site_geo` geography to base adaptive sites on only option is `ct` for now ; `n_adapt_sites` how many adaptive sites available to place ; `adapt_site_test_criteria` character either `n_pos`or `pct_pos`for whteher targeted sites should be added based on census tract with highest number positive tests or highest percent positive tests ; `adapt_site_mult` increase in testing probability if test site is placed in residence ct ; `adapt_site_delay_fx` function to generate time delay for test conducted to disclosure for agents in cts with  adaptive sites.
 #' `vax_phases` should contain three lists each of the same length: `dates` containing start dates of new vaccination eligibility phases, `ages` with entries containing ages of eligilibility for vaccination, and `occps` containing numerical codes for occupations eligible for vaccination. All three lists should be same length and are additive, i.e. agents in phase 1 still unvaccinated in phase two will remain eligible for phase 2. agents must also meet both age and occp criteria for eligibility. each entry should define a group eligible for vaccination, so if two groups becoming eligible at same time, separate entries required by replicating date in `dates` and defining separate criteria in `ages` and `occps`. See `Analysis/0-Prep-Agents.R` for occp codes.
 #' 
 #' @return list with two objects: an epi curve with counts of agents in each state through time and a dataframe with infection reports for every new infection (e.g. entry created whenever agent transitions from S to E)
@@ -63,10 +59,6 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
   
   # Extract parameter inputs then store in object for return with sim outputs
   unpack_list(input_pars)
-    input_pars$trans_pars$bta_base   <- bta_base
-    input_pars$trans_pars$bta_hh     <- bta_hh
-    input_pars$trans_pars$bta_work   <- bta_work
-    input_pars$trans_pars$bta_sip_rd <- bta_sip_red
   
   # Convert bta_parameters into function returning baseline transmission probability on each day
   if(t0 > SiP.start){
@@ -101,14 +93,14 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
   
   
   # Initial infection allocated randomly among non-children/non-retirees
-  init.Es   <- sample(agents[!age %in% c(5,15,65,75,85), id], e.seed)   
-  init.Ips  <- sample(agents[!age %in% c(5,15,65,75,85), id], ip.seed)   
-  init.Ias  <- sample(agents[!age %in% c(5,15,65,75,85), id], ia.seed)   
-  init.Ims  <- sample(agents[!age %in% c(5,15,65,75,85), id], im.seed)   
-  init.Imhs <- sample(agents[!age %in% c(5,15,65,75,85), id], imh.seed)   
-  init.Ihs  <- sample(agents[!age %in% c(5,15,65,75,85), id], ih.seed)   
-  init.Ds   <- sample(agents[!age %in% c(5,15,65,75,85), id], d.seed)   
-  init.Rs   <- sample(agents[!age %in% c(5,15,65,75,85), id], r.seed)   
+  init.Es   <- sample(agents[!age %in% c(5,15,75,85), id], e.seed)   
+  init.Ips  <- sample(agents[!age %in% c(5,15,75,85), id], ip.seed)   
+  init.Ias  <- sample(agents[!age %in% c(5,15,75,85), id], ia.seed)   
+  init.Ims  <- sample(agents[!age %in% c(5,15,75,85), id], im.seed)   
+  init.Imhs <- sample(agents[!age %in% c(5,15,75,85), id], imh.seed)   
+  init.Ihs  <- sample(agents[!age %in% c(5,15,75,85), id], ih.seed)   
+  init.Ds   <- sample(agents[!age %in% c(5,15,75,85), id], d.seed)   
+  init.Rs   <- sample(agents[!age %in% c(5,15,75,85), id], r.seed)   
   
   agents[id %in% init.Es, state:="E"]
   agents[id %in% init.Ips, state:="Ip"]
@@ -124,9 +116,6 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
   #epi_curve[1,] <- agents[,.N, by = state]$N
   epi_curve <- list()
     epi_curve[[1]] <- agents[,.N, by = state] -> epicurve ; epicurve[,date:=t0]
-  
-  # Keep record of infection events
-  infection_reports <- list()
   
   # Keep track of test data through time
   test_reports <- list()
@@ -180,6 +169,7 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
   agents[, test_pos := 0] # Start everyone off with no postive test status
   agents[, init_test := 0] # Start everyone off eligible for testing
   agents[, t_til_test_note:=0] #nobody tested to start, so nobody waiting on notification
+  agents[, t_death := 0]  # Time of death record
   agents[, adapt_site := 0]   # No adaptive testing sites to start
   agents[, vax_eligible := 0] # Nobody vaccine eligible to start
   agents[, t_til_dose2 := 0] # Nobody waiting on dose 2 to start
@@ -228,9 +218,12 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
     
     # Advance expired states to next state, determine new nextstate and time til next state, reset expired quarantines, test notifications, vaccine second dose
     agents[tnext < 0, state:=nextstate]
+    agents[tnext < 0 & state == "D", t_death := date_now]  # Record death events
     agents[tnext < 0 & state %in% c("R", "D"), t_symptoms:=0]
     agents[tnext < 0 & state %in% c("E", "Ip", "Ia", "Im", "Imh", "Ih"), nextstate:=next_state(state, age)]
     agents[tnext < 0 & state %in% c("E", "Ip", "Ia", "Im", "Imh", "Ih"), tnext:=t_til_nxt(state)]
+    agents[tnext < 0 & state == "D", tested := 1]          # Assume agents are tested to confirm infection at death if not confirmed positive previously
+    agents[tnext < 0 & state == "D", tnext := 0]           # Reset state progression so only recording deaths once
     agents[state %in% c("R", "D") & test_pos == 1, test_pos:=0]
     agents[t_til_test_note < 0 & test_pos == 1, tested:= 1]
     agents[t_til_test_note < 0, init_test:= 0]
@@ -530,9 +523,7 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
       agents[contact_prob > 0, contact := rbinom(.N, 1, contact_prob)]
       agents[contact == 1, t_since_contact:=dt]
       
-      # Store detailed infection info
-      infection_reports[[t-1]] <- agents[infect == 1,]
-      if(verbose){cat(nrow(agents[infect == 1,]), "new infections generated,",
+       if(verbose){cat(nrow(agents[infect == 1,]), "new infections generated,",
                       nrow(agents[state == "Ih",]), "agents currently hospitalized,",
                       nrow(agents[state == "D",]), "cumulative COVID deaths\n\n")}
       
@@ -626,12 +617,11 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
   gc()  
   
 # Export sim outputs
-  fin_out                     <- list()
-  fin_out[["epi_curve"]]      <- rbindlist(epi_curve, fill=TRUE)
-  fin_out[["infections"]]     <- rbindlist(infection_reports,fill=TRUE)
-  fin_out[["linelist_tests"]] <- rbindlist(test_reports,fill = TRUE)
-  fin_out[["input_pars"]]     <- input_pars
-  fin_out[["agents"]]         <- agents
+  fin_out                           <- list()
+  fin_out[["epi_curve"]]            <- rbindlist(epi_curve, fill=TRUE)
+  fin_out[["linelist_tests"]]       <- rbindlist(test_reports,fill = TRUE)
+  fin_out[["input_pars"]]           <- input_pars
+  fin_out[["agents"]]               <- agents
   
   if(store_extra){
     fin_out[["stay_home"]] <- stay_home
@@ -648,9 +638,8 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
   }
   
   sim1_file <- here::here(paste0(output_path, 
-                                 "ABMv4_bta", bta_base,
-                                 "_SiPred", bta_sip_red,
-                                 "_testing", testing,
+                                 "ABMv4_", 
+                                 "testing", testing,
                                  "_vax", vaccination,
                                  "_", t0,"-", t.end,
                                  "sim1.rds"))
@@ -666,9 +655,8 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
     })))
     
     saveRDS(fin_out, here::here(paste0(output_path, 
-                                       "ABMv4_bta", bta_base,
-                                       "_SiPred", bta_sip_red,
-                                       "_testing", testing,
+                                       "ABMv4_bta", 
+                                       "testing", testing,
                                        "_vax", vaccination,
                                        "_", t0,"-", t.end,
                                        "sim", last_sim+1, ".rds")))

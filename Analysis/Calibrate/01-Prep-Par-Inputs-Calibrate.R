@@ -54,6 +54,14 @@ input_pars$time_pars$SiP.start      <- SiP.start
 input_pars$time_pars$mask.start     <- mask.start
 input_pars$time_pars$time_of_day_fx <- time_of_day
 
+# Transmission parameters ------------------
+input_pars$trans_pars <- list()
+
+input_pars$trans_pars$bta_base   <- 0.25
+input_pars$trans_pars$bta_hh     <- 1
+input_pars$trans_pars$bta_work   <- 1
+input_pars$trans_pars$bta_sip_rd <- 1/3
+
 
 # Initial infection characteristics ---------------------
 input_pars$init_states <- list()
