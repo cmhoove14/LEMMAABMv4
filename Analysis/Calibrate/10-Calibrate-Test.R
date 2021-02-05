@@ -25,8 +25,7 @@ time_run <- LEMMAABMv4::covid_abm_v4(data_inputs = data_inputs,
                                      testing     = testing, 
                                      vaccination = vaccination,
                                      verbose     = verbose, 
-                                     store_extra = store_extra)
-
-saveRDS(time_run, here::here("data", "outputs", "Calibrate_test_Run.rds"))
+                                     store_extra = store_extra,
+                                     output_path = here::here("data", "outputs"))
 
 toc()
