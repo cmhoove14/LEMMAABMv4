@@ -11,7 +11,14 @@ GetCTVisit_cpp <- function(agents, s, cdfs) {
 #' @title test_probs_fx
 #' @return Vector of test probabilities for all agents to weight sampling to determine who is tested
 #' @export
-test_probs_fx <- function(income, income_mult, hpi, essential, essential_prob, t_symptoms, state, t_since_contact, res_inf, adapt_site, adapt_site_mult, tests_avail, case_find_mult, symp_mult, hpi_mult, cont_mult, res_mult, nosymp_state_mult, symp_state_mult, hosp_mult) {
-    .Call(`_LEMMAABMv4_test_probs_fx`, income, income_mult, hpi, essential, essential_prob, t_symptoms, state, t_since_contact, res_inf, adapt_site, adapt_site_mult, tests_avail, case_find_mult, symp_mult, hpi_mult, cont_mult, res_mult, nosymp_state_mult, symp_state_mult, hosp_mult)
+test_probs_fx <- function(income, income_mult, hpi_hc, hpi_mult, essential, essential_prob, t_symptoms, symp_mult, state, nosymp_state_mult, symp_state_mult, t_since_contact, cont_mult, res_inf, res_mult, adapt_site, adapt_site_mult, tests_avail, case_find_mult, hosp_mult) {
+    .Call(`_LEMMAABMv4_test_probs_fx`, income, income_mult, hpi_hc, hpi_mult, essential, essential_prob, t_symptoms, symp_mult, state, nosymp_state_mult, symp_state_mult, t_since_contact, cont_mult, res_inf, res_mult, adapt_site, adapt_site_mult, tests_avail, case_find_mult, hosp_mult)
+}
+
+#' @title q_prob_fx
+#' @return Vector of quarantine probabilities for all agents to make quarantine decisions
+#' @export
+q_prob_fx <- function(contact, t_since_contact, q_prob_contact, res_inf, q_prob_resinf, t_symptoms, q_prob_symptoms, tested, infector, q_prob_testpos, essential, q_prob_essential) {
+    .Call(`_LEMMAABMv4_q_prob_fx`, contact, t_since_contact, q_prob_contact, res_inf, q_prob_resinf, t_symptoms, q_prob_symptoms, tested, infector, q_prob_testpos, essential, q_prob_essential)
 }
 

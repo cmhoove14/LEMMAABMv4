@@ -85,6 +85,9 @@ input_pars$quar_pars$q_prob_symptoms    <- 0.5^4
 input_pars$quar_pars$q_prob_testpos     <- 0.9^4
 input_pars$quar_pars$q_prob_adapt       <- 0.9^4
 
+input_pars$quar_pars$q_prob_essential   <- 0.5         # Reduction in probability of qurantining if essential worker 
+input_pars$quar_pars$q_bta_red_exp      <- 2           # Exponent on reduction in transmission probability based on household size where reduction = (1-1/hhsize)^q_bta_red_exp
+
 # Probability of known contact. Multiplier on the location specific FOI that determines if agent is aware of potential exposure
 input_pars$quar_pars$known_contact_prob <- 9
 
@@ -164,6 +167,5 @@ input_pars$other_pars$mask_red             <- 0.6         # Reduction in transmi
 input_pars$other_pars$social_fx            <- social_fx   # Generate sociality metrics
 input_pars$other_pars$visitor_mult_testing <- 4           # Multiplier on true number of infectious agents compared to number confirmed positive in testing. Likely varies through time in reality, but here 4 assumes 1 in 4 agents who are infectious are actually confirmed positive
 input_pars$other_pars$visitor_mult_sfgrph  <- 10          # Multiplier on number of visitors from safegraph to reflect true number of visitors (safegraph panel is ~10% of population)
-input_pars$other_pars$q_prob_essential     <- 0.5         # Reduction in probability of qurantining if essential worker 
 
 saveRDS(input_pars, here::here("data", "processed", "input_pars_calibrate.rds"))

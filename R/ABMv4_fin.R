@@ -230,7 +230,7 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
     agents[t_til_test_note < 0 & test_pos == 0, q_duration:=0] # Exit quarantine if test negative
     agents[q_duration < 0, q_duration:=0]
     agents[q_duration < 0, q_bta_red:=1]
-    agents[t_since_contact > 14, t_since_contact:=0] #Agents stop considering contact relevant after 14 days
+    agents[t_since_contact > 7, t_since_contact:=0] #Agents stop considering contact relevant after 7 days
     agents[t_til_dose2 < 0, vax2 := 1]
     
     if(verbose){ cat("Infections advanced\n") } 
@@ -265,23 +265,23 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
         
         eligible_agents[, test_prob:=test_probs_fx(income            = hhincome, 
                                                    income_mult       = income_mult,
-                                                   hpi               = hpi_quartile, 
+                                                   hpi_hc            = hpi_healthcareaccess, 
+                                                   hpi_mult          = hpi_mult, 
                                                    essential         = essential, 
                                                    essential_prob    = essential_prob,
                                                    t_symptoms        = t_symptoms,  
+                                                   symp_mult         = symp_mult, 
                                                    state             = state, 
+                                                   nosymp_state_mult = nosymp_state_mult, 
+                                                   symp_state_mult   = symp_state_mult, 
                                                    t_since_contact   = t_since_contact, 
+                                                   cont_mult         = cont_mult, 
                                                    res_inf           = res_inf,  
+                                                   res_mult          = res_mult, 
                                                    adapt_site        = adapt_site, 
                                                    adapt_site_mult   = adapt_site_mult, 
                                                    tests_avail       = n_tests,
                                                    case_find_mult    = case_finding_mult,
-                                                   symp_mult         = symp_mult, 
-                                                   hpi_mult          = hpi_mult, 
-                                                   cont_mult         = cont_mult, 
-                                                   res_mult          = res_mult, 
-                                                   nosymp_state_mult = nosymp_state_mult, 
-                                                   symp_state_mult   = symp_state_mult, 
                                                    hosp_mult         = hosp_mult)]
         
         eligible_ids <- eligible_agents[, id]
@@ -295,23 +295,23 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
           
           eligible_agents[, test_prob:=test_probs_fx(income            = hhincome, 
                                                      income_mult       = income_mult,
-                                                     hpi               = hpi_quartile, 
+                                                     hpi_hc            = hpi_healthcareaccess, 
+                                                     hpi_mult          = hpi_mult, 
                                                      essential         = essential, 
                                                      essential_prob    = essential_prob,
                                                      t_symptoms        = t_symptoms,  
+                                                     symp_mult         = symp_mult, 
                                                      state             = state, 
+                                                     nosymp_state_mult = nosymp_state_mult, 
+                                                     symp_state_mult   = symp_state_mult, 
                                                      t_since_contact   = t_since_contact, 
+                                                     cont_mult         = cont_mult, 
                                                      res_inf           = res_inf,  
+                                                     res_mult          = res_mult, 
                                                      adapt_site        = adapt_site, 
                                                      adapt_site_mult   = adapt_site_mult, 
                                                      tests_avail       = n_tests,
                                                      case_find_mult    = case_finding_mult,
-                                                     symp_mult         = symp_mult, 
-                                                     hpi_mult          = hpi_mult, 
-                                                     cont_mult         = cont_mult, 
-                                                     res_mult          = res_mult, 
-                                                     nosymp_state_mult = nosymp_state_mult, 
-                                                     symp_state_mult   = symp_state_mult, 
                                                      hosp_mult         = hosp_mult)]
           eligible_ids <- eligible_agents[, id]
           eligible_probs <- eligible_agents[, test_prob]
@@ -431,8 +431,8 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
         agents[is.na(pct_home), pct_home:=home.mean]
       }
       
-      # Find locations of those not deceased, in the hospital, in group quarters, or quarantining  
-      #Agents that are quarantined stay at home, those in hospital considered in hospital, not contributing to infection. Those in prisons or nursing homes stay there. Everyone else is "mobile"
+      # Find locations of those not deceased, in the hospital, or quarantining  
+      #Agents that are quarantined stay at home, those in hospital considered in hospital, not contributing to infection. Everyone else is "mobile"
       agents[q_duration > 0, location:=hhid]
       agents[state != "Ih" & state != "D" & q_duration == 0, 
              mobile:=1]
@@ -519,9 +519,9 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
       agents[infect == 1, tnext:=t_til_nxt(state)]
       
       # document contacts in proportion to infection risk   
-      agents[FOI > 0 & state == "S", contact_prob:=FOI*(1+infect*known_contact_prob)]
+      agents[FOI > 0 & state == "S", contact_prob:=FOI*known_contact_prob]
       agents[contact_prob > 0, contact := rbinom(.N, 1, contact_prob)]
-      agents[contact == 1, t_since_contact:=dt]
+      agents[contact == 1, t_since_contact:=dt] # Assumes most recent contact overwrites any old contact
       
        if(verbose){cat(nrow(agents[infect == 1,]), "new infections generated,",
                       nrow(agents[state == "Ih",]), "agents currently hospitalized,",
@@ -537,21 +537,14 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
       agents[state == "Im" | state == "Imh" | (infector == 1 & tested == 1), res_infector:=1] #Identify known residential infections
       agents[res_infector == 1, res_inf:=.N, by=hhid]  # Sum residential infectors by household
       
-      # New contact
-      agents[contact == 1 & t_since_contact == dt & q_duration == 0,
-             q_prob:=q_prob+q_prob_contact]  
-      # Known residential infection
-      agents[res_inf > 0 & q_duration == 0,
-             q_prob:=q_prob+q_prob_resinf*res_inf]
-      # Experiencing symptoms 
-      agents[t_symptoms > 0 & q_duration == 0,
-             q_prob:=(q_prob+q_prob_symptoms*t_symptoms)]  
-      # Tested positive
-      agents[tested == 1 & infector == 1 & q_duration == 0,
-             q_prob:=q_prob+q_prob_testpos]  
-      #Essential workers
-      agents[essential == 1,
-             q_prob:=q_prob*(1-q_prob_essential)]
+      # Get quarantine probabilities
+      agents[q_duration == 0, 
+             q_prob := q_prob_fx(contact, t_since_contact, q_prob_contact,
+                                 res_inf, q_prob_resinf,
+                                 t_symptoms, q_prob_symptoms,
+                                 tested, infector, q_prob_testpos,
+                                 essential, q_prob_essential)]
+      
       # Influence of adaptive site
       if(testing == "A"){
         agents[adapt_site == 1,
@@ -567,7 +560,7 @@ covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red,
       # Assign isolation duration and reduction in transmission if quarantining at home based on income bracket 
       agents[choose_quar == 1 & q_duration == 0, 
              q_duration:=q_dur_fx(.N)]
-      agents[choose_quar == 1, q_bta_red:=(1-1/hhsize)**2]
+      agents[choose_quar == 1, q_bta_red:=(1-1/hhsize)**q_bta_red_exp]
       
       
       if(verbose){

@@ -19,8 +19,10 @@ verbose <- TRUE
 store_extra <- TRUE 
   
 set.seed(430)
-  
-#Function insides below
+
+##########################################
+# Function insides below 
+##########################################
 
 #Extract data inputs -------------
 agents        <- data_inputs$agents
@@ -50,10 +52,6 @@ if(vaccination){
 
 # Extract parameter inputs then store in object for return with sim outputs
 unpack_list(input_pars)
-input_pars$trans_pars$bta_base   <- bta_base
-input_pars$trans_pars$bta_hh     <- bta_hh
-input_pars$trans_pars$bta_work   <- bta_work
-input_pars$trans_pars$bta_sip_rd <- bta_sip_red
 
 # Convert bta_parameters into function returning baseline transmission probability on each day
 if(t0 > SiP.start){
@@ -88,14 +86,14 @@ s.seed   <- N - non.s
 
 
 # Initial infection allocated randomly among non-children/non-retirees
-init.Es   <- sample(agents[!age %in% c(5,15,65,75,85), id], e.seed)   
-init.Ips  <- sample(agents[!age %in% c(5,15,65,75,85), id], ip.seed)   
-init.Ias  <- sample(agents[!age %in% c(5,15,65,75,85), id], ia.seed)   
-init.Ims  <- sample(agents[!age %in% c(5,15,65,75,85), id], im.seed)   
-init.Imhs <- sample(agents[!age %in% c(5,15,65,75,85), id], imh.seed)   
-init.Ihs  <- sample(agents[!age %in% c(5,15,65,75,85), id], ih.seed)   
-init.Ds   <- sample(agents[!age %in% c(5,15,65,75,85), id], d.seed)   
-init.Rs   <- sample(agents[!age %in% c(5,15,65,75,85), id], r.seed)   
+init.Es   <- sample(agents[!age %in% c(5,15,75,85), id], e.seed)   
+init.Ips  <- sample(agents[!age %in% c(5,15,75,85), id], ip.seed)   
+init.Ias  <- sample(agents[!age %in% c(5,15,75,85), id], ia.seed)   
+init.Ims  <- sample(agents[!age %in% c(5,15,75,85), id], im.seed)   
+init.Imhs <- sample(agents[!age %in% c(5,15,75,85), id], imh.seed)   
+init.Ihs  <- sample(agents[!age %in% c(5,15,75,85), id], ih.seed)   
+init.Ds   <- sample(agents[!age %in% c(5,15,75,85), id], d.seed)   
+init.Rs   <- sample(agents[!age %in% c(5,15,75,85), id], r.seed)   
 
 agents[id %in% init.Es, state:="E"]
 agents[id %in% init.Ips, state:="Ip"]
@@ -111,9 +109,6 @@ agents[id %in% init.Rs, state:="R"]
 #epi_curve[1,] <- agents[,.N, by = state]$N
 epi_curve <- list()
 epi_curve[[1]] <- agents[,.N, by = state] -> epicurve ; epicurve[,date:=t0]
-
-# Keep record of infection events
-infection_reports <- list()
 
 # Keep track of test data through time
 test_reports <- list()
@@ -167,6 +162,7 @@ agents[, t_since_test := 14.1] # Start everyone off eligible for testing
 agents[, test_pos := 0] # Start everyone off with no postive test status
 agents[, init_test := 0] # Start everyone off eligible for testing
 agents[, t_til_test_note:=0] #nobody tested to start, so nobody waiting on notification
+agents[, t_death := 0]  # Time of death record
 agents[, adapt_site := 0]   # No adaptive testing sites to start
 agents[, vax_eligible := 0] # Nobody vaccine eligible to start
 agents[, t_til_dose2 := 0] # Nobody waiting on dose 2 to start
@@ -183,11 +179,8 @@ if(!verbose){
   )  
 }
 
-t_til_test <- (test_start - t0)/dt
-
 # Run simulation     ---------------------
-for(t in 2:t_til_test){
-#for(t in 2:(t.tot/dt)){
+for(t in 2:(t.tot/dt)){
   
   # Time step characteristics
   date_now <- t0+t*dt
@@ -218,16 +211,19 @@ for(t in 2:t_til_test){
   
   # Advance expired states to next state, determine new nextstate and time til next state, reset expired quarantines, test notifications, vaccine second dose
   agents[tnext < 0, state:=nextstate]
+  agents[tnext < 0 & state == "D", t_death := date_now]  # Record death events
   agents[tnext < 0 & state %in% c("R", "D"), t_symptoms:=0]
   agents[tnext < 0 & state %in% c("E", "Ip", "Ia", "Im", "Imh", "Ih"), nextstate:=next_state(state, age)]
   agents[tnext < 0 & state %in% c("E", "Ip", "Ia", "Im", "Imh", "Ih"), tnext:=t_til_nxt(state)]
+  agents[tnext < 0 & state == "D", tested := 1]          # Assume agents are tested to confirm infection at death if not confirmed positive previously
+  agents[tnext < 0 & state == "D", tnext := 0]           # Reset state progression so only recording deaths once
   agents[state %in% c("R", "D") & test_pos == 1, test_pos:=0]
   agents[t_til_test_note < 0 & test_pos == 1, tested:= 1]
   agents[t_til_test_note < 0, init_test:= 0]
   agents[t_til_test_note < 0 & test_pos == 0, q_duration:=0] # Exit quarantine if test negative
   agents[q_duration < 0, q_duration:=0]
   agents[q_duration < 0, q_bta_red:=1]
-  agents[t_since_contact > 14, t_since_contact:=0] #Agents stop considering contact relevant after 14 days
+  agents[t_since_contact > 7, t_since_contact:=0] #Agents stop considering contact relevant after 7 days
   agents[t_til_dose2 < 0, vax2 := 1]
   
   if(verbose){ cat("Infections advanced\n") } 
@@ -262,23 +258,23 @@ for(t in 2:t_til_test){
       
       eligible_agents[, test_prob:=test_probs_fx(income            = hhincome, 
                                                  income_mult       = income_mult,
-                                                 hpi               = hpi_quartile, 
+                                                 hpi_hc            = hpi_healthcareaccess, 
+                                                 hpi_mult          = hpi_mult, 
                                                  essential         = essential, 
                                                  essential_prob    = essential_prob,
                                                  t_symptoms        = t_symptoms,  
+                                                 symp_mult         = symp_mult, 
                                                  state             = state, 
+                                                 nosymp_state_mult = nosymp_state_mult, 
+                                                 symp_state_mult   = symp_state_mult, 
                                                  t_since_contact   = t_since_contact, 
+                                                 cont_mult         = cont_mult, 
                                                  res_inf           = res_inf,  
+                                                 res_mult          = res_mult, 
                                                  adapt_site        = adapt_site, 
                                                  adapt_site_mult   = adapt_site_mult, 
                                                  tests_avail       = n_tests,
                                                  case_find_mult    = case_finding_mult,
-                                                 symp_mult         = symp_mult, 
-                                                 hpi_mult          = hpi_mult, 
-                                                 cont_mult         = cont_mult, 
-                                                 res_mult          = res_mult, 
-                                                 nosymp_state_mult = nosymp_state_mult, 
-                                                 symp_state_mult   = symp_state_mult, 
                                                  hosp_mult         = hosp_mult)]
       
       eligible_ids <- eligible_agents[, id]
@@ -292,23 +288,23 @@ for(t in 2:t_til_test){
         
         eligible_agents[, test_prob:=test_probs_fx(income            = hhincome, 
                                                    income_mult       = income_mult,
-                                                   hpi               = hpi_quartile, 
+                                                   hpi_hc            = hpi_healthcareaccess, 
+                                                   hpi_mult          = hpi_mult, 
                                                    essential         = essential, 
                                                    essential_prob    = essential_prob,
                                                    t_symptoms        = t_symptoms,  
+                                                   symp_mult         = symp_mult, 
                                                    state             = state, 
+                                                   nosymp_state_mult = nosymp_state_mult, 
+                                                   symp_state_mult   = symp_state_mult, 
                                                    t_since_contact   = t_since_contact, 
+                                                   cont_mult         = cont_mult, 
                                                    res_inf           = res_inf,  
+                                                   res_mult          = res_mult, 
                                                    adapt_site        = adapt_site, 
                                                    adapt_site_mult   = adapt_site_mult, 
                                                    tests_avail       = n_tests,
                                                    case_find_mult    = case_finding_mult,
-                                                   symp_mult         = symp_mult, 
-                                                   hpi_mult          = hpi_mult, 
-                                                   cont_mult         = cont_mult, 
-                                                   res_mult          = res_mult, 
-                                                   nosymp_state_mult = nosymp_state_mult, 
-                                                   symp_state_mult   = symp_state_mult, 
                                                    hosp_mult         = hosp_mult)]
         eligible_ids <- eligible_agents[, id]
         eligible_probs <- eligible_agents[, test_prob]
@@ -428,8 +424,8 @@ for(t in 2:t_til_test){
       agents[is.na(pct_home), pct_home:=home.mean]
     }
     
-    # Find locations of those not deceased, in the hospital, in group quarters, or quarantining  
-    #Agents that are quarantined stay at home, those in hospital considered in hospital, not contributing to infection. Those in prisons or nursing homes stay there. Everyone else is "mobile"
+    # Find locations of those not deceased, in the hospital, or quarantining  
+    #Agents that are quarantined stay at home, those in hospital considered in hospital, not contributing to infection. Everyone else is "mobile"
     agents[q_duration > 0, location:=hhid]
     agents[state != "Ih" & state != "D" & q_duration == 0, 
            mobile:=1]
@@ -516,12 +512,10 @@ for(t in 2:t_til_test){
     agents[infect == 1, tnext:=t_til_nxt(state)]
     
     # document contacts in proportion to infection risk   
-    agents[FOI > 0 & state == "S", contact_prob:=FOI*(1+infect*known_contact_prob)]
+    agents[FOI > 0 & state == "S", contact_prob:=FOI*known_contact_prob]
     agents[contact_prob > 0, contact := rbinom(.N, 1, contact_prob)]
-    agents[contact == 1, t_since_contact:=dt]
+    agents[contact == 1, t_since_contact:=dt] # Assumes most recent contact overwrites any old contact
     
-    # Store detailed infection info
-    infection_reports[[t-1]] <- agents[infect == 1,]
     if(verbose){cat(nrow(agents[infect == 1,]), "new infections generated,",
                     nrow(agents[state == "Ih",]), "agents currently hospitalized,",
                     nrow(agents[state == "D",]), "cumulative COVID deaths\n\n")}
@@ -536,21 +530,14 @@ for(t in 2:t_til_test){
     agents[state == "Im" | state == "Imh" | (infector == 1 & tested == 1), res_infector:=1] #Identify known residential infections
     agents[res_infector == 1, res_inf:=.N, by=hhid]  # Sum residential infectors by household
     
-    # New contact
-    agents[contact == 1 & t_since_contact == dt & q_duration == 0,
-           q_prob:=q_prob+q_prob_contact]  
-    # Known residential infection
-    agents[res_inf > 0 & q_duration == 0,
-           q_prob:=q_prob+q_prob_resinf*res_inf]
-    # Experiencing symptoms 
-    agents[t_symptoms > 0 & q_duration == 0,
-           q_prob:=(q_prob+q_prob_symptoms*t_symptoms)]  
-    # Tested positive
-    agents[tested == 1 & infector == 1 & q_duration == 0,
-           q_prob:=q_prob+q_prob_testpos]  
-    #Essential workers
-    agents[essential == 1,
-           q_prob:=q_prob*(1-q_prob_essential)]
+    # Get quarantine probabilities
+    agents[q_duration == 0, 
+           q_prob := q_prob_fx(contact, t_since_contact, q_prob_contact,
+                               res_inf, q_prob_resinf,
+                               t_symptoms, q_prob_symptoms,
+                               tested, infector, q_prob_testpos,
+                               essential, q_prob_essential)]
+    
     # Influence of adaptive site
     if(testing == "A"){
       agents[adapt_site == 1,
@@ -566,7 +553,7 @@ for(t in 2:t_til_test){
     # Assign isolation duration and reduction in transmission if quarantining at home based on income bracket 
     agents[choose_quar == 1 & q_duration == 0, 
            q_duration:=q_dur_fx(.N)]
-    agents[choose_quar == 1, q_bta_red:=(1-1/hhsize)**2]
+    agents[choose_quar == 1, q_bta_red:=(1-1/hhsize)**q_bta_red_exp]
     
     
     if(verbose){

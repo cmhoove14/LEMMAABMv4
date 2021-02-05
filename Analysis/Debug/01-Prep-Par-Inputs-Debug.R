@@ -78,12 +78,15 @@ input_pars$init_states$D0   <- 0
 # Quarantine parameters ---------------------
 input_pars$quar_pars <- list()
 
-# Probabilities of choosing to qurantine given different events (contact, residence infection, symptoms, test positive) all adjusted for 4 decision points per day
+# Probabilities of choosing to quarantine given different events (contact, residence infection, symptoms, test positive) all adjusted for 4 decision points per day
 input_pars$quar_pars$q_prob_contact     <- 0.2^4 
 input_pars$quar_pars$q_prob_resinf      <- 0.5^4
 input_pars$quar_pars$q_prob_symptoms    <- 0.5^4 
 input_pars$quar_pars$q_prob_testpos     <- 0.9^4
 input_pars$quar_pars$q_prob_adapt       <- 0.9^4
+
+input_pars$quar_pars$q_prob_essential   <- 0.5         # Reduction in probability of qurantining if essential worker 
+input_pars$quar_pars$q_bta_red_exp      <- 2           # Exponent on reduction in transmission probability based on household size where reduction = (1-1/hhsize)^q_bta_red_exp
 
 # Probability of known contact. Multiplier on the location specific FOI that determines if agent is aware of potential exposure
 input_pars$quar_pars$known_contact_prob <- 9
@@ -162,8 +165,7 @@ social_fx <- function(n_agents){
 input_pars$other_pars$mask_fx              <- mask_fx     # Generates probability individual agents will wear mask
 input_pars$other_pars$mask_red             <- 0.6         # Reduction in transmission if infectious is wearing mask
 input_pars$other_pars$social_fx            <- social_fx   # Generate sociality metrics
-input_pars$other_pars$visitor_mult_testing <- 4           # Multiplier on true number of infectious agents compared to number confirmed positive in testing. Likely varies through time in reality, but here 4 assumes 1 in 4 agents who are infectious are actually confirmed positive
+input_pars$other_pars$visitor_mult_testing <- 4           # Multiplier on true number of infectious agents compared to number confirmed positive in testing. Likely varies through time in reality, but here 4 assumes 1 in 4 agents who are infectious and potentially traveling are actually confirmed positive 
 input_pars$other_pars$visitor_mult_sfgrph  <- 10          # Multiplier on number of visitors from safegraph to reflect true number of visitors (safegraph panel is ~10% of population)
-input_pars$other_pars$q_prob_essential     <- 0.5         # Reduction in probability of qurantining if essential worker 
 
 saveRDS(input_pars, here::here("data", "processed", "input_pars_debug.rds"))
