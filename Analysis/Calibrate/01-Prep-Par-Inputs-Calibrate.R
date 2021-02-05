@@ -57,10 +57,11 @@ input_pars$time_pars$time_of_day_fx <- time_of_day
 # Transmission parameters ------------------
 input_pars$trans_pars <- list()
 
-input_pars$trans_pars$bta_base   <- 0.25
-input_pars$trans_pars$bta_hh     <- 1
-input_pars$trans_pars$bta_work   <- 1
-input_pars$trans_pars$bta_sip_rd <- 1/3
+input_pars$trans_pars$bta_base     <- 0.25
+input_pars$trans_pars$bta_hh       <- 1
+input_pars$trans_pars$bta_work     <- 1
+input_pars$trans_pars$bta_sip_red  <- 1/3
+input_pars$trans_pars$hpi_bta_mult <- 0.1
 
 
 # Initial infection characteristics ---------------------

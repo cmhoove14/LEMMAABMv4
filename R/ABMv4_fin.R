@@ -491,11 +491,15 @@ covid_abm_v4 <- function(data_inputs, input_pars, vax_phases,
       agents[infector == 1, 
              trans_prob := beta_today*(1-mask_red*wear.mask)*(1-test.red*tested)]
       
+      # Assume no mask wearing at home unless confirmed positive, reduction in transmission if quarantining based on income (assigned below in qurantine determination)
       agents[infector == 1 & location == hhid, 
-             trans_prob := beta_today*bta_hh*q_bta_red*(1-mask_red*wear.mask*tested)*(1-test.red*tested)] # Assume no mask wearing at home unless confirmed positive, reduction in transmission if quarantining based on income (assigned below in qurantine determination)
+             trans_prob := beta_today*bta_hh*q_bta_red*(1-mask_red*wear.mask*tested)*(1-test.red*tested)] 
       
       agents[infector == 1 & location == work, 
              trans_prob := beta_today*bta_work*(1-mask_red*wear.mask*tested)*(1-test.red*tested)] 
+      
+      # Higher transmission in lower hpi CTs, scaled such that highest quartile unaffected
+      agents[location == ct, trans_prob:=trans_prob*(1+hpi_bta_mult*(hpi_quartile-1))] 
       
       # Get FOI for all agents  
       agents[, FOIi:=0]

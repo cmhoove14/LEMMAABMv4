@@ -61,6 +61,7 @@ input_pars$trans_pars$bta_base   <- 0.25
 input_pars$trans_pars$bta_hh     <- 1
 input_pars$trans_pars$bta_work   <- 1
 input_pars$trans_pars$bta_sip_rd <- 1/3
+input_pars$trans_pars$hpi_bta_mult <- 0.1
 
 
 # Initial infection characteristics ---------------------
