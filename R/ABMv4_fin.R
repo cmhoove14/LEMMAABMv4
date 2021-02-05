@@ -147,7 +147,7 @@ covid_abm_v4 <- function(data_inputs, input_pars, vax_phases,
   # Transition time
   agents[state %in% c("E", "Ip", "Ia", "Im", "Imh", "Ih"), tnext:=t_til_nxt(state)]
   # State entering once transition time expires
-  agents[state %in% c("E", "Ip", "Ia", "Im", "Imh", "Ih"), nextstate:=next_state(state, age)]
+  agents[state %in% c("E", "Ip", "Ia", "Im", "Imh", "Ih"), nextstate:=next_state(state, age, sex, mort_mult_now)]
   #Time initial infections occurred
   agents[state %in% c("E", "Ip", "Ia", "Im", "Imh", "Ih"), t_infection:=dt]
   
@@ -189,14 +189,15 @@ covid_abm_v4 <- function(data_inputs, input_pars, vax_phases,
   for(t in 2:(t.tot/dt)){
 
     # Time step characteristics
-    date_now <- t0+t*dt
-    agents[, Date:=date_now]
-    date_num <- as.numeric(floor(date_now-ref_date))
-    beta_today <- bta_fx(date_num)
-    day_week <- day_of_week_fx[t]
-    time_day <- time_of_day_fx[t]
-    SiP.active <- ifelse(date_now > SiP.start, 1, 0)
-    mask.mandate <- ifelse(date_now > mask.start, 1, 0)
+    date_now      <- t0+t*dt
+      agents[, Date:=date_now]
+    date_num      <- as.numeric(floor(date_now-ref_date))
+    beta_today    <- bta_fx(date_num)
+    day_week      <- day_of_week_fx[t]
+    time_day      <- time_of_day_fx[t]
+    SiP.active    <- ifelse(date_now > SiP.start, 1, 0)
+    mask.mandate  <- ifelse(date_now > mask.start, 1, 0)
+    mort_mult_now <- ifelse(date_now > mort_red_date, mort_mult, 1)
     
     if(verbose){cat(as.character(date_now), time_day, "------------------------------------\n\n")}
     

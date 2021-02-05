@@ -26,6 +26,6 @@ time_run <- LEMMAABMv4::covid_abm_v4(data_inputs = data_inputs,
                                      vaccination = vaccination,
                                      verbose     = verbose, 
                                      store_extra = store_extra,
-                                     output_path = here::here("data", "outputs"))
+                                     output_path = paste0(here::here("data", "outputs"), "/"))
 
 toc()

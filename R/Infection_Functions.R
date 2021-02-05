@@ -116,7 +116,7 @@ p_symp <- function(age){
   return(n)
 }
 
-#' @title Probability of severely symptomatic (will be hospitalized) infection
+#' @title Probability of severely symptomatic (will be hospitalized) infection conditional on being symptomatic from https://www.medrxiv.org/content/10.1101/2020.05.10.20097469v1.full.pdf
 #'  
 #' @description Age-dependent probabilities of having severe symptoms. Used in `next.state`
 #' 
@@ -127,37 +127,50 @@ p_symp <- function(age){
 #'
 p_sevsymp <- function(age){
   n <- length(age)
-  n[age %in% c(0:9)] <- 0.004
-  n[age %in% c(10:19)] <- 0.004
-  n[age %in% c(20:29)] <- 0.01
-  n[age %in% c(30:39)] <- 0.04
-  n[age %in% c(40:49)] <- 0.09
-  n[age %in% c(50:59)] <- 0.13
-  n[age %in% c(60:69)] <- 0.19
-  n[age %in% c(70:79)] <- 0.2
-  n[age >= 80] <- 0.25 
+  n[age %in% c(0:9)] <- 0.0001
+  n[age %in% c(10:19)] <- 0.0001
+  n[age %in% c(20:29)] <- 0.011
+  n[age %in% c(30:39)] <- 0.034
+  n[age %in% c(40:49)] <- 0.043
+  n[age %in% c(50:59)] <- 0.082
+  n[age %in% c(60:69)] <- 0.118
+  n[age %in% c(70:79)] <- 0.166
+  n[age >= 80] <- 0.184 
 }
 
 #' @title Probability of death
 #'  
-#' @description Age-dependent probabilities of dying given hospitalization (Ih) Used in `next.state`; from https://www.bmj.com/content/369/bmj.m1923 Fig 4 mean of sex-stratified
+#' @description Age-dependent and sex-dependent probabilities of dying conditional on hospitalization (Ih) Used in `next.state`; from https://www.bmj.com/content/369/bmj.m1923 Fig 4
 #' 
-#' @param age age of person
+#' @param age age of agent
+#' @param sex sex of agent (1-male, 2-female)
+#' @param mort_mult multiplier on mortality rate to model improved treatment through time
 #' 
 #' @return numeric of probability of dying.
 #' @export
 #'
-p_mort <- function(age) {
+p_mort <- function(age,sex,mort_mult) {
   n <- length(age)
-  n[age %in% c(0:9)] <- 0.0005#0.01 Probabilities altered due to too high death rate in abm sims 2020-10-28
-  n[age %in% c(10:19)] <- 0.001#0.0205
-  n[age %in% c(20:29)] <- 0.01#0.031
-  n[age %in% c(30:39)] <- 0.02#0.0475
-  n[age %in% c(40:49)] <- 0.03#0.0785
-  n[age %in% c(50:59)] <- 0.06#0.12
-  n[age %in% c(60:69)] <- 0.1 #0.186
-  n[age %in% c(70:79)] <- 0.15 #0.3
-  n[age >= 80] <- 0.25#0.45
+  n[age %in% c(0:9) & sex == 1] <- 0.004*mort_mult # No estimate provided in reference, taken to be 9x lower than 20-29 reference as reported by CDC https://www.cdc.gov/coronavirus/2019-ncov/covid-data/investigations-discovery/hospitalization-death-by-age.html
+  n[age %in% c(10:19) & sex == 1] <- 0.024*mort_mult
+  n[age %in% c(20:29) & sex == 1] <- 0.036*mort_mult
+  n[age %in% c(30:39) & sex == 1] <- 0.059*mort_mult
+  n[age %in% c(40:49) & sex == 1] <- 0.095*mort_mult
+  n[age %in% c(50:59) & sex == 1] <- 0.143*mort_mult
+  n[age %in% c(60:69) & sex == 1] <- 0.221*mort_mult
+  n[age %in% c(70:79) & sex == 1] <- 0.363*mort_mult
+  n[age >= 80 & sex == 1] <- 0.538*mort_mult
+  
+  n[age %in% c(0:9) & sex == 2] <- 0.0029*mort_mult # No estimate provided in reference, raken to be 9x lower than 20-29 reference as reported by CDC https://www.cdc.gov/coronavirus/2019-ncov/covid-data/investigations-discovery/hospitalization-death-by-age.html
+  n[age %in% c(10:19) & sex == 2] <- 0.017*mort_mult
+  n[age %in% c(20:29) & sex == 2] <- 0.026*mort_mult
+  n[age %in% c(30:39) & sex == 2] <- 0.036*mort_mult
+  n[age %in% c(40:49) & sex == 2] <- 0.062*mort_mult
+  n[age %in% c(50:59) & sex == 2] <- 0.099*mort_mult
+  n[age %in% c(60:69) & sex == 2] <- 0.151*mort_mult
+  n[age %in% c(70:79) & sex == 2] <- 0.238*mort_mult
+  n[age >= 80 & sex == 2] <- 0.365*mort_mult
+  
 }
 
 #' @title Time til Next state
@@ -194,16 +207,18 @@ t_til_nxt <- function(pre.status){
 #' 
 #' @param pre.status Infection status that has expired 
 #' @param age age of individual for probability of moving to different states
+#' @param sex sex of agent (1-male, 2-female)
+#' @param mort_mult multiplier on mortality rate to model improved treatment through time
 #' 
 #' @return vector the next state
 #' @export
 
-next_state <- function(pre.status, age){
+next_state <- function(pre.status, age, sex, mort_mult){
   n           <- length(pre.status)
   post.status <- rep("R", n)
   p_symps     <- p_symp(age)
   p_sevsymps  <- p_sevsymp(age)
-  p_deads     <- p_mort(age)
+  p_deads     <- p_mort(age,sex,mort_mult)
   p1          <- dqrng::dqrunif(n)
   p2          <- dqrng::dqrunif(n)
   
