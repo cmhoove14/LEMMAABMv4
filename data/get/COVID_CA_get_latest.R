@@ -118,7 +118,11 @@ if(sum(grepl(Sys.Date(), list.files(here::here("data", "get", "got")))) == 0){
   sf_geo <- geojson_sf(paste0(here::here("data", "get", "got", "SF_geo"), Sys.Date(), ".geojson")) %>% 
     filter(area_type == "Census Tract") %>% 
     mutate(
-      Date = as.Date(specimen_collection_date)
+      Date = as.Date(specimen_collection_date),
+      acs_population = as.numeric(acs_population),
+      new_confirmed_cases = as.numeric(new_confirmed_cases),
+      cumulative_confirmed_cases = as.numeric(cumulative_confirmed_cases),
+      rate_of_cumulative_confirmed_case = as.numeric(rate_of_cumulative_confirmed_case)
     ) %>% 
     dplyr::select(Date, id, acs_population, 
                   new_confirmed_cases, cumulative_confirmed_cases, rate_of_cumulative_confirmed_case, 
