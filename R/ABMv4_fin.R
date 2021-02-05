@@ -22,8 +22,7 @@
 #' @return list with two objects: an epi curve with counts of agents in each state through time and a dataframe with infection reports for every new infection (e.g. entry created whenever agent transitions from S to E)
 #' @export
 
-covid_abm_v4 <- function(bta_base, bta_hh, bta_work, bta_sip_red, 
-                         data_inputs, input_pars, vax_phases,
+covid_abm_v4 <- function(data_inputs, input_pars, vax_phases,
                          visitors, testing, vaccination,
                          verbose, store_extra, output_path){
   # Stop messages for invalid inputs -----------------

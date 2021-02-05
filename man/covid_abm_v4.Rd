@@ -5,10 +5,6 @@
 \title{ABM V4 with testing}
 \usage{
 covid_abm_v4(
-  bta_base,
-  bta_hh,
-  bta_work,
-  bta_sip_red,
   data_inputs,
   input_pars,
   vax_phases,
