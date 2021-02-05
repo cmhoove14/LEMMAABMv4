@@ -629,16 +629,16 @@ covid_abm_v4 <- function(data_inputs, input_pars, vax_phases,
     fin_out[["vax_phases"]] <- vax_phases
   }
   
-  if(!dir.exists(here::here(output_path))){
-    dir.create(here::here(output_path))
+  if(!dir.exists(output_path)){
+    dir.create(output_path)
   }
   
-  sim1_file <- here::here(paste0(output_path, 
-                                 "ABMv4_", 
-                                 "testing", testing,
-                                 "_vax", vaccination,
-                                 "_", t0,"-", t.end,
-                                 "sim1.rds"))
+  sim1_file <- paste0(output_path, 
+                      "ABMv4_", 
+                      "testing", testing,
+                      "_vax", vaccination,
+                      "_", t0,"-", t.end,
+                      "sim1.rds")
   
   if(!file.exists(sim1_file)){
     
@@ -650,12 +650,12 @@ covid_abm_v4 <- function(data_inputs, input_pars, vax_phases,
       as.numeric(str_match(i, "sim\\s*(.*?)\\s*.rds")[,2])
     })))
     
-    saveRDS(fin_out, here::here(paste0(output_path, 
-                                       "ABMv4_bta", 
-                                       "testing", testing,
-                                       "_vax", vaccination,
-                                       "_", t0,"-", t.end,
-                                       "sim", last_sim+1, ".rds")))
+    saveRDS(fin_out, paste0(output_path, 
+                            "ABMv4_bta", 
+                            "testing", testing,
+                            "_vax", vaccination,
+                            "_", t0,"-", t.end,
+                            "sim", last_sim+1, ".rds"))
   }
   
   rm(fin_out)
