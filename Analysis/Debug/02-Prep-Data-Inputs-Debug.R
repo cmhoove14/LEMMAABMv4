@@ -37,8 +37,8 @@ N <- nrow(agents)
 #ggplot(data = sf_test) + geom_line(aes(x = Date, y = (tests/9e5)*1e5)) + theme_bw() +scale_x_date(date_breaks = "14 day") +theme(axis.text.x = element_text(angle = 45,hjust = 1))+labs(x="",y="SF Tests per 100k")
 
 # Testing data for sims ----------------------
-source(here::here("data", "get","COVID_CA_get_latest.R"))
-
+#source(here::here("data", "get","COVID_CA_get_latest.R"))
+load(here::here("data", "get", "got", "CA_SF_data2021-02-02.Rdata"))
 # sf_test is observed testing completed in SF county
 # Must contain columns date_num and tests_pp to convert to testing function in model
 sf_test_smooth <- sf_test %>% 

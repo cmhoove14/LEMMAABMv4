@@ -23,7 +23,7 @@ holidays      <- c(seq.Date(as.Date("2020-05-23"), as.Date("2020-05-25"), by = "
                   seq.Date(as.Date("2020-11-26"), as.Date("2020-11-29"), by = "day"), # Thanksgiving
                   seq.Date(as.Date("2020-12-24"), as.Date("2020-12-26"), by = "day"), # Christmas 
                   seq.Date(as.Date("2020-12-31"), as.Date("2021-01-01"), by = "day")) # New Years
-
+mort_red_date <- as.Date("2020-07-01")       # Date to mark change in mortality rate
 ref_date      <- as.Date(t0-1)
 t.end         <- as.Date("2020-04-15")       # Simulation end date
 
@@ -51,16 +51,17 @@ input_pars$time_pars$ref_date       <- ref_date
 input_pars$time_pars$dt             <- dt
 input_pars$time_pars$day_of_week_fx <- day_of_week_expand
 input_pars$time_pars$SiP.start      <- SiP.start
+input_pars$time_pars$mort_red_date  <- mort_red_date
 input_pars$time_pars$mask.start     <- mask.start
 input_pars$time_pars$time_of_day_fx <- time_of_day
 
 # Transmission parameters ------------------
 input_pars$trans_pars <- list()
 
-input_pars$trans_pars$bta_base   <- 0.25
-input_pars$trans_pars$bta_hh     <- 1
-input_pars$trans_pars$bta_work   <- 1
-input_pars$trans_pars$bta_sip_rd <- 1/3
+input_pars$trans_pars$bta_base     <- 0.25
+input_pars$trans_pars$bta_hh       <- 1
+input_pars$trans_pars$bta_work     <- 1
+input_pars$trans_pars$bta_sip_rd   <- 1/3
 input_pars$trans_pars$hpi_bta_mult <- 0.1
 
 
@@ -93,8 +94,10 @@ input_pars$quar_pars$q_bta_red_exp      <- 2           # Exponent on reduction i
 input_pars$quar_pars$known_contact_prob <- 9
 
 # function for length of time quarantining agent remains at home
-q_dur_fx <- function(n_agents){
-  rgamma(n_agents, 14, 2)
+input_pars$quar_pars$q_dur_mean         <- 7 
+
+q_dur_fx <- function(n_agents, q_dur_mean){
+  rgamma(n_agents, q_dur_mean, 2)
 }
 input_pars$quar_pars$q_dur_fx           <- q_dur_fx 
 
@@ -105,7 +108,7 @@ input_pars$test_pars$test_start        <- as.Date("2020-03-01")  # Testing start
 input_pars$test_pars$tests_wknd        <- 0.5                    # Proportional reduction in tests conducted on weekend days
 input_pars$test_pars$hpi_mult          <- 1                      # Multiplier for testing probability on hpi quartile (1=lowest, 4 highest), so 1 means highest hpi 4 times more likely to get tested
 input_pars$test_pars$income_mult       <- 1                      # Multiplier for testing probability on income category (1=lowest, 3 highest), so 1 means highest income 3x more likely to get tested
-input_pars$test_pars$case_finding_mult <- 0.01                      # Per test available improvement in case finding meant to capture test availability, improved case identification, contact tracing, etc.
+input_pars$test_pars$case_finding_mult <- 0.01                   # Per test available improvement in case finding meant to capture test availability, improved case identification, contact tracing, etc.
 input_pars$test_pars$cont_mult         <- 10                     # Multiplier for testing probability for agents with known contact
 input_pars$test_pars$symp_mult         <- 10                     # Multiplier for testing probability for time experiencing symptoms (increases probability by symp_mult*t_symptoms, e.g. longer period experiencing symptoms increases probability of testing)
 input_pars$test_pars$res_mult          <- 100                    # Multiplier for testing probability for agents with known residential infection
@@ -168,5 +171,6 @@ input_pars$other_pars$mask_red             <- 0.6         # Reduction in transmi
 input_pars$other_pars$social_fx            <- social_fx   # Generate sociality metrics
 input_pars$other_pars$visitor_mult_testing <- 4           # Multiplier on true number of infectious agents compared to number confirmed positive in testing. Likely varies through time in reality, but here 4 assumes 1 in 4 agents who are infectious and potentially traveling are actually confirmed positive 
 input_pars$other_pars$visitor_mult_sfgrph  <- 10          # Multiplier on number of visitors from safegraph to reflect true number of visitors (safegraph panel is ~10% of population)
+input_pars$other_pars$mort_mult            <- 0.5         # Reduction in mortality rate occurring on mort_red_date: lower mortality rate associated with improved treatment 
 
 saveRDS(input_pars, here::here("data", "processed", "input_pars_debug.rds"))

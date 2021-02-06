@@ -141,7 +141,8 @@ if(testing == "A"){
 # Transition time
 agents[state %in% c("E", "Ip", "Ia", "Im", "Imh", "Ih"), tnext:=t_til_nxt(state)]
 # State entering once transition time expires
-agents[state %in% c("E", "Ip", "Ia", "Im", "Imh", "Ih"), nextstate:=next_state(state, age)]
+mort_mult_init <- 1
+agents[state %in% c("E", "Ip", "Ia", "Im", "Imh", "Ih"), nextstate:=next_state(state, age, sex, mort_mult_init)]
 #Time initial infections occurred
 agents[state %in% c("E", "Ip", "Ia", "Im", "Imh", "Ih"), t_infection:=dt]
 
@@ -183,14 +184,15 @@ if(!verbose){
 for(t in 2:(t.tot/dt)){
   
   # Time step characteristics
-  date_now <- t0+t*dt
+  date_now      <- t0+t*dt
   agents[, Date:=date_now]
-  date_num <- as.numeric(floor(date_now-ref_date))
-  beta_today <- bta_fx(date_num)
-  day_week <- day_of_week_fx[t]
-  time_day <- time_of_day_fx[t]
-  SiP.active <- ifelse(date_now > SiP.start, 1, 0)
-  mask.mandate <- ifelse(date_now > mask.start, 1, 0)
+  date_num      <- as.numeric(floor(date_now-ref_date))
+  beta_today    <- bta_fx(date_num)
+  day_week      <- day_of_week_fx[t]
+  time_day      <- time_of_day_fx[t]
+  SiP.active    <- ifelse(date_now > SiP.start, 1, 0)
+  mask.mandate  <- ifelse(date_now > mask.start, 1, 0)
+  mort_mult_now <- ifelse(date_now > mort_red_date, mort_mult, 1)
   
   if(verbose){cat(as.character(date_now), time_day, "------------------------------------\n\n")}
   
@@ -213,7 +215,7 @@ for(t in 2:(t.tot/dt)){
   agents[tnext < 0, state:=nextstate]
   agents[tnext < 0 & state == "D", t_death := date_now]  # Record death events
   agents[tnext < 0 & state %in% c("R", "D"), t_symptoms:=0]
-  agents[tnext < 0 & state %in% c("E", "Ip", "Ia", "Im", "Imh", "Ih"), nextstate:=next_state(state, age)]
+  agents[tnext < 0 & state %in% c("E", "Ip", "Ia", "Im", "Imh", "Ih"), nextstate:=next_state(state, age, sex, mort_mult_now)]
   agents[tnext < 0 & state %in% c("E", "Ip", "Ia", "Im", "Imh", "Ih"), tnext:=t_til_nxt(state)]
   agents[tnext < 0 & state == "D", tested := 1]          # Assume agents are tested to confirm infection at death if not confirmed positive previously
   agents[tnext < 0 & state == "D", tnext := 0]           # Reset state progression so only recording deaths once
@@ -485,11 +487,15 @@ for(t in 2:(t.tot/dt)){
     agents[infector == 1, 
            trans_prob := beta_today*(1-mask_red*wear.mask)*(1-test.red*tested)]
     
+    # Assume no mask wearing at home unless confirmed positive, reduction in transmission if quarantining based on income (assigned below in qurantine determination)
     agents[infector == 1 & location == hhid, 
-           trans_prob := beta_today*bta_hh*q_bta_red*(1-mask_red*wear.mask*tested)*(1-test.red*tested)] # Assume no mask wearing at home unless confirmed positive, reduction in transmission if quarantining based on income (assigned below in qurantine determination)
+           trans_prob := beta_today*bta_hh*q_bta_red*(1-mask_red*wear.mask*tested)*(1-test.red*tested)] 
     
     agents[infector == 1 & location == work, 
            trans_prob := beta_today*bta_work*(1-mask_red*wear.mask*tested)*(1-test.red*tested)] 
+    
+    # Higher transmission in lower hpi CTs, scaled such that highest quartile unaffected
+    agents[location == ct, trans_prob:=trans_prob*(1+hpi_bta_mult*(hpi_quartile-1))] 
     
     # Get FOI for all agents  
     agents[, FOIi:=0]
@@ -508,7 +514,7 @@ for(t in 2:(t.tot/dt)){
     # Generate infections, update their state, sample for their nextstate and time until reaching it, 
     agents[FOI > 0 & state == "S", infect:=foi_infect(FOI)]
     agents[infect == 1, state:="E"]
-    agents[infect == 1, nextstate:=next_state(state, age)]
+    agents[infect == 1, nextstate:=next_state(state, age, sex, mort_mult_now)]
     agents[infect == 1, tnext:=t_til_nxt(state)]
     
     # document contacts in proportion to infection risk   
