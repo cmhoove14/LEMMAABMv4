@@ -147,7 +147,8 @@ covid_abm_v4 <- function(data_inputs, input_pars, vax_phases,
   # Transition time
   agents[state %in% c("E", "Ip", "Ia", "Im", "Imh", "Ih"), tnext:=t_til_nxt(state)]
   # State entering once transition time expires
-  agents[state %in% c("E", "Ip", "Ia", "Im", "Imh", "Ih"), nextstate:=next_state(state, age, sex, mort_mult_now)]
+  mort_mult_init <- 1
+  agents[state %in% c("E", "Ip", "Ia", "Im", "Imh", "Ih"), nextstate:=next_state(state, age, sex, mort_mult_init)]
   #Time initial infections occurred
   agents[state %in% c("E", "Ip", "Ia", "Im", "Imh", "Ih"), t_infection:=dt]
   
@@ -220,7 +221,7 @@ covid_abm_v4 <- function(data_inputs, input_pars, vax_phases,
     agents[tnext < 0, state:=nextstate]
     agents[tnext < 0 & state == "D", t_death := date_now]  # Record death events
     agents[tnext < 0 & state %in% c("R", "D"), t_symptoms:=0]
-    agents[tnext < 0 & state %in% c("E", "Ip", "Ia", "Im", "Imh", "Ih"), nextstate:=next_state(state, age)]
+    agents[tnext < 0 & state %in% c("E", "Ip", "Ia", "Im", "Imh", "Ih"), nextstate:=next_state(state, age, sex, mort_mult_now)]
     agents[tnext < 0 & state %in% c("E", "Ip", "Ia", "Im", "Imh", "Ih"), tnext:=t_til_nxt(state)]
     agents[tnext < 0 & state == "D", tested := 1]          # Assume agents are tested to confirm infection at death if not confirmed positive previously
     agents[tnext < 0 & state == "D", tnext := 0]           # Reset state progression so only recording deaths once
@@ -519,7 +520,7 @@ covid_abm_v4 <- function(data_inputs, input_pars, vax_phases,
       # Generate infections, update their state, sample for their nextstate and time until reaching it, 
       agents[FOI > 0 & state == "S", infect:=foi_infect(FOI)]
       agents[infect == 1, state:="E"]
-      agents[infect == 1, nextstate:=next_state(state, age)]
+      agents[infect == 1, nextstate:=next_state(state, age, sex, mort_mult_now)]
       agents[infect == 1, tnext:=t_til_nxt(state)]
       
       # document contacts in proportion to infection risk   

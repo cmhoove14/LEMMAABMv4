@@ -4,14 +4,18 @@
 \alias{p_mort}
 \title{Probability of death}
 \usage{
-p_mort(age)
+p_mort(age, sex, mort_mult)
 }
 \arguments{
-\item{age}{age of person}
+\item{age}{age of agent}
+
+\item{sex}{sex of agent (1-male, 2-female)}
+
+\item{mort_mult}{multiplier on mortality rate to model improved treatment through time}
 }
 \value{
 numeric of probability of dying.
 }
 \description{
-Age-dependent probabilities of dying given hospitalization (Ih) Used in `next.state`; from https://www.bmj.com/content/369/bmj.m1923 Fig 4 mean of sex-stratified
+Age-dependent and sex-dependent probabilities of dying conditional on hospitalization (Ih) Used in `next.state`; from https://www.bmj.com/content/369/bmj.m1923 Fig 4
 }

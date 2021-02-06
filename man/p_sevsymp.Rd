@@ -2,7 +2,7 @@
 % Please edit documentation in R/Infection_Functions.R
 \name{p_sevsymp}
 \alias{p_sevsymp}
-\title{Probability of severely symptomatic (will be hospitalized) infection}
+\title{Probability of severely symptomatic (will be hospitalized) infection conditional on being symptomatic from https://www.medrxiv.org/content/10.1101/2020.05.10.20097469v1.full.pdf}
 \usage{
 p_sevsymp(age)
 }

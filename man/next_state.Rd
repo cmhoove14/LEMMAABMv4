@@ -4,12 +4,16 @@
 \alias{next_state}
 \title{Next State}
 \usage{
-next_state(pre.status, age)
+next_state(pre.status, age, sex, mort_mult)
 }
 \arguments{
 \item{pre.status}{Infection status that has expired}
 
 \item{age}{age of individual for probability of moving to different states}
+
+\item{sex}{sex of agent (1-male, 2-female)}
+
+\item{mort_mult}{multiplier on mortality rate to model improved treatment through time}
 }
 \value{
 vector the next state
