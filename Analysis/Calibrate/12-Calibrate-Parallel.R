@@ -39,21 +39,7 @@ lhs <- readRDS("data/processed/Calibration_LHS.rds")
 
 # Setup, export everything to cluster, and run in parallel ------------------
 #Setup for running jobs across parallel nodes in cluster
-RAM <- as.numeric(system("awk '/MemFree/ {print $2}' /proc/meminfo", intern = T))/1e6
-nworkers <- floor(RAM/5)
-
-n_cores <- nworkers
-
-n_jobs <- nworkers*max_iters
-
-n_sims_per_par <- 5
-
-sweep_length <- floor(n_jobs/n_sims_per_par)
-
-bta_sweeps <- rep(seq(bta_base_lo, bta_base_hi, length.out = sweep_length), each = n_sims_per_par)
-
-cat(RAM, "gb RAM available\n", 
-    nworkers,"workers deployed to simulate",n_sims_per_par,"simulations per parameter across", sweep_length,"parameter values\n")
+n_cores <- 12
 
 clooster <- parallel::makeCluster(n_cores)
 

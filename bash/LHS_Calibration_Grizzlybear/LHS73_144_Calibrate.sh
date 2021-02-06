@@ -8,4 +8,4 @@
 #$ -M choover@berkeley.edu
 # 
 
-Rscript Analysis/Calibrate/12-Calibrate-Parallel.R 73 144 "data/processed/data_inputs_calibrate.rds" "data/processed/input_pars_calibrate.rds" "data/processed/vax65p_scenario.rds" "data/outputs/Calibration_Sims/" "T" "S" "F" "F" "F"
+Rscript Analysis/Calibrate/12-Calibrate-Parallel.R 145 217 "data/processed/data_inputs_calibrate.rds" "data/processed/input_pars_calibrate.rds" "data/processed/vax65p_scenario.rds" "data/outputs/LHS_Calibration/" "T" "S" "F" "F" "F"
