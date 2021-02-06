@@ -94,7 +94,7 @@ parallel::parLapply(cl = clooster,
                                                vaccination = vaccination,
                                                verbose     = verbose, 
                                                store_extra = store_extra,
-                                               output_path = output_path)
+                                               output_path = paste0(output_path,x,"/"))
                     })
 
 parallel::stopCluster(clooster)
