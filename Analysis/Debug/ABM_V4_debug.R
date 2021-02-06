@@ -519,7 +519,7 @@ for(t in 2:(t.tot/dt)){
     
     # document contacts in proportion to infection risk   
     agents[FOI > 0 & state == "S", contact_prob:=FOI*known_contact_prob]
-    agents[contact_prob > 0, contact := rbinom(.N, 1, contact_prob)]
+    agents[contact_prob > 0 & FOI > 0, contact := rbinom(.N, 1, contact_prob)]
     agents[contact == 1, t_since_contact:=dt] # Assumes most recent contact overwrites any old contact
     
     if(verbose){cat(nrow(agents[infect == 1,]), "new infections generated,",
@@ -558,7 +558,7 @@ for(t in 2:(t.tot/dt)){
     
     # Assign isolation duration and reduction in transmission if quarantining at home based on income bracket 
     agents[choose_quar == 1 & q_duration == 0, 
-           q_duration:=q_dur_fx(.N)]
+           q_duration:=q_dur_fx(.N, q_dur_mean)]
     agents[choose_quar == 1, q_bta_red:=(1-1/hhsize)**q_bta_red_exp]
     
     
