@@ -53,7 +53,7 @@ parallel::clusterExport(cl = clooster,
                           "visitors", "testing", "vaccination", "verbose", "store_extra"))
 
 parallel::parLapply(cl = clooster,
-                    X=c(lhs_start, lhs_end), 
+                    X=c(lhs_start:lhs_end), 
                     fun = function(x){
                       
                       input_pars$trans_pars$bta_base             <- lhs[x,1]
