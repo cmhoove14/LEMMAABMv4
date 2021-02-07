@@ -92,6 +92,8 @@ covid_abm_v4 <- function(data_inputs, input_pars, vax_phases,
   
   
   # Initial infection allocated randomly among non-children/non-retirees
+  set.seed(430)  # Sample same initial agents every time
+  
   init.Es   <- sample(agents[!age %in% c(5,15,75,85), id], e.seed)   
   init.Ips  <- sample(agents[!age %in% c(5,15,75,85), id], ip.seed)   
   init.Ias  <- sample(agents[!age %in% c(5,15,75,85), id], ia.seed)   
@@ -337,7 +339,7 @@ covid_abm_v4 <- function(data_inputs, input_pars, vax_phases,
         # Tested agents
         # Test results and reset time since last test for those who were tested
         # agents[id %in% testeds, tested:=test_sens(state, t_infection)]
-        test_reports[[as.numeric(date_now-t0)]] <- agents[init_test==1,
+        test_reports[[as.numeric(date_now-t0)]] <- agents[id %in% test_ids,
                                                           c("id", "age", "sex", "race", "occp", "essential", "work", "state", "nextstate",
                                                             "t_infection", "t_symptoms", "t_since_contact", "res_inf", 
                                                             "hhid", "hhincome", "ct", "hpi_quartile", 
