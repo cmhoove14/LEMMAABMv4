@@ -7,11 +7,6 @@ input_pars  <- readRDS(here::here("data/processed/input_pars_debug.rds"))
 data_inputs <- readRDS(here::here("data/processed/data_inputs_debug.rds"))
 vax_phases  <- readRDS(here::here("data/processed/vax65p_scenario.rds"))
 
-bta_base    <- 0.25
-bta_hh      <- 1.2
-bta_work    <- 1.2
-bta_sip_red <- 1/3
-
 visitors <- TRUE 
 testing <- "S" 
 vaccination <- FALSE 
