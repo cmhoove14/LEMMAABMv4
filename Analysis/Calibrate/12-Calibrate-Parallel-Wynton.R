@@ -39,7 +39,7 @@ lhs <- readRDS("data/processed/Calibration_LHS.rds")
 
 # Setup, export everything to cluster, and run in parallel ------------------
 #Setup for running jobs across parallel nodes in cluster
-n_cores <- 12
+n_cores <- future::availableCores()
 
 clooster <- parallel::makeCluster(n_cores)
 
