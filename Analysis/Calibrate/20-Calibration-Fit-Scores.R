@@ -6,7 +6,7 @@
 sim_folders <- as.numeric(list.files(here::here("data/outputs/LHS_Calibration/")))
 sim_folders <- sim_folders[!is.na(sim_folders)]
 
-clooster <- parallel::makeCluster(n_cores)
+clooster <- parallel::makeCluster(parallel::detectCores()-4)
 
 clusterEvalQ(cl = clooster,
              expr = lapply(c("data.table", "tidyverse"), 
