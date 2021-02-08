@@ -9,7 +9,7 @@ sim_folders <- sim_folders[!is.na(sim_folders)]
 clooster <- parallel::makeCluster(parallel::detectCores()-4)
 
 parallel::clusterEvalQ(cl = clooster,
-                       expr = lapply(c("data.table", "tidyverse", "zoo", "lubridate", "sf"), 
+                       expr = lapply(c("data.table", "tidyverse", "zoo", "lubridate"), 
                                      library,
                                      character.only = TRUE))
 
@@ -88,8 +88,7 @@ lhs_fits <- parallel::parLapply(cl = clooster,
                       mutate(MO_YR = paste0(lubridate::month(Date), "_", lubridate::year(Date)),
                              ct = as.numeric(id)) %>% 
                       group_by(ct, MO_YR) %>% 
-                      summarise(n_obs = sum(as.numeric(new_confirmed_cases))) %>% 
-                      sf::st_set_geometry(NULL)
+                      summarise(n_obs = sum(as.numeric(new_confirmed_cases)))
                     
                     # Get reference data frame for all potential ct-months of comparison
                     month_dates <- seq.Date(sim$input_pars$test_pars$test_start, sim$input_pars$time_pars$t.end, by = "month")
