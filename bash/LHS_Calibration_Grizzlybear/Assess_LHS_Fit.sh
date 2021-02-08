@@ -8,4 +8,4 @@
 #$ -M choover@berkeley.edu
 # 
 
-Rscript Analysis/Calibrate/20-Calibration-Fit_Scores.R
+Rscript Analysis/Calibrate/20-Calibration-Fit-Scores.R
