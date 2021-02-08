@@ -11,5 +11,4 @@
 #$ -t 1-1440                       #-- array job
                                    #-- tasks if desired (see Tips section on this page)
 module load CBI r
-module load scl-devtoolset/8
 Rscript Analysis/Calibrate/12-Calibrate-Wynton.R $SGE_TASK_ID "data/processed/data_inputs_calibrate.rds" "data/processed/input_pars_calibrate.rds" "data/processed/vax65p_scenario.rds" "data/outputs/Calibration_Outputs/" "T" "S" "F" "F" "F"

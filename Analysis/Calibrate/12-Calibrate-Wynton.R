@@ -33,7 +33,7 @@ data_inputs <- readRDS(here::here(data_inputs_path))
 vax_phases  <- readRDS(here::here(vax_phases_path))
 
 # Replace pars in list with pars from lhs -------------------
-lhs <- readRDS("data/processed/Calibration_LHS.rds")
+lhs <- readRDS("data/processed/Calibration_LHS_Wynton.rds")
 
 input_pars$trans_pars$bta_base             <- lhs[taskID,1]
 input_pars$trans_pars$bta_hh               <- lhs[taskID,2]
