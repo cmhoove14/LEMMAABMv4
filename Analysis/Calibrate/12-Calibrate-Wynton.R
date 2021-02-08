@@ -2,21 +2,20 @@
 data.table::setDTthreads(1)
 
 # Get options passed from BASH -----------------
-taskID <- as.numeric(Sys.getenv("SGE_TASK_ID"))
-
 opts <- commandArgs(TRUE)
 
-data_inputs_path <- as.character(opts[1])
-input_pars_path  <- as.character(opts[2])
-vax_phases_path  <- as.character(opts[3])
-output_path      <- as.character(opts[4]) 
+taskID <- as.numeric(opts[1])
+data_inputs_path <- as.character(opts[2])
+input_pars_path  <- as.character(opts[3])
+vax_phases_path  <- as.character(opts[4])
+output_path      <- as.character(opts[5]) 
 
-if(length(opts) > 4){
-  visitors    <- as.logical(opts[5]) 
-  testing     <- opts[6]  
-  vaccination <- as.logical(opts[7])
-  verbose     <- as.logical(opts[8])  
-  store_extra <- as.logical(opts[9])  
+if(length(opts) > 5){
+  visitors    <- as.logical(opts[6]) 
+  testing     <- opts[7]  
+  vaccination <- as.logical(opts[8])
+  verbose     <- as.logical(opts[9])  
+  store_extra <- as.logical(opts[10])  
 } else {
   visitors    <- TRUE 
   testing     <- "S" 
