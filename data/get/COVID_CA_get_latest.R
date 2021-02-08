@@ -128,8 +128,10 @@ if(sum(grepl(Sys.Date(), list.files(here::here("data", "get", "got")))) == 0){
                   new_confirmed_cases, cumulative_confirmed_cases, rate_of_cumulative_confirmed_case, 
                   geometry)
   
+  sf_geo_null <- sf_geo %>% sf::st_set_geometry(NULL)
+  
 # Save final object  
-  save(list=c("sf_all", "sf_case", "sf_hosp", "sf_test", "sf_geo", "sf_case_race", 
+  save(list=c("sf_all", "sf_case", "sf_hosp", "sf_test", "sf_geo", "sf_case_race", "sf_geo_null",
               "CA_cases", "CA_hosp", "CA_tests"), 
        file=here::here("data", "get", "got", paste0("CA_SF_data", Sys.Date(), ".Rdata")))
   

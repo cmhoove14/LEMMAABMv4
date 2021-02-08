@@ -84,7 +84,7 @@ lhs_fits <- parallel::parLapply(cl = clooster,
                       group_by(ct, MO_YR) %>% 
                       summarise(n_sim = sum(test_pos))
                     
-                    obs_cases <- sf_geo %>% 
+                    obs_cases <- sf_geo_null %>% 
                       mutate(MO_YR = paste0(lubridate::month(Date), "_", lubridate::year(Date)),
                              ct = as.numeric(id)) %>% 
                       group_by(ct, MO_YR) %>% 
