@@ -1,4 +1,3 @@
-library(LEMMAABMv4)
 
 data.table::setDTthreads(1)
 
@@ -43,10 +42,10 @@ n_cores <- future::availableCores()
 
 clooster <- parallel::makeCluster(n_cores)
 
-clusterEvalQ(cl = clooster,
-             expr = lapply(c("data.table", "wrswoR", "dqrng", "matrixStats", "fastmatch", "lubridate", "tidyverse", "LEMMAABMv4"), 
-                           library,
-                           character.only = TRUE))
+parallel::clusterEvalQ(cl = clooster,
+                       expr = lapply(c("data.table", "wrswoR", "dqrng", "matrixStats", "fastmatch", "lubridate", "tidyverse", "LEMMAABMv4"), 
+                                     library,
+                                     character.only = TRUE))
 
 parallel::clusterExport(cl = clooster, 
                         c("lhs", "lhs_start", "lhs_end", "data_inputs", "input_pars", "vax_phases", "output_path",
@@ -85,6 +84,8 @@ parallel::parLapply(cl = clooster,
                       input_pars$other_pars$visitor_mult_testing <- lhs[x,24]
                       input_pars$other_pars$visitor_mult_sfgrph  <- lhs[x,25]
                       input_pars$other_pars$mort_mult            <- lhs[x,26]
+                      
+                      input_pars$init_states$E0                  <- lhs[x,27]
 
                       LEMMAABMv4::covid_abm_v4(data_inputs = data_inputs, 
                                                input_pars  = input_pars, 
