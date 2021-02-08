@@ -9,7 +9,7 @@ sim_folders <- sim_folders[!is.na(sim_folders)]
 clooster <- parallel::makeCluster(parallel::detectCores()-4)
 
 parallel::clusterEvalQ(cl = clooster,
-                       expr = lapply(c("data.table", "tidyverse"), 
+                       expr = lapply(c("data.table", "tidyverse", "zoo", "lubridate", "sf"), 
                                      library,
                                      character.only = TRUE))
 
