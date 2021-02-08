@@ -1,6 +1,6 @@
 # Test run
 
-devtools::load_all() # library(LEMMAABMv4)
+library(LEMMAABMv4)
 library(tictoc)
 library(progress)
 
