@@ -67,6 +67,8 @@ input_pars$other_pars$mort_mult            <- lhs[taskID,26]
 
 input_pars$init_states$E0                  <- lhs[taskID,27]
 
+library(LEMMAABMv4)
+
 LEMMAABMv4::covid_abm_v4(data_inputs = data_inputs, 
                          input_pars  = input_pars, 
                          vax_phases  = vax_phases,
