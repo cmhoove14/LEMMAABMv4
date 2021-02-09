@@ -118,7 +118,7 @@ dev.off()
 
 # Compare cumulative Dec 1 deaths by race ---------------------
 # State database only has non-hispanic white, non-hispanic black, hispanic, and other, so condense to match
-best_dths_race_sim <- get_sim(best_dths_race)$dths_race %>% 
+best_dths_race_sim <- get_fit(best_dths_race)$dths_race %>% 
   mutate(Race_Eth = case_when(race2 == 1 ~ "White only",
                               race2 == 2 ~ "Black only",
                               race2 == 8 ~ "Hispanic_Latinx",
@@ -144,7 +144,7 @@ ggsave(here::here("Plots", "LHS_Calibration", "Fits1", "dths_race_sims_best.jpg"
        units="in", width = 5, height = 3)
 
 # Compare cumulative Dec 1 confirmed cases by race ----------------------
-best_case_race_sim <- get_sim(best_case_race)$case_race %>% 
+best_case_race_sim <- get_fit(best_case_race)$case_race %>% 
   rename("Sim" = n_sim,
          "Obs" = n_obs)
   pivot_longer(Sim:Obs)
@@ -174,7 +174,7 @@ ggsave(here::here("Plots", "LHS_Calibration", "Fits1", "case_race_sims_best.jpg"
        units="in", width = 7, height = 5)
 
 # Compare CT Cases by month ----------------------
-best_ct_cases_sim <- get_sim(best_ct_cases)$ct_cases %>% 
+best_ct_cases_sim <- get_fit(best_ct_cases)$ct_cases %>% 
   mutate(mse = (n_sim - n_obs)^2)
 
 best_ct_cases_sim %>% 
