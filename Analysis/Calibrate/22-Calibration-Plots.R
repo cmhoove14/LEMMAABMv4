@@ -146,8 +146,8 @@ ggsave(here::here("Plots", "LHS_Calibration", "Fits1", "dths_race_sims_best.jpg"
 # Compare cumulative Dec 1 confirmed cases by race ----------------------
 best_case_race_sim <- get_fit(best_case_race)$case_race %>% 
   rename("Sim" = n_sim,
-         "Obs" = n_obs)
-  pivot_longer(Sim:Obs)
+         "Obs" = n_obs) %>% 
+  pivot_longer(Sim:Obs) %>% 
   mutate(Race_Eth = case_when(race == 1 ~ "White only",
                               race == 2 ~ "Black only",
                               race == 3 ~ "Am. Indian/AK Native",
