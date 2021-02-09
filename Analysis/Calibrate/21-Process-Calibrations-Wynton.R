@@ -33,7 +33,7 @@ get_z <- function(vec){
   return(z)
 }
 
-fitsdf_out <- fits_df %>% 
+fitsdf_out <- fitsdf %>% 
   mutate(
     hosp_z      = get_z(hosp_mse),
     dths_z      = get_z(dths_mse),
