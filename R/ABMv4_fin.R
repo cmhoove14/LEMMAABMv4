@@ -59,23 +59,6 @@ covid_abm_v4 <- function(data_inputs, input_pars, vax_phases,
   # Extract parameter inputs then store in object for return with sim outputs
   unpack_list(input_pars)
   
-  # Convert bta_parameters into function returning baseline transmission probability on each day
-  if(t0 > SiP.start){
-    bta_fx <- function(...) return(bta_base*bta_sip_red)
-  } else {
-    bta_change_df <- data.frame(dates = c(t0, SiP.start, t.end),
-                                btas = c(bta_base, bta_base*bta_sip_red, bta_base*bta_sip_red)) %>% 
-      padr::pad() %>% 
-      mutate(date_num = as.numeric(dates - ref_date))
-    
-    bta_change_df$btas[is.na(bta_change_df$btas) & bta_change_df$dates < SiP.start] <- bta_base
-    bta_change_df$btas[is.na(bta_change_df$btas) & bta_change_df$dates > SiP.start] <- bta_base*bta_sip_red
-    
-    bta_fx <- approxfun(bta_change_df$date_num,
-                        bta_change_df$btas)
-  }
-  
-  
   # Extract Initial conditions ----------------
   N <- nrow(agents)
   
@@ -193,12 +176,12 @@ covid_abm_v4 <- function(data_inputs, input_pars, vax_phases,
     date_now      <- t0+t*dt
       agents[, Date:=date_now]
     date_num      <- as.numeric(floor(date_now-ref_date))
-    beta_today    <- bta_fx(date_num)
     day_week      <- day_of_week_fx[t]
     time_day      <- time_of_day_fx[t]
     SiP.active    <- ifelse(date_now > SiP.start, 1, 0)
     mask.mandate  <- ifelse(date_now > mask.start, 1, 0)
     mort_mult_now <- ifelse(date_now > mort_red_date, mort_mult, 1)
+    beta_today    <- ifelse(date_now > SiP.start, bta_base*bta_sip_red, bta_base)
     
     if(verbose){cat(as.character(date_now), time_day, "------------------------------------\n\n")}
     
@@ -490,7 +473,7 @@ covid_abm_v4 <- function(data_inputs, input_pars, vax_phases,
         agents[tested == 1 & infector == 1, wear.mask:=1] # anyone known tested positive wears mask
       } 
       
-      agents[infector == 1, 
+      agents[infector == 1 & location != hhid & location != work, 
              trans_prob := beta_today*(1-mask_red*wear.mask)*(1-test.red*tested)]
       
       # Assume no mask wearing at home unless confirmed positive, reduction in transmission if quarantining based on income (assigned below in qurantine determination)
@@ -498,7 +481,7 @@ covid_abm_v4 <- function(data_inputs, input_pars, vax_phases,
              trans_prob := beta_today*bta_hh*q_bta_red*(1-mask_red*wear.mask*tested)*(1-test.red*tested)] 
       
       agents[infector == 1 & location == work, 
-             trans_prob := beta_today*bta_work*(1-mask_red*wear.mask*tested)*(1-test.red*tested)] 
+             trans_prob := beta_today*bta_work*(1-mask_red*wear.mask)*(1-test.red*tested)] 
       
       # Higher transmission in lower hpi CTs, scaled such that highest quartile unaffected
       agents[location == ct, trans_prob:=trans_prob*(1+hpi_bta_mult*(hpi_quartile-1))] 
