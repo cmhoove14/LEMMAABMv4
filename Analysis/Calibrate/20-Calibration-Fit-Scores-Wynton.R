@@ -4,6 +4,7 @@
 # ---------------------------------------
 library(tidyverse)
 library(data.table)
+library(zoo)
 
 opts <- commandArgs(TRUE)
 
@@ -127,7 +128,7 @@ gc()
 
 out_list <- list()
 
-out_list$fits <- list("sim"           = x, 
+out_list$fits <- list("sim"           = taskID, 
                       "status"        = 1,
                       "hosp_mse"      = hosp_mse,
                       "dths_mse"      = dths_mse,
@@ -141,7 +142,7 @@ out_list$comp_dfs <- list("hosp"      = comp_hosp,
                           "dths_race" = comp_dths_race,
                           "case_race" = comp_case_race)
 
-out_path <- here::here("data","outputs","Calibration_Fits",x)
+out_path <- here::here("data","outputs","Calibration_Fits",taskID)
 
 if(dir.exists(out_path)){
   saveRDS(out_list, paste0(out_path, "/LHS_Fits.rds"))
