@@ -14,7 +14,7 @@ n_tasks <- 1440
 fitsdf <- bind_rows(lapply(1:n_tasks, function(x){
   # Get sim file  
   fit_folder <- here::here(root, x)
-  fit <- readRDS(paste0(sim_folder,"/",list.files(sim_folder)[1]))
+  fit <- readRDS(paste0(fit_folder,"/",list.files(fit_folder)[1]))
   
   fits <- fit$fits
   
