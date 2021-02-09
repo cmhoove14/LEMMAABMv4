@@ -2,6 +2,8 @@
 # Compare simulation to observed data metrics
 # Chris Hoover Feb 2021
 # ---------------------------------------
+library(tidyverse)
+
 opts <- commandArgs(TRUE)
 
 taskID <- as.numeric(opts[1])
