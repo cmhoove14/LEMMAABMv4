@@ -3,6 +3,7 @@
 # Chris Hoover Feb 2021
 # ---------------------------------------
 library(tidyverse)
+library(data.table)
 
 fits <- readRDS(here::here("data", "processed", "LHS_Fits1_summary.rds"))
 
