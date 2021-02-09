@@ -3,6 +3,7 @@
 # Chris Hoover Feb 2021
 # ---------------------------------------
 library(tidyverse)
+library(data.table)
 
 opts <- commandArgs(TRUE)
 
