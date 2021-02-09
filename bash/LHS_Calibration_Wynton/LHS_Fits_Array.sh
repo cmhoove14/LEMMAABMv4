@@ -7,7 +7,7 @@
 #$ -j y                            #-- tell the system that the STDERR and STDOUT should be joined
 #$ -l mem_free=5G                  #-- submits on nodes with enough free memory (required)
 #$ -l scratch=70G                  #-- SGE resources (home and scratch disks)
-#$ -l h_rt=04:00:00                #-- runtime limit (see above; this requests 24 hours)
+#$ -l h_rt=00:20:00                #-- runtime limit 
 #$ -t 1-1440                       #-- array job
                                    #-- tasks if desired (see Tips section on this page)
 module load CBI r
