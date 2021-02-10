@@ -244,3 +244,63 @@ for(s in best10_norm){
 }
 
 dev.off()  
+
+
+# Look at all sims hospitalizations in first wave -------------------
+jpeg(here::here("Plots", "LHS_Calibration", "Fits2", "first_wave_hosp.jpg"),
+     height = 4, width = 7, units = "in", res = 100)
+
+plot(x    = sf_hosp$Date[which(sf_hosp$Date <= as.Date("2020-06-15"))], 
+     y    = sf_hosp$HOSP_tot[which(sf_hosp$Date <= as.Date("2020-06-15"))], 
+     type = "h", 
+     lwd  = 1, 
+     col  = "grey50",
+     ylab = "Hospitalizations",
+     main = "First wave hospitalizations")
+
+for(s in 1:1000){
+  hosp_sim <- get_fit(s)$hosp
+  # Filter for sims fitting first wave criteria
+  if(hosp_sim$N[hosp_sim$Date == as.Date("2020-05-01")] > hosp_sim$N[hosp_sim$Date == as.Date("2020-06-01")]){
+    lines(hosp_sim$Date[which(hosp_sim$Date <= as.Date("2020-06-15"))], 
+          hosp_sim$N[which(hosp_sim$Date <= as.Date("2020-06-15"))], 
+          col = "lightblue", lwd = 0.5)    
+  }
+
+}
+
+dev.off()  
+
+# Look at all sims hospitalizations in second wave -------------------
+scndwavewinners <- numeric()
+
+jpeg(here::here("Plots", "LHS_Calibration", "Fits2", "second_wave_hosp.jpg"),
+     height = 4, width = 7, units = "in", res = 100)
+
+plot(x    = sf_hosp$Date[which(sf_hosp$Date >= as.Date("2020-06-15") & sf_hosp$Date <= t.end)], 
+     y    = sf_hosp$HOSP_tot[which(sf_hosp$Date >= as.Date("2020-06-15") & sf_hosp$Date <= t.end)], 
+     type = "h", 
+     lwd  = 1, 
+     col  = "grey50",
+     ylab = "Hospitalizations",
+     main = "Second wave hospitalizations")
+
+for(s in 1:1000){
+  hosp_sim <- get_fit(s)$hosp
+  
+  # Filter for second wave criteria
+  if((hosp_sim$N[hosp_sim$Date == as.Date("2020-08-01")] - hosp_sim$N[hosp_sim$Date == as.Date("2020-07-01")]) > 20 &
+     (hosp_sim$N[hosp_sim$Date == as.Date("2020-08-01")] - hosp_sim$N[hosp_sim$Date == as.Date("2020-11-01")]) > 20){
+    
+    scndwavewinners <- c(scndwavewinners, s)
+    
+    lines(hosp_sim$Date[which(hosp_sim$Date >= as.Date("2020-06-15") & hosp_sim$Date <= t.end)], 
+          hosp_sim$N[which(hosp_sim$Date >= as.Date("2020-06-15") & hosp_sim$Date <= t.end)], 
+          col = "blue")
+    
+  }  
+}
+
+dev.off()  
+
+cat(scndwavewinners)
