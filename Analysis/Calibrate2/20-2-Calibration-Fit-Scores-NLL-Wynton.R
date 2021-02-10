@@ -144,7 +144,7 @@ out_list$fits <- list("sim"                = taskID,
                       "case_race_fit"      = case_race_nll,
                       "hosp_fit_norm"      = hosp_nll/nrow(comp_hosp),
                       "dths_fit_norm"      = dths_nll/nrow(comp_dths),
-                      "dths_race_fit_norm" = dths_race_nll/nrow(dths_race_nll),
+                      "dths_race_fit_norm" = dths_race_nll/nrow(comp_dths_race),
                       "ct_cases_fit_norm"  = ct_cases_nll/nrow(comp_ct_cases),
                       "case_race_fit_norm" = case_race_nll/nrow(comp_case_race))
 
