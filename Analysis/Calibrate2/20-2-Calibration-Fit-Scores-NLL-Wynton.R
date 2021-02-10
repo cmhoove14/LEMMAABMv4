@@ -25,7 +25,7 @@ sim_hosp$Date <- as.Date(as.character(sim_hosp$date)) # Date formate from sim me
 
 comp_hosp <- merge(sim_hosp, sf_hosp, by = "Date")
 
-hosp_mse <- sum(dpois(comp_hosp$N, comp_hosp$HOSP_CONF, log = T))
+hosp_nll <- -sum(dpois(comp_hosp$N, comp_hosp$HOSP_CONF, log = T))
 
 # Compare weekly deaths -------------------------
 sim_dths <- as_tibble(sim$agents[state == "D", c("id", "sex", "age", "race", "t_death")]) %>% 
@@ -48,7 +48,7 @@ obs_dths_wk <- sf_case %>%
 
 comp_dths <- merge(sim_dths_wk, obs_dths_wk, by = "wod")
 
-dths_nll <- sum(dpois(comp_dths$n_d_sim, comp_dths$n_d_obs, log = T))
+dths_nll <- -sum(dpois(comp_dths$n_d_sim, comp_dths$n_d_obs, log = T))
 
 # Compare cumulative Dec 1 deaths by race ---------------------
 # State database only has non-hispanic white, non-hispanic black, hispanic, and other, so condense to match
@@ -62,7 +62,7 @@ obs_dths_race <- data.frame(race2 = c(1, 2, 8, 9),
 
 comp_dths_race <- merge(sim_dths_race, obs_dths_race, by = "race2")
 
-dths_race_nll <- sum(dpois(comp_dths_race$n_dths, comp_dths_race$deaths, log = T))
+dths_race_nll <- -sum(dpois(comp_dths_race$n_dths, comp_dths_race$deaths, log = T))
 
 # Compare Monthly census tract confirmed cases -------------------
 sim_cases <- sim$linelist_tests %>% 
@@ -98,7 +98,7 @@ comp_ct_cases <- ct_months %>%
 ct_cases_nll_vec <- dpois(comp_ct_cases$n_sim, comp_ct_cases$n_obs, log = T)
   ct_cases_nll_vec[is.infinite(ct_cases_nll_vec)] <- comp_ct_cases$n_sim[is.infinite(ct_cases_nll_vec)]*-1
 
-ct_cases_nll <- sum(ct_cases_nll_vec)
+ct_cases_nll <- -sum(ct_cases_nll_vec)
 
 # Compare cumulative Dec 1 confirmed cases by race ----------------------
 sim_case_race <- sim$linelist_tests %>% 
@@ -125,7 +125,7 @@ obs_case_race2$n_obs <- obs_case_race2$n_obs + obs_add
 
 comp_case_race <- merge(sim_case_race, obs_case_race2, by.x = "race", by.y = "Race")
 
-case_race_nll<- sum(dpois(comp_case_race$n_sim, comp_case_race$n_obs, log = T))
+case_race_nll <- -sum(dpois(comp_case_race$n_sim, comp_case_race$n_obs, log = T))
 
 rm(sim)
 gc()               
