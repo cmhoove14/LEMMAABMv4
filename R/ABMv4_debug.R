@@ -174,7 +174,7 @@ covid_abm_v4_debug <- function(data_inputs, input_pars, vax_phases,
     pb <- progress_bar$new(
       format = "  Running simulation [:bar] :percent in :elapsed",
       total  = t.tot/dt, 
-      clear  = FALSE, 
+      clear  = TRUE, 
       width  = 100
     )  
   }
@@ -603,8 +603,8 @@ covid_abm_v4_debug <- function(data_inputs, input_pars, vax_phases,
     }    
     
   # If running in debug, check in relation to checkpoints and checkpoint values and stop if doesn't pass  
-    if(debug & date_now %in% as.character(as.Date(debug_checkpoints))){
-      checkpoint <- which(date_now == as.character(as.Date(debug_checkpoints)))
+    if(debug & as.Date(as.character(date_now)) %in% debug_checkpoints){
+      checkpoint <- which(as.Date(as.character(date_now)) == debug_checkpoints)
       check_hosp <-  epi_curve[[t]][state == "Ih", N]$N
         
       cat("Checkpoint", checkpoint, ",", check_hosp, "hospitalizations\n")
