@@ -38,7 +38,7 @@ N <- nrow(agents)
 
 # Testing data for sims ----------------------
 # source(here::here("data", "get","COVID_CA_get_latest.R"))
-load(here::here("data", "get", "got", "CA_SF_data2021-02-02.Rdata"))
+load(here::here("data", "get", "got", "CA_SF_data2021-02-04.Rdata"))
 # sf_test is observed testing completed in SF county
 # Must contain columns date_num and tests_pp to convert to testing function in model
 sf_test_smooth <- sf_test %>% 

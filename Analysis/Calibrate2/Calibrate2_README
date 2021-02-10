@@ -1,1 +1,5 @@
-First round calibration using an latinhypercube with 27 parameters and broad uniform distributions resulted in no parameter sets that were particularly great at fitting. Closer inspection showed that range of beta tested was broader than necessary and PRCC global sensitivity analysis showed many model parameters did not have much influence on model outcomes. Given this, a more condensed latin hypercube was constructed 
+First round calibration using an latinhypercube with 27 parameters and broad uniform distributions resulted in no parameter sets that were particularly great at fitting. Closer inspection showed that range of beta tested was broader than necessary and PRCC global sensitivity analysis showed many model parameters did not have much influence on model outcomes. Given this, a more condensed latin hypercube was constructed and used for another round of calibration runs.
+
+More specifically, the testing probabilities were removed, mask reduction was fixed at 0.8 (80% reduction in infectiousness of infectious agents wearing mask)
+
+In addition, the age-dependent symptomatic infection probabilities were deemed suspiciously low and weretherefore updated using a combination of UeS data and the probabilities from COVASIM and other ABMs.

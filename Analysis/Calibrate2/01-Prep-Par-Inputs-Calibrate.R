@@ -167,7 +167,7 @@ social_fx <- function(n_agents){
 # hist(social_fx(1e5))
 
 input_pars$other_pars$mask_fx              <- mask_fx     # Generates probability individual agents will wear mask
-input_pars$other_pars$mask_red             <- 0.6         # Reduction in transmission if infectious is wearing mask
+input_pars$other_pars$mask_red             <- 0.8         # Reduction in transmission if infectious is wearing mask
 input_pars$other_pars$social_fx            <- social_fx   # Generate sociality metrics
 input_pars$other_pars$visitor_mult_testing <- 4           # Multiplier on true number of infectious agents compared to number confirmed positive in testing. Likely varies through time in reality, but here 4 assumes 1 in 4 agents who are infectious are actually confirmed positive
 input_pars$other_pars$visitor_mult_sfgrph  <- 10          # Multiplier on number of visitors from safegraph to reflect true number of visitors (safegraph panel is ~10% of population)
