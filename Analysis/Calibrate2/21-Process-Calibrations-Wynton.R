@@ -35,15 +35,17 @@ get_z <- function(vec){
 
 fitsdf_out <- fitsdf %>% 
   mutate(
-    hosp_z             = get_z(hosp_nll),
-    dths_z             = get_z(dths_nll),
-    dths_race_z        = get_z(dths_race_nll),
-    ct_cases_z         = get_z(ct_cases_nll),
-    case_race_z        = get_z(case_race_nll),
-    overall_z          = hosp_z + dths_z + dths_race_z + ct_cases_z + case_race_z,
-    overall_nll        = hosp_nll+dths_nll+dths_race_nll+ct_cases_nll+case_race_nll,
-    hosp_dths_race_nll = hosp_nll+dths_nll+dths_race_nll+case_race_nll
+    hosp_z                  = get_z(hosp_fit),
+    dths_z                  = get_z(dths_fit),
+    dths_race_z             = get_z(dths_race_fit),
+    ct_cases_z              = get_z(ct_cases_fit),
+    case_race_z             = get_z(case_race_fit),
+    overall_z               = hosp_z + dths_z + dths_race_z + ct_cases_z + case_race_z,
+    overall_fit             = hosp_fit+dths_fit+dths_race_fit+ct_cases_fit+case_race_fit,
+    hosp_dths_race_fit      = hosp_fit+dths_fit+dths_race_fit+case_race_fit,
+    overall_fit_norm        = hosp_fit_norm+dths_fit_norm+dths_race_fit_norm+ct_cases_fit_norm+case_race_fit_norm,
+    hosp_dths_race_fit_norm = hosp_fit_norm+dths_fit_norm+dths_race_fit_norm+case_race_fit_norm
   ) %>% 
-  arrange(overall_nll)
+  arrange(overall_fit_norm)
 
 saveRDS(fitsdf_out, here::here("data", "processed", "LHS_Fits2_summary.rds"))
