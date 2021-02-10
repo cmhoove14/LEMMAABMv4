@@ -25,7 +25,7 @@ sim_hosp$Date <- as.Date(as.character(sim_hosp$date)) # Date formate from sim me
 
 comp_hosp <- merge(sim_hosp, sf_hosp, by = "Date")
 
-hosp_mse <- sum(dpois(comp_hosp$N, comp_hosp$HOSP_CONF, log = T))
+hosp_nll <- sum(dpois(comp_hosp$N, comp_hosp$HOSP_CONF, log = T))
 
 # Compare weekly deaths -------------------------
 sim_dths <- as_tibble(sim$agents[state == "D", c("id", "sex", "age", "race", "t_death")]) %>% 
