@@ -7,9 +7,9 @@ library(data.table)
 library(zoo)
 
 # Folders containing lists of outputs on wynton
-root <- here::here("data","outputs","Calibration_Fits")
+root <- here::here("data","outputs","Calibration2_Fits")
 
-n_tasks <- 1440
+n_tasks <- 1000
 
 fitsdf <- bind_rows(lapply(1:n_tasks, function(x){
   # Get sim file  
@@ -35,13 +35,15 @@ get_z <- function(vec){
 
 fitsdf_out <- fitsdf %>% 
   mutate(
-    hosp_z      = get_z(hosp_mse),
-    dths_z      = get_z(dths_mse),
-    dths_race_z = get_z(dths_race_mse),
-    ct_cases_z  = get_z(ct_cases_mse),
-    case_race_z = get_z(case_race_mse),
-    overall_z   = hosp_z + dths_z + dths_race_z + ct_cases_z + case_race_z
+    hosp_z             = get_z(hosp_nll),
+    dths_z             = get_z(dths_nll),
+    dths_race_z        = get_z(dths_race_nll),
+    ct_cases_z         = get_z(ct_cases_nll),
+    case_race_z        = get_z(case_race_nll),
+    overall_z          = hosp_z + dths_z + dths_race_z + ct_cases_z + case_race_z,
+    overall_nll        = hosp_nll+dths_nll+dths_race_nll+ct_cases_nll+case_race_nll,
+    hosp_dths_race_nll = hosp_nll+dths_nll+dths_race_nll+case_race_nll
   ) %>% 
-  arrange(-overall_z)
+  arrange(overall_nll)
 
-saveRDS(fitsdf_out, here::here("data", "processed", "LHS_Fits1_summary.rds"))
+saveRDS(fitsdf_out, here::here("data", "processed", "LHS_Fits2_summary.rds"))
