@@ -13,5 +13,5 @@ p_symp(age)
 numeric of probability of clinical (symptomatic).
 }
 \description{
-Age-dependent probabilities of having clinical (symptomatic) infection. Used in `next.state`. From https://www.nature.com/articles/s41591-020-0962-9/figures/8
+Age-dependent probabilities of having clinical (symptomatic) infection. Used in `next.state`. From combination of UeS data for 0-49 and best guesstimate/input from COVASIM for older age groups
 }

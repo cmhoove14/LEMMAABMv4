@@ -94,7 +94,7 @@ t_sevsymp <- function(n_Ih, shape.ih = 6, scale.ih = 0.5){
 
 #' @title Probability of symptomatic infection
 #'  
-#' @description Age-dependent probabilities of having clinical (symptomatic) infection. Used in `next.state`. From https://www.nature.com/articles/s41591-020-0962-9/figures/8
+#' @description Age-dependent probabilities of having clinical (symptomatic) infection. Used in `next.state`. From combination of UeS data for 0-49 and best guesstimate/input from COVASIM for older age groups
 #' 
 #' @param age age of person
 #' 
@@ -103,15 +103,15 @@ t_sevsymp <- function(n_Ih, shape.ih = 6, scale.ih = 0.5){
 #'
 p_symp <- function(age){
   n <- length(age)
-  n[age %in% c(0:9)] <- 0.29
-  n[age %in% c(10:19)] <- 0.21
-  n[age %in% c(20:29)] <- 0.27
-  n[age %in% c(30:39)] <- 0.33
-  n[age %in% c(40:49)] <- 0.4
-  n[age %in% c(50:59)] <- 0.49
-  n[age %in% c(60:69)] <- 0.63
-  n[age %in% c(70:79)] <- 0.69
-  n[age >= 80] <- 0.69
+  n[age %in% c(0:9)] <- 0.4
+  n[age %in% c(10:19)] <- 0.675
+  n[age %in% c(20:29)] <- 0.688
+  n[age %in% c(30:39)] <- 0.719
+  n[age %in% c(40:49)] <- 0.707
+  n[age %in% c(50:59)] <- 0.75
+  n[age %in% c(60:69)] <- 0.8
+  n[age %in% c(70:79)] <- 0.85
+  n[age >= 80] <- 0.9
   
   return(n)
 }
