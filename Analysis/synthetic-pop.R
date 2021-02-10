@@ -5,6 +5,7 @@ library(ipfr)
 library(tidycensus)
 library(tidyverse)
 library(stringr)
+library(readxl)
 
 setwd("C:/Users/Sophia/Documents/COVID Research")
 
@@ -45,7 +46,14 @@ tm_basemap(leaflet::providers$Esri.WorldImagery)+
 # 8. $100,000 to $149,999
 # 9. $150,000 to $199,999
 # 10. $200,000 or more
-PUMS_2018_h <- read_csv("csv_hca (1)/psam_h06.csv")
+
+temp <- tempfile()
+download.file("https://www2.census.gov/programs-surveys/acs/data/pums/2018/5-Year/csv_hca.zip",temp)
+PUMS_2018_h <- read_csv(unz(temp, "psam_h06.csv"))
+unlink(temp)
+
+h <- read_csv("csv_hca (1)/psam_h06.csv")
+
 h_seed<- PUMS_2018_h %>% 
   filter(PUMA %in% c("07501", "07502", "07503", "07504", "07505", "07506", "07507"), NP!=0, !is.na(SERIALNO), !is.na(HINCP)) %>%
   mutate(hhsize = ifelse(NP > 6, 7, NP), 
@@ -56,8 +64,12 @@ h_seed<- PUMS_2018_h %>%
 
 #============================ processing seed data ==============================
 # read in person data from PUMS 2014-2018 5 year survey
-PUMS_2018_p <-read_csv("csv_hca (1)/psam_p06.csv")
+temp <- tempfile()
+download.file("https://www2.census.gov/programs-surveys/acs/data/pums/2018/5-Year/csv_pca.zip",temp)
+PUMS_2018_p <- read_csv(unz(temp, "psam_p06.csv"))
+unlink(temp)
 
+p<-read_csv("csv_hca (1)/psam_p06.csv")
 # for SF county only
 # PUMA list https://www.census.gov/geographies/reference-maps/2010/geo/2010-pumas/california.html
 PUMS_2018_sf <- PUMS_2018_p %>%
@@ -70,11 +82,36 @@ pop.prop <- PUMS_2018_sf %>%
   mutate(prop = prop/sum(prop))
 pop.prop
 
-#### Make OCC dataset
 
-OCC.list <- read_csv("2018-ACS-PUMS-Occupation-Code-List.csv") %>% 
-  rename(Code = "2018 Census PUMS Occupation Code") %>%
-  filter(!is.na(Code))
+#### Make OCC dataset
+temp <- tempfile(fileext = ".xlsx")
+download.file(url = "https://www2.census.gov/programs-surveys/acs/tech_docs/pums/code_lists/ACSPUMS2014_2018CodeLists.xlsx", destfile = temp, mode="wb")
+OCC.list <- read_excel(temp, sheet="OCCP & SOCP", range="A10:C881")
+unlink(temp)
+
+OCC.list <- OCC.list %>% 
+  rename(Code = `2018 Census PUMS Occupation Code`) %>%
+  rename(Description = `Description (2018 Census Occupation Code)`) %>%
+  filter(!is.na(Code)) 
+
+occ_groups <- c("Management Occupations:", "Business and Financial Operations Occupations:", "Computer and mathematical occupations:",
+                "Architecture and Engineering Occupations:", "Life, Physical, and Social Science Occupations:", "Community and Social Service Occupations:",
+                "Legal Occupations:", "Educational Instruction and Library Occupations:", "Arts, Design, Entertainment, Sports, and Media Occupations:",
+                "Healthcare Practitioners and Technical Occupations:", "Healthcare Support Occupations:", "Protective Service Occupations:", "Food Preparation and Serving Related Occupations:",
+                "Building and Grounds Cleaning and Maintenance Occupations:", "Personal Care and Service Occupations:", "Sales and Related Occupations:",
+                "Office and Administrative Support Occupations:", "Farming, Fishing, and Forestry Occupations:", "Construction and Extraction Occupations:",
+                "Installation, Maintenance, and Repair Occupations:", "Production Occupations:", "Transportation Occupations:", "Material Moving Occupations:")
+
+d_occ_groups <- filter(OCC.list, Description %in% occ_groups)
+
+OCC.list$New_Code <- NA
+cutoffs <- str_split(d_occ_groups$Code, "-")
+for(i in 1:23){
+  cutoff_group <- cutoffs[[i]]
+  if(cutoff_group[2]=="4150")
+    cutoff_group[2] <- "4160"
+  OCC.list$New_Code[OCC.list$Code >= cutoff_group[1] & OCC.list$Code <= cutoff_group[2]] <- i
+}
 
 sf_occp <- PUMS_2018_sf %>%
   filter(! OCCP %in% c("9800", "9810", "9825", "9830")) %>%   # remove military
@@ -82,7 +119,7 @@ sf_occp <- PUMS_2018_sf %>%
   summarise(num = n(), prop = num/nrow(PUMS_2018_sf)) %>%
   left_join(OCC.list, by = c("OCCP" = "Code")) %>%
   ungroup() %>%
-  mutate(new.code = ifelse(is.na(`New Code`), "00", str_pad(`New Code`, 2, pad = "0")))
+  mutate(new.code = ifelse(is.na(`New_Code`), "00", str_pad(`New_Code`, 2, pad = "0")))
 
 
 ### Race
@@ -103,8 +140,8 @@ p_seed <- PUMS_2018_sf %>%
   mutate(sex = SEX, 
          age = cut(AGEP, breaks = c(0,10,20,30,40,50,60,70,80,Inf), right = FALSE, include.lowest = TRUE), 
          age = as.numeric(age)) %>%  
-         left_join(OCC.list[,c("Code", "New Code")], by = c("OCCP" = "Code")) %>%
-  mutate(occp = ifelse(is.na(`New Code`), 0, `New Code`),
+         left_join(OCC.list[,c("Code", "New_Code")], by = c("OCCP" = "Code")) %>%
+  mutate(occp = ifelse(is.na(`New_Code`), 0, `New_Code`),
          # combine american indian and alaskan native categories
          # and recode variable
          combine_aain = ifelse(RAC1P %in% c(4, 5), 3, RAC1P), 
@@ -159,8 +196,6 @@ acs_subject_var18<-load_variables(2018, "acs5/subject", cache=FALSE)
 # 21	Production occupations
 # 22	Transportation occupations
 # 23	Material moving occupations
-
-OCC.list.agg <- read_csv("occupation-aggregated.csv")
 
 acs_occup <- get_acs(geography = "tract", table = "S2401", year = 2018, state = "CA", survey = "acs5") 
 
@@ -276,8 +311,8 @@ p_target <- function(ct_name, occup, age_sex, race){
     filter(!(is.na(level6) & freq >1)) %>%
     mutate(label.new = ifelse(freq > 1, level6, level5)) %>%
     dplyr::select("variable","label.new","estimate") %>%
-    left_join(OCC.list.agg[,c("Description", "New Code")], by = c("label.new" = "Description")) %>%
-    group_by(`New Code`) %>%
+    mutate(code=c(1:10, 10, 11:12, 12, 13:23)) %>%
+    group_by(code) %>%
     summarise(estimate = sum(estimate))
   print(acs_occup_reshape)
   
@@ -306,11 +341,11 @@ p_target <- function(ct_name, occup, age_sex, race){
     ungroup() %>%
     select(estimate, racegroup) %>%
     spread(racegroup, estimate) 
-  print(acs_race)
+  print(acs_race_reshape)
   
   acs_all_sex <- colSums(acs_age_sex_reshape[,2:3])
   acs_all_agegroup <- rowSums(acs_age_sex_reshape[,2:3])
-  acs_all_occup <- rbind(acs_occup_reshape %>% rename("Code" = "New Code"), data.frame("Code" = 0, estimate = sum(acs_all_sex) - sum(acs_occup_reshape$estimate)))
+  acs_all_occup <- rbind(acs_occup_reshape %>% rename("Code" = code), data.frame("Code" = 0, estimate = sum(acs_all_sex) - sum(acs_occup_reshape$estimate)))
   
   #==== personal target =======
   p_targets <- list()
@@ -326,7 +361,7 @@ p_target <- function(ct_name, occup, age_sex, race){
   p_targets$occp <- as.tibble(p_targets$occp)
   colnames(p_targets$occp) <- c(1:23, 0)
 
-  p_targets$race <- acs_race_sf
+  p_targets$race <- acs_race_reshape
   
   return(p_targets)
 }
@@ -383,8 +418,7 @@ syn_pop <- function(ct_name, ptarget, htarget, pseed, hseed) {
   # p_seed=data frame containing person pums data for SF county
   # h_seed=data frame containing household pums data for SF county 
   # output: 
-  # head of the synthetic pop
-  # all the populations will automatically be saved to a csv file
+  # synthetic pop
   
   #============ IPU ===================
   ct_ipu <- ipu(hseed, htarget, pseed, ptarget, primary_id="SERIALNO")
@@ -394,7 +428,6 @@ syn_pop <- function(ct_name, ptarget, htarget, pseed, hseed) {
     rename(house_id=new_id) %>%
     select(house_id, indiv_id, hhsize, hhincome, sex, age, occp, race)
   
-  write.csv(ct_syn_p, paste("synthetic_pops/", ct_name, ".csv", sep=""), row.names = FALSE)
   ct_syn_p
 }
 
@@ -431,14 +464,35 @@ syn_pop <- function(ct_name, ptarget, htarget, pseed, hseed) {
 # filter out those ct names
 CT_sf_filtered <- CT_sf[!(grepl(("9804.01|9901"), CT_sf))]
 
-for (ct in CT_sf) {
+total_pop <- NULL
+for (ct in CT_sf_filtered[1]) {
   persons <- p_target(ct, acs_occup_sf, acs_age_sex_sf, acs_race_sf)
   hh <- h_target(ct, acs_hh_income_sf, acs_hhsize_sf)
-  syn_pop(ct, persons, hh, p_seed, h_seed)
+  pop <- syn_pop(ct, persons, hh, p_seed, h_seed)
+  # find geoid
+  has_id <- acs_occup_sf %>% filter(NAME==ct)
+  # add geoid column
+  pop$geoid <- has_id$GEOID[1]
+  total_pop <- rbind(total_pop, pop)
 }
+
 
 # for (ct in CT_sf[194:196]) {
 #   persons <- p_target(ct, acs_occup_sf, acs_age_sex_sf, acs_race_sf)
 #   hh <- h_target(ct, acs_hh_income_sf, acs_hhsize_sf)
 #   syn_pop(ct, persons, hh, p_seed, h_seed)
 # }
+
+
+# # add geoid to each csv
+# for (ct in CT_sf_filtered) {
+#   # read in csv
+#   pop <- read.csv(paste("synthetic_pops/", ct, ".csv", sep=""))
+#   # find geoid
+#   has_id <- acs_occup_sf %>% filter(NAME==ct)
+#   # add geoid column
+#   pop$geoid <- has_id$GEOID[1]
+#   total_pop <- rbind(total_pop, pop)
+# }
+
+write.csv(total_pop, "synthetic_pops/total_sf_pop.csv", row.names = FALSE)
