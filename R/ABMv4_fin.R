@@ -636,7 +636,7 @@ covid_abm_v4 <- function(data_inputs, input_pars, vax_phases,
     })))
     
     saveRDS(fin_out, paste0(output_path, 
-                            "ABMv4_bta", 
+                            "ABMv4_", 
                             "testing", testing,
                             "_vax", vaccination,
                             "_", t0,"-", t.end,
