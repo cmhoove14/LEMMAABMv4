@@ -192,3 +192,55 @@ best_ct_cases_sim %>%
 ggsave(here::here("Plots", "LHS_Calibration", "Fits2", "ct_cases_sims_best.jpg"),
        units="in", width = 7, height = 5)
 
+
+
+# Compare confirmed cases and test positivity ----------------------
+
+jpeg(here::here("Plots", "LHS_Calibration", "Fits2", "best10_confirmed.jpg"),
+     height = 4, width = 7, units = "in", res = 100)
+
+plot(x    = sf_test$Date[which(sf_hosp$Date <= t.end)], 
+     y    = sf_test$pos[which(sf_hosp$Date <= t.end)], 
+     type = "h", 
+     lwd  = 1, 
+     col  = "black",
+     ylab = "Test positive %")
+
+for(s in best10_norm){
+  tests_sim <- get_sim(s)$linelist_tests
+  
+  tests_sum_by_date <- tests_sim %>% 
+    group_by(Date) %>% 
+    summarise(n_tests = n(),
+              n_pos = sum(test_pos),
+              per_pos = n_pos/n_tests)
+  
+  lines(tests_sum_by_date$Date, tests_sum_by_date$n_pos, col = "coral")
+}
+
+dev.off()  
+
+
+jpeg(here::here("Plots", "LHS_Calibration", "Fits2", "best10_test_pct.jpg"),
+     height = 4, width = 7, units = "in", res = 100)
+
+plot(x    = sf_test$Date[which(sf_hosp$Date <= t.end)], 
+     y    = sf_test$pct[which(sf_hosp$Date <= t.end)], 
+     type = "h", 
+     lwd  = 1, 
+     col  = "black",
+     ylab = "Test positive %")
+
+for(s in best10_norm){
+  tests_sim <- get_sim(s)$linelist_tests
+  
+  tests_sum_by_date <- tests_sim %>% 
+    group_by(Date) %>% 
+    summarise(n_tests = n(),
+              n_pos = sum(test_pos),
+              per_pos = n_pos/n_tests)
+  
+  lines(tests_sum_by_date$Date, tests_sum_by_date$per_pos, col = "blue")
+}
+
+dev.off()  
