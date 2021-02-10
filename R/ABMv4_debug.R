@@ -11,8 +11,8 @@
 #' @param vaccination TRUE/FALSE of whether to model vaccination using inputs in `input_pars` and `vax_phases`
 #' @param verbose TRUE/FALSE should detailed info at each time step be printed?
 #' @param store_extra TRUE/FALSE should extra metrics including % staying home and % isolating be stored and returned? Good for debugging
-#' @param output_path file path relative to `here::here` root to save outputs
 #' @param debug LOGICAL of whether to run in debug mode
+#' @param output_path file path relative to `here::here` root to save outputs
 #' 
 #' @details 
 #' `data_inputs` is a list of lists containing `agents_dt`: data.table of agents with necessary characteristics including: "hhsize" "hhincome"   "sex"        "age"        "occp"       "race"       "hhid"       "id" "ct"  "essential"  "work_ct"    "work"    "state"    "nextstate"  "tnext"  "t_symptoms" ;  `ct_cdf_list`: list of matrices of dim cts x cts in which entries represent probabilities of moving from CT i to CT j on day t where t subsets the list to corresponding day (e.g. ct_cdf_list[[t]] = ct x ct matrix). Used in `GetCTVisit`/`GetCTVisit_cpp` function ; `ct_ids` vector relating row numbers of `ct_cdf_list` to actual ct codes ; `stay_home_dt` data table with columns `Date`, `CT`, and `pct_home` (E.g. derived from safegraph data) to use for social distancing/stay at home compliance ; `visitors_list` list of data frames/tables with columns corresponding to census tract, number of external visitors to that ct, county from which they visited, and population and infection characteristics of that county. column inf_prob represents incidence in that county (new cases identified per population) and is used as probability a visiting agent is infectious along with `visitor_mult_testing` to correct for ratio of true incidence to incidence from testing data and `visitor_mult_sfgrph` to correct for ratio of safegraph devices tracked to total population ;  `test_avail` data frame with columns date_num and tests_pp corresponding to number of tests availabe per person on day date_num. Used to generate function returning the number of tests available per agent on day t since test start. 
@@ -23,9 +23,9 @@
 #' @return list with two objects: an epi curve with counts of agents in each state through time and a dataframe with infection reports for every new infection (e.g. entry created whenever agent transitions from S to E)
 #' @export
 
-covid_abm_v4 <- function(data_inputs, input_pars, vax_phases,
-                         visitors, testing, vaccination,
-                         verbose, store_extra, output_path){
+covid_abm_v4_debug <- function(data_inputs, input_pars, vax_phases,
+                               visitors, testing, vaccination,
+                               verbose, store_extra, debug, output_path){
   # Stop messages for invalid inputs -----------------
   if(!testing %in% c("N", "S", "A")){
     stop("Invalid testing scenario, testing must be 'S', 'A', or 'N'")
