@@ -8,7 +8,16 @@ if(sum(grepl(Sys.Date(), list.files(here::here("data", "get", "got")))) == 0){
   system(paste0("wget -O ", here::here("data", "get", "got", "CA_cases"), Sys.Date(), ".csv " ,
                 "https://data.ca.gov/dataset/590188d5-8545-4c93-a9a0-e230f0db7290/resource/926fd08f-cc91-4828-af38-bd45de97f8c3/download/statewide_cases.csv")) 
   
-  CA_cases <- read.csv(paste0(here::here("data", "get", "got", "CA_cases"), Sys.Date(), ".csv"))
+  CA_cases <- read.csv(paste0(here::here("data", "get", "got", "CA_cases"), Sys.Date(), ".csv")) %>% 
+    filter(county != "Unassigned") %>% 
+    mutate(date = as.Date(date)) %>% 
+    padr::pad() %>% 
+    replace_na(list(totalcountconfirmed = 0,
+                    totalcountdeaths=0,
+                    newcountconfirmed=0,
+                    newcountdeaths=0)) %>% 
+    group_by(county) %>% 
+    mutate(newcount7day = zoo::rollmean(newcountconfirmed,7, na.pad=T, align="left"))
   
   system(paste0("wget -O ", here::here("data", "get", "got", "CA_tests"), Sys.Date(), ".csv " ,
                 "https://data.ca.gov/dataset/efd6b822-7312-477c-922b-bccb82025fbe/resource/b6648a0d-ff0a-4111-b80b-febda2ac9e09/download/statewide_testing.csv"))
@@ -22,13 +31,13 @@ if(sum(grepl(Sys.Date(), list.files(here::here("data", "get", "got")))) == 0){
     
 # Get SF data ----------------------
   system(paste0("wget -O ", here::here("data", "get", "got", "SF_hosp"), Sys.Date(), ".csv " ,
-                "https://data.sfgov.org/resource/nxjg-bhem.csv"))
+                "https://data.sfgov.org/api/views/nxjg-bhem/rows.csv?accessType=DOWNLOAD"))
   
   system(paste0("wget -O ", here::here("data", "get", "got", "SF_case"), Sys.Date(), ".csv " ,
-                "https://data.sfgov.org/resource/tvq9-ec9w.csv"))
+                "https://data.sfgov.org/api/views/tvq9-ec9w/rows.csv?accessType=DOWNLOAD"))
   
   system(paste0("wget -O ", here::here("data", "get", "got", "SF_test"), Sys.Date(), ".csv " ,
-                "https://data.sfgov.org/resource/nfpa-mg4g.csv"))
+                "https://data.sfgov.org/api/views/nfpa-mg4g/rows.csv?accessType=DOWNLOAD"))
   
   system(paste0("wget -O ", here::here("data", "get", "got", "SF_case_by_race"), Sys.Date(), ".csv " ,
                 "https://data.sfgov.org/api/views/vqqm-nsqg/rows.csv?accessType=DOWNLOAD"))
@@ -39,12 +48,12 @@ if(sum(grepl(Sys.Date(), list.files(here::here("data", "get", "got")))) == 0){
 # Clean SF data ---------------------    
 ### Hospitalizations  
   sf_hosp <- read.csv(paste0(here::here("data", "get", "got", "SF_hosp"), Sys.Date(), ".csv" )) %>% 
-    mutate(Date = as.Date(reportdate),
-           type = ifelse(dphcategory == "ICU", "ICU", "HOSP"),
-           conf = ifelse(covidstatus == "PUI", "PUI", "CONF"),
+    mutate(Date = as.Date(reportDate, format = "%Y/%m/%d"),
+           type = ifelse(DPHCategory == "ICU", "ICU", "HOSP"),
+           conf = ifelse(CovidStatus == "PUI", "PUI", "CONF"),
            hosp_stat = paste(type, conf, sep = "_")) %>% 
     pivot_wider(names_from = hosp_stat,
-                values_from = patientcount) %>%
+                values_from = PatientCount) %>%
     group_by(Date) %>% 
     summarise(ICU_PUI = sum(ICU_PUI, na.rm = T),
               ICU_CONF = sum(ICU_CONF, na.rm = T),
@@ -60,24 +69,24 @@ if(sum(grepl(Sys.Date(), list.files(here::here("data", "get", "got")))) == 0){
   
 ### Cases  
   sf_case_raw <- read.csv(paste0(here::here("data", "get", "got", "SF_case"), Sys.Date(), ".csv")) %>% 
-    mutate(Date = as.Date(specimen_collection_date))
+    mutate(Date = as.Date(Specimen.Collection.Date))
   
   #sf_case_raw %>% filter(case_disposition == "Confirmed") %>% ggplot() + geom_line(aes(x = Date, y = case_count, col = transmission_category)) + theme_bw()
   #sf_case_raw %>% filter(case_disposition == "Confirmed") %>% group_by(Date) %>% summarise(tot_cases = sum(case_count), cont_cases = case_count[which(transmission_category == "From Contact")], prop_contact = cont_cases/tot_cases) %>% ggplot() + geom_line(aes(x = Date, y = prop_contact)) + theme_bw() + labs(title = "Proportion of cases identified from contact")
   
   sf_case <- sf_case_raw %>% 
     padr::pad(., start_val = as.Date("2020-03-01")) %>%  
-    pivot_wider(names_from = case_disposition,
-                values_from = case_count) %>%
+    pivot_wider(names_from = Case.Disposition,
+                values_from = Case.Count) %>%
     group_by(Date) %>% 
     summarise(Cases = sum(Confirmed, na.rm = T),
               Deaths = sum(Death, na.rm = T),
-              Cases_Community = sum(Confirmed[which(transmission_category == "Community")], na.rm = T),
-              Cases_Contact = sum(Confirmed[which(transmission_category == "From Contact")], na.rm = T),
-              Cases_Unknown = sum(Confirmed[which(transmission_category == "Unknown")], na.rm = T),
-              Deaths_Community = sum(Death[which(transmission_category == "Community")], na.rm = T),
-              Deaths_Contact = sum(Death[which(transmission_category == "From Contact")], na.rm = T),
-              Deaths_Unknown = sum(Death[which(transmission_category == "Unknown")], na.rm = T)) %>% 
+              Cases_Community = sum(Confirmed[which(Transmission.Category == "Community")], na.rm = T),
+              Cases_Contact = sum(Confirmed[which(Transmission.Category == "From Contact")], na.rm = T),
+              Cases_Unknown = sum(Confirmed[which(Transmission.Category == "Unknown")], na.rm = T),
+              Deaths_Community = sum(Death[which(Transmission.Category == "Community")], na.rm = T),
+              Deaths_Contact = sum(Death[which(Transmission.Category == "From Contact")], na.rm = T),
+              Deaths_Unknown = sum(Death[which(Transmission.Category == "Unknown")], na.rm = T)) %>% 
     arrange(Date) %>% 
     mutate(cum_case = cumsum(Cases),
            cum_death = cumsum(Deaths))
@@ -147,7 +156,7 @@ if(sum(grepl(Sys.Date(), list.files(here::here("data", "get", "got")))) == 0){
   
   del_date <- Sys.Date() - 3
   
-  if(del_date != as.Date("2020-02-02")){ # Keep for sims to run through January so don't have to run entire script each new day
+  if(del_date != as.Date("2020-02-10")){ # Keep for sims to run through January so don't have to run entire script each new day
     unlink(paste0(here::here("data", "get", "got"), "/", got_files[grepl(del_date, got_files)]))
   }
 } else {
