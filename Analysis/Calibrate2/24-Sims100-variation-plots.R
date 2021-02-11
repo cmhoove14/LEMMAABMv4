@@ -25,40 +25,35 @@ input_pars  <- sim1$input_pars
 LEMMAABMv4::unpack_list(input_pars)
 
 # Plot vars
-par(mar = c(3,2,2,0.1),
-    mgp = c(1.5,0.5,0))
 
 # Compare daily hospitalizations ----------------
+
 jpeg(here::here("Scratch", "hosp_sims_100sims_bta028.jpg"),
-     height = 4, width = 7, units = "in", res = 100)
+     height = 8, width = 8, units = "in", res = 100)
+par(mar = c(3,2,2,0.1),
+    mgp = c(1.5,0.5,0))
+par(mfrow = c(5,2))
 
-#Plot of observed data with range due to PUI
-plot(x    = sf_hosp$Date[which(sf_hosp$Date <= t.end)], 
-     y    = sf_hosp$HOSP_tot[which(sf_hosp$Date <= t.end)], 
-     type = "h", 
-     lwd  = 1, 
-     col  = "black",
-     ylab = "Hospitalizations")
-
-  segments(x0    = sf_hosp$Date[which(sf_hosp$Date <= t.end)], 
-           x1    = sf_hosp$Date[which(sf_hosp$Date <= t.end)],
-           y0    = sf_hosp$HOSP_tot[which(sf_hosp$Date <= t.end)],
-           y0    = sf_hosp$HOSP_max[which(sf_hosp$Date <= t.end)],
-           col   = "grey50")
+for(i in 0:9){
+  #Plot of observed data with range due to PUI
+  plot(x    = sf_hosp$Date[which(sf_hosp$Date <= t.end)], 
+       y    = sf_hosp$HOSP_max[which(sf_hosp$Date <= t.end)], 
+       type = "h", 
+       lwd  = 1, 
+       col  = "grey50",
+       ylab = "Hospitalizations")
   
-  points(x    = sf_hosp$Date[which(sf_hosp$Date <= t.end)], 
-         y    = sf_hosp$HOSP_tot[which(sf_hosp$Date <= t.end)],
-         pch  = 16)
+    points(x    = sf_hosp$Date[which(sf_hosp$Date <= t.end)], 
+           y    = sf_hosp$HOSP_tot[which(sf_hosp$Date <= t.end)],
+           type = "h")
+    
   
-  points(x    = sf_hosp$Date[which(sf_hosp$Date <= t.end)], 
-         y    = sf_hosp$HOSP_max[which(sf_hosp$Date <= t.end)],
-         pch  = 16)
-
-# Add sims  
-  for(s in 1:100){
-    hosp_sim <- get_fit(s)$hosp
-    lines(hosp_sim$Date, hosp_sim$N, col = "red", lwd = 0.5)
-  }
+  # Add sims  
+    for(s in c((i*10+1):(i*10+10))){
+      hosp_sim <- get_fit(s)$hosp
+      lines(hosp_sim$Date, hosp_sim$N, col = "red", lwd = 0.5)
+    }
+}
   
 dev.off()  
 
