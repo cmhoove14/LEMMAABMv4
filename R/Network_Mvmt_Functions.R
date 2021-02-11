@@ -164,6 +164,23 @@ worker_location <- function(inf.state,
   
 }
 
+#' @title Simulate contacts
+#'  
+#' @description Given infectious agent's location, age and their number of contacts, determine who is contacted in that location
+#' 
+#' @param location location of agent
+#' @param n_contacts number of contacts drawn from NB distribution based on sociality metric and current time step's contact multiplier
+#' @param age age of person
+#' @param age_contacts_probs square matrix with dimensions equivalent to number of age classes encoding age-dependent contact probabilities
+#' @param agents_dt data table of all agents 
+#'  
+#' @return agents in location who have infectious contact
+#' @export
+#'        
+get_contacts <- function(location, n_contacts, age, age_contacts_probs, agents_dt){
+  
+}
+
 
 #' @title Simulate location of individuals who are not workers or school-aged
 #'  
