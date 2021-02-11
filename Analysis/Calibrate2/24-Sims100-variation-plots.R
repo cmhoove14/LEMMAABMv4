@@ -57,7 +57,31 @@ for(i in 0:9){
   
 dev.off()  
 
-
+# Look at mean FOI through time
+bind_rows(lapply(1:100, function(s){
+  sim <- get_sim(s)
+  fois <- sim$mean
+}))
+for(i in 0:9){
+  #Plot of observed data with range due to PUI
+  plot(x    = sf_hosp$Date[which(sf_hosp$Date <= t.end)], 
+       y    = sf_hosp$HOSP_max[which(sf_hosp$Date <= t.end)], 
+       type = "h", 
+       lwd  = 1, 
+       col  = "grey50",
+       ylab = "Hospitalizations")
+  
+  points(x    = sf_hosp$Date[which(sf_hosp$Date <= t.end)], 
+         y    = sf_hosp$HOSP_tot[which(sf_hosp$Date <= t.end)],
+         type = "h")
+  
+  
+  # Add sims  
+  for(s in c((i*10+1):(i*10+10))){
+    hosp_sim <- get_fit(s)$hosp
+    lines(hosp_sim$Date, hosp_sim$N, col = "red", lwd = 0.5)
+  }
+  
 # Compare weekly deaths -------------------------
 best_dths_sim <- as_tibble(get_sim(best_dths)$agents[state == "D", c("id", "sex", "age", "race", "t_death")]) %>% 
   mutate(
