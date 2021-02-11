@@ -37,8 +37,8 @@ pops <- readxl::read_excel(temp.file2, skip = 3)
   ca_cnty_fips_dt <- merge(ca_cnty_fips_dt, pops, by = "County")
   
 # Get case data ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~---------------------------
-  source(here::here("data", "get", "COVID_CA_get_latest.R"))
-  
+  #source(here::here("data", "get", "COVID_CA_get_latest.R"))
+  load(here::here("data/get/got/CA_SF_data2021-02-04.Rdata"))
   CA_cases_dt <- as.data.table(CA_cases)
   CA_cases_dt[, County := paste0(county, " County")]
 
@@ -53,7 +53,8 @@ sf_tot_visitors <- lapply(1:length(sf_visitors), function(t){
   dt[, ct:=substr(visits,1,11)]
   dt[, visits:=NULL]
     colnames(dt)[1:2] <- c("fips", "Visits")
-  dt_ct <- dt[, Visits:=sum(Visits), by = list(fips, ct)]  
+  dt_ct <- dt[, sum(Visits), by = list(fips, ct)]  
+    colnames(dt_ct)[3] <- "Visits"  
     
   dt_ct[, date:=t0+t]  
   dt_ct[, fips:=as.character(fips)]  
