@@ -18,6 +18,9 @@ verbose     <- FALSE
 store_extra <- TRUE 
 
 # Replace pars in list with manual pars -------------------
+# Reduce run time for quicker runs
+input_pars$time_pars$t.end <- as.Date("2020-10-01")
+input_pars$time_pars$t.tot <- input_pars$time_pars$t.end - input_pars$time_pars$t0
 
 input_pars$trans_pars$bta_base             <- 0.28
 input_pars$trans_pars$bta_hh               <- 1
