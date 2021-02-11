@@ -30,13 +30,12 @@ input_pars$init_states$E0                  <- 3
 
 library(LEMMAABMv4)
 
-covid_abm_v4_debug(data_inputs = data_inputs, 
-                   input_pars  = input_pars, 
-                   vax_phases  = vax_phases,
-                   visitors    = visitors, 
-                   testing     = testing, 
-                   vaccination = vaccination,
-                   verbose     = verbose, 
-                   store_extra = store_extra,
-                   debug       = TRUE,
-                   output_path = paste0(output_path,"/"))
+covid_abm_v4(data_inputs = data_inputs, 
+             input_pars  = input_pars, 
+             vax_phases  = vax_phases,
+             visitors    = visitors, 
+             testing     = testing, 
+             vaccination = vaccination,
+             verbose     = verbose, 
+             store_extra = store_extra,
+             output_path = paste0(output_path,"/"))
