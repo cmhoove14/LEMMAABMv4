@@ -22,8 +22,11 @@ store_extra <- TRUE
 input_pars$trans_pars$bta_base             <- 0.28
 input_pars$trans_pars$bta_hh               <- 1
 input_pars$trans_pars$bta_work             <- 1
-input_pars$trans_pars$bta_sip_rd           <- 1
+input_pars$trans_pars$bta_sip_rd           <- 0.5
 input_pars$trans_pars$hpi_bta_mult         <- 0.25
+
+input_pars$other_pars$visitor_mult_testing <- 20
+input_pars$other_pars$visitor_mult_sfgrph  <- 10
 
 input_pars$other_pars$mort_mult            <- 0.5
 input_pars$init_states$E0                  <- 3
