@@ -1,6 +1,6 @@
 #' @title ABM V4 with testing 
 #' 
-#' @description Function to run agent based model
+#' @description Function to run agent based model with explicit contacts function
 #' 
 #' @param data_inputs List of data inputs for model including, see `details`. Compiled in `01-Prep-Data-Inputs.R`
 #' @param input_pars LIST of LISTS containing parameters, dates, functions to support simulation, see `details`.  Compiled in `02-Prep-Par-Inputs.R`
@@ -22,9 +22,9 @@
 #' @return list with two objects: an epi curve with counts of agents in each state through time and a dataframe with infection reports for every new infection (e.g. entry created whenever agent transitions from S to E)
 #' @export
 
-covid_abm_v4 <- function(data_inputs, input_pars, vax_phases,
-                         visitors, testing, vaccination,
-                         verbose, store_extra, output_path){
+covid_abm_v4_contact <- function(data_inputs, input_pars, vax_phases,
+                                 visitors, testing, vaccination,
+                                 verbose, store_extra, output_path){
   # Stop messages for invalid inputs -----------------
   if(!testing %in% c("N", "S", "A")){
     stop("Invalid testing scenario, testing must be 'S', 'A', or 'N'")
