@@ -12,15 +12,15 @@ output_path <- here::here("Scratch")
   visitors    <- TRUE 
   testing     <- "S" 
   vaccination <- FALSE 
-  verbose     <- TRUE 
+  verbose     <- FALSE 
   store_extra <- TRUE 
   
 # Replace pars in list with manual pars -------------------
 
 input_pars$trans_pars$bta_base             <- 0.28
-input_pars$trans_pars$bta_hh               <- 1.4
-input_pars$trans_pars$bta_work             <- 1.1
-input_pars$trans_pars$bta_sip_rd           <- 0.75
+input_pars$trans_pars$bta_hh               <- 1
+input_pars$trans_pars$bta_work             <- 1
+input_pars$trans_pars$bta_sip_rd           <- 1
 input_pars$trans_pars$hpi_bta_mult         <- 0.25
 
 input_pars$other_pars$mort_mult            <- 0.5
