@@ -13,6 +13,7 @@ sf_HPIs <- readRDS(here::here("data/processed/SF_HPI.rds"))
 sf_geo_hpi <- sf_geos %>% 
   left_join(sf_HPIs, by = "CensusTract")
 
+# Plot estimate of safegraph infected visitor rate through time ---------------------------
 visitors20 <- readRDS(here::here("data/processed/Safegraph/SF_visitors_CTs_2020Processed.rds"))
 visitors21 <- readRDS(here::here("data/processed/Safegraph/SF_visitors_CTs_2021Processed.rds"))
 
@@ -47,4 +48,34 @@ vis_geo_hpi %>%
          col = "HPI Quartile")
 
 ggsave(here::here("Plots/Inputs/expected_infected_visitors_by_hpi_quartile.jpg"),
+       width = 5, height = 4, units = "in")
+
+
+# Correlation between cumulative cases and HPI ------------------------
+load(here::here("data/get/got/CA_SF_data2021-02-10.Rdata"))
+
+sf_ct_cases_jan21 <- sf_geo_null %>% 
+  filter(Date == as.Date("2021-01-01")) %>% 
+  mutate(CensusTract = as.numeric(id),
+         prev_rate = cumulative_confirmed_cases/acs_population)
+
+ct_case_hpi <- sf_ct_cases_jan21 %>% 
+  left_join(sf_HPIs, by = "CensusTract")
+
+hpi_prev_r2 <- cor(ct_case_hpi$hpi2score, ct_case_hpi$prev_rate)^2
+
+ct_case_hpi %>% 
+  ggplot(aes(x = hpi2score, y = prev_rate)) +
+    geom_point(aes(col = as.factor(quartiles))) +
+    theme_classic() +
+    geom_smooth(method = "lm") +
+    annotate(geom = "text",
+             x = 1,
+             y = 0.1,
+             label = paste0(expression(r^2)," = ", round(hpi_prev_r2,2))) +
+    labs(x = "Healthy Places Index",
+         y = "Jan 2021 Cumulative Prevalence",
+         col = "HPI Quartile")
+    
+ggsave(here::here("Plots/Inputs/hpi_Jan2021_cum_prev_rate_corr.jpg"),
        width = 5, height = 4, units = "in")
