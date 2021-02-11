@@ -50,6 +50,40 @@ vis_geo_hpi %>%
 ggsave(here::here("Plots/Inputs/expected_infected_visitors_by_hpi_quartile.jpg"),
        width = 5, height = 4, units = "in")
 
+# Plot estimate of safegraph stay at home metrics through time ---------------------------
+home20 <- readRDS(here::here("data/processed/Safegraph/sfgrph_devices_pct_home_cts_2020.rds"))
+home21 <- readRDS(here::here("data/processed/Safegraph/sfgrph_devices_pct_home_cts_2021.rds"))
+
+home_all <- as_tibble(rbind(home20, home21)) %>% 
+  mutate(CensusTract = as.numeric(CT))
+
+home_all_hpi <- home_all %>% 
+  left_join(sf_geo_hpi, by = "CensusTract")
+
+home_all_hpi_sum <- home_all_hpi %>% 
+  group_by(Date, quartiles) %>% 
+  summarise(n_devices = sum(device_count),
+            n_home = sum(completely_home_device_count),
+            n_work = sum(part_time_work_behavior_devices)+sum(full_time_work_behavior_devices),
+            `Percent Home` = n_home/n_devices,
+            `Percent Work` = n_work/n_devices)
+
+home_all_hpi_sum %>% 
+  filter(!is.na(quartiles)) %>% 
+  pivot_longer(`Percent Home`:`Percent Work`,
+               names_to = "home_work",
+               values_to = "percent") %>% 
+  ggplot(aes(x = Date, y = percent, col = as.factor(quartiles), fill = as.factor(quartiles))) +
+  facet_wrap("home_work", nrow = 2) +
+  geom_line(size = 1.2) +
+  theme_classic() +
+  labs(y = "Proportion device behavior",
+       title = "Safegraph device behavior by HPI quartile",
+       fill = "HPI Quartile",
+       col = "HPI Quartile")
+
+ggsave(here::here("Plots/Inputs/safegraph_percent_home_work_behavior.jpg"),
+       width = 4, height = 6, units = "in")
 
 # Correlation between cumulative cases and HPI ------------------------
 load(here::here("data/get/got/CA_SF_data2021-02-10.Rdata"))
