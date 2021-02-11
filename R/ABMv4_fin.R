@@ -508,7 +508,8 @@ covid_abm_v4 <- function(data_inputs, input_pars, vax_phases,
       
       # document contacts in proportion to infection risk   
       agents[FOI > 0 & state == "S", contact_prob:=FOI*known_contact_prob]
-      agents[contact_prob > 0 & FOI > 0, contact := rbinom(.N, 1, contact_prob)]
+      agents[contact_prob > 1, contact := 1] # Agents with very high FOI end up with very high contact prob, assume they're contact is known
+      agents[contact_prob > 0 & contact_prob < 1 & FOI > 0, contact := rbinom(.N, 1, contact_prob)]
       agents[contact == 1, t_since_contact:=dt] # Assumes most recent contact overwrites any old contact
       
        if(verbose){cat(nrow(agents[infect == 1,]), "new infections generated,",
