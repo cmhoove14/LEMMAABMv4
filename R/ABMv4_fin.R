@@ -75,6 +75,7 @@ covid_abm_v4 <- function(data_inputs, input_pars, vax_phases,
   
   
   # Initial infection allocated randomly among non-children/non-retirees
+  set.seed(430)
   init.Es   <- sample(agents[!age %in% c(5,15,75,85), id], e.seed)   
   init.Ips  <- sample(agents[!age %in% c(5,15,75,85), id], ip.seed)   
   init.Ias  <- sample(agents[!age %in% c(5,15,75,85), id], ia.seed)   
