@@ -108,9 +108,13 @@ covid_abm_v4 <- function(data_inputs, input_pars, vax_phases,
     stay_home <- numeric(length = (t.tot/dt))
     quar_iso  <- numeric(length = (t.tot/dt))
     inf_quar  <- numeric(length = (t.tot/dt))
-    mean_FOI  <- numeric(length = (t.tot/dt))
+    mean_FOI  <- list()
     
-    stay_home[1] = quar_iso[1] = inf_quar[1] = mean_FOI[1] = 0
+    stay_home[1] = quar_iso[1] = inf_quar[1] = 0
+    
+    mean_FOI[[1]] <- data.table(loc_type = c("H", "C", "W"),
+                                V1 = c(0,0,0),
+                                Date = t0)
   }  
   
   # Determine adaptive testing days if adaptive testing ------------------
@@ -561,11 +565,21 @@ covid_abm_v4 <- function(data_inputs, input_pars, vax_phases,
             nrow(agents[infector == 1,]), "infectious agents are quarantining\n\n")
       }
       
-      if(store_extra){
+      if(store_extra & time_day != "N"){
         stay_home[t] <- nrow(agents[location==hhid,])/nrow(agents)*100
         quar_iso[t] <- nrow(agents[q_duration > 0,])
         inf_quar[t] <- nrow(agents[infector == 1 & q_duration > 0,])/nrow(agents[infector == 1,])
-        mean_FOI[t] <- mean(agents[, FOI], na.rm = T)
+        
+        agents[,loc_type:="C"]
+        agents[location == hhid, loc_type:="H"]
+        agents[location == work, loc_type:="W"]
+        
+        foi_init <- agents[FOI > 0, mean(FOI), by=loc_type]
+        foi_init$Date <- date_now
+        
+        mean_FOI[[t]] <- foi_init
+        
+        agents[,loc_type:=NULL]
       }  
       
       # Remove visiting agents
@@ -610,6 +624,7 @@ covid_abm_v4 <- function(data_inputs, input_pars, vax_phases,
     fin_out[["stay_home"]] <- stay_home
     fin_out[["quar_iso"]]  <- quar_iso
     fin_out[["inf_quar"]]  <- inf_quar
+    fin_out[["FOIs"]]      <- rbindlist(mean_FOI, fill = TRUE)
   }
   
   if(vaccination){
