@@ -63,6 +63,8 @@ home_all_hpi <- home_all %>%
 home_all_hpi_sum <- home_all_hpi %>% 
   group_by(Date, quartiles) %>% 
   summarise(n_devices = sum(device_count),
+            n_pop = sum(pop2010),
+            dev2pop = n_devices/n_pop,
             n_home = sum(completely_home_device_count),
             n_work = sum(part_time_work_behavior_devices)+sum(full_time_work_behavior_devices),
             `Percent Home` = n_home/n_devices,
