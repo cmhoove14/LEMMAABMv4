@@ -241,7 +241,7 @@ visitors_to_agents <- function(visits_dt, visitor_mult_testing, visitor_mult_sfg
   
   # adjust for testing and sfgrph devices to estimate of number of visitors who are infectious  
   visits_dt[, visits_adjust:=Visits*visitor_mult_sfgrph]
-  visits_dt[, inf_adjust:=newcountconfirmed*visitor_mult_testing]
+  visits_dt[, inf_adjust:=newcount7day*visitor_mult_testing]
   visits_dt[, inf_prob_adjust:=inf_adjust/pops]
   visits_dt[, inf_visits:=rpois(.N, visits_adjust*inf_prob_adjust)]
   

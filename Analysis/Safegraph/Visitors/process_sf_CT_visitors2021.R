@@ -38,7 +38,7 @@ pops <- readxl::read_excel(temp.file2, skip = 3)
   
 # Get case data ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~---------------------------
   #source(here::here("data", "get", "COVID_CA_get_latest.R"))
-  load(here::here("data/get/got/CA_SF_data2021-02-04.Rdata"))
+  load(here::here("data/get/got/CA_SF_data2021-02-10.Rdata"))
   CA_cases_dt <- as.data.table(CA_cases)
   CA_cases_dt[, County := paste0(county, " County")]
 
@@ -62,7 +62,7 @@ sf_tot_visitors <- lapply(1:length(sf_visitors), function(t){
   dt2 <- merge(dt_ct, CA_cases_dt2, by = c("fips", "date"),
                all.x = TRUE)
   
-  dt2[, inf_prob:=(newcountconfirmed/pops)]
+  dt2[, inf_prob:=(newcount7day/pops)]
 
   dt_out <- dt2[!is.na(Visits) & !is.na(inf_prob)]
   
