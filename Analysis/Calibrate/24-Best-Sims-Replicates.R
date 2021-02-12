@@ -8,7 +8,7 @@ data.table::setDTthreads(1)
 opts <- commandArgs(TRUE)
 
 taskID <- as.numeric(opts[1])
-output_path <- as.character(opts2[2])
+output_path <- as.character(opts[2])
 
 # Get fits and lhs to refence fits and pars
 fits <- readRDS(here::here("data", "processed", "LHS_Fits1_summary.rds"))
