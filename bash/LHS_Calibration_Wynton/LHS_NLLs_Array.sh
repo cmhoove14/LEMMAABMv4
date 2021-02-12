@@ -8,7 +8,7 @@
 #$ -l mem_free=1G                  #-- submits on nodes with enough free memory (required)
 #$ -l scratch=10G                  #-- SGE resources (home and scratch disks)
 #$ -l h_rt=00:05:00                #-- runtime limit 
-#$ -t 1-1440                       #-- array job
+#$ -t 1-2000                       #-- array job
                                    #-- tasks if desired (see Tips section on this page)
 module load CBI r
 Rscript Analysis/Calibrate/20-2-Calibration-Fit-Scores-NLL-Wynton.R $SGE_TASK_ID 
