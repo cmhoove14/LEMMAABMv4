@@ -8,16 +8,20 @@ library(data.table)
 fits <- readRDS(here::here("data", "processed", "LHS_Fits1_summary.rds"))
 
 # Sims with best fits to individual categories and best overall
-best_hosp      <- fits$sim[which.min(fits$hosp_mse)]
-best_dths      <- fits$sim[which.min(fits$dths_mse)]
-best_dths_race <- fits$sim[which.min(fits$dths_race_mse)]
-best_ct_cases  <- fits$sim[which.min(fits$ct_cases_mse)]
-best_case_race <- fits$sim[which.min(fits$case_race_mse)]
-best_overall   <- fits$sim[which.min(fits$overall_z)]
-best10         <- fits$sim[which(fits$overall_z <= quantile(fits$overall_z, 10/nrow(fits)))]
+best_hosp           <- fits$sim[which.min(fits$hosp_fit)]
+best_dths           <- fits$sim[which.min(fits$dths_fit)]
+best_dths_race      <- fits$sim[which.min(fits$dths_race_fit)]
+best_ct_cases       <- fits$sim[which.min(fits$ct_cases_fit)]
+best_case_race      <- fits$sim[which.min(fits$case_race_fit)]
+best_overall        <- fits$sim[which.min(fits$overall_fit)]
+best_overall_norm   <- fits$sim[which.min(fits$overall_fit_norm)]
+best10              <- fits$sim[which(fits$overall_fit <= quantile(fits$overall_fit, 10/nrow(fits)))]
+best10_no_ct        <- fits$sim[which(fits$hosp_dths_race_fit <= quantile(fits$hosp_dths_race_fit, 10/nrow(fits)))]
+best10_norm         <- fits$sim[which(fits$overall_fit_norm <= quantile(fits$overall_fit_norm, 10/nrow(fits)))]
+best10_no_ct_norm   <- fits$sim[which(fits$hosp_dths_race_fit_norm <= quantile(fits$hosp_dths_race_fit_norm, 10/nrow(fits)))]
 
 # Get CA & SF data
-load(here::here("data", "get", "got", "CA_SF_data2021-02-04.Rdata"))
+load(here::here("data", "get", "got", "CA_SF_data2021-02-10.Rdata"))
 
 # Utils to grab simulation/fit files
 sims_root <- here::here("data","outputs","Calibration_Outputs")
@@ -41,7 +45,7 @@ get_fit <- function(sim){
 }
 
 # Get input pars for reference dates
-best_overall_sim <- get_sim(best_overall)
+best_overall_sim <- get_sim(best_overall_norm)
 input_pars  <- best_overall_sim$input_pars
 LEMMAABMv4::unpack_list(input_pars)
 
@@ -62,18 +66,18 @@ plot(x    = sf_hosp$Date[which(sf_hosp$Date <= t.end)],
      col  = "grey50",
      ylab = "Hospitalizations")
 
-  lines(best_hosp_sim$Date, best_hosp_sim$N, col = "red")
+lines(best_hosp_sim$Date, best_hosp_sim$N, col = "red")
 
-  for(s in best10){
-    hosp_sim <- get_fit(s)$hosp
-    lines(hosp_sim$Date, hosp_sim$N, col = "blue")
-  }
-  
-  legend("topleft", bty = "n",
-         lty = 1, col = c("red", "blue"),
-         legend = c("Best fit", "Top10 Overall"),
-         cex = 0.7)
-  
+for(s in best10_norm){
+  hosp_sim <- get_fit(s)$hosp
+  lines(hosp_sim$Date, hosp_sim$N, col = "blue")
+}
+
+legend("topleft", bty = "n",
+       lty = 1, col = c("red", "blue"),
+       legend = c("Best hosp fit", "Top10 Overall"),
+       cex = 0.7)
+
 dev.off()  
 
 
@@ -97,7 +101,7 @@ plot(x    = sf_case$Date[which(sf_case$Date <= t.end)],
 
 lines(best_dths_sim$tod, best_dths_sim$n_d_sim, col = "red")
 
-for(s in best10){
+for(s in best10_norm){
   dths_sim <- as_tibble(get_sim(s)$agents[state == "D", c("id", "sex", "age", "race", "t_death")]) %>% 
     mutate(
       tod = as.Date(as.character(zoo::as.Date.numeric(t_death)))
@@ -179,12 +183,65 @@ best_ct_cases_sim <- get_fit(best_ct_cases)$ct_cases %>%
 
 best_ct_cases_sim %>% 
   ggplot(aes(x = MO_YR, y = mse)) +
-    geom_violin() +
-    geom_jitter(aes(col = as.factor(ct)),
-                shape = 16, position = position_jitter(0.2)) +
-    theme_classic() +
-    theme(legend.position = "none")
-    
+  geom_violin() +
+  geom_jitter(aes(col = as.factor(ct)),
+              shape = 16, position = position_jitter(0.2)) +
+  theme_classic() +
+  theme(legend.position = "none")
+
 ggsave(here::here("Plots", "LHS_Calibration", "Fits1", "ct_cases_sims_best.jpg"),
        units="in", width = 7, height = 5)
+
+
+
+# Compare confirmed cases and test positivity ----------------------
+
+jpeg(here::here("Plots", "LHS_Calibration", "Fits1", "best10_confirmed.jpg"),
+     height = 4, width = 7, units = "in", res = 100)
+
+plot(x    = sf_test$Date[which(sf_hosp$Date <= t.end)], 
+     y    = sf_test$pos[which(sf_hosp$Date <= t.end)], 
+     type = "h", 
+     lwd  = 1, 
+     col  = "black",
+     ylab = "Test positive %")
+
+for(s in best10_norm){
+  tests_sim <- get_sim(s)$linelist_tests
+  
+  tests_sum_by_date <- tests_sim %>% 
+    group_by(Date) %>% 
+    summarise(n_tests = n(),
+              n_pos = sum(test_pos),
+              per_pos = n_pos/n_tests)
+  
+  lines(tests_sum_by_date$Date, tests_sum_by_date$n_pos, col = "coral")
+}
+
+dev.off()  
+
+
+jpeg(here::here("Plots", "LHS_Calibration", "Fits1", "best10_test_pct.jpg"),
+     height = 4, width = 7, units = "in", res = 100)
+
+plot(x    = sf_test$Date[which(sf_hosp$Date <= t.end)], 
+     y    = sf_test$pct[which(sf_hosp$Date <= t.end)], 
+     type = "h", 
+     lwd  = 1, 
+     col  = "black",
+     ylab = "Test positive %")
+
+for(s in best10_norm){
+  tests_sim <- get_sim(s)$linelist_tests
+  
+  tests_sum_by_date <- tests_sim %>% 
+    group_by(Date) %>% 
+    summarise(n_tests = n(),
+              n_pos = sum(test_pos),
+              per_pos = n_pos/n_tests)
+  
+  lines(tests_sum_by_date$Date, tests_sum_by_date$per_pos, col = "blue")
+}
+
+dev.off()  
 

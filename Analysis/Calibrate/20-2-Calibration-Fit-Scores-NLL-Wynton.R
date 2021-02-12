@@ -47,8 +47,9 @@ obs_dths_wk <- sf_case %>%
   summarise(n_d_obs = sum(Deaths))
 
 comp_dths <- merge(sim_dths_wk, obs_dths_wk, by = "wod")
+  comp_dths_vec[is.infinite(comp_dths_vec)] <- comp_dths$n_d_sim[is.infinite(comp_dths_vec)]*-1
 
-dths_nll <- -sum(dpois(comp_dths$n_d_sim, comp_dths$n_d_obs, log = T))
+dths_nll <- -sum(comp_dths_vec)
 
 # Compare cumulative Dec 1 deaths by race ---------------------
 # State database only has non-hispanic white, non-hispanic black, hispanic, and other, so condense to match
