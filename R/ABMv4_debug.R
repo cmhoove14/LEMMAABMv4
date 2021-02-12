@@ -462,7 +462,8 @@ covid_abm_v4_debug <- function(data_inputs, input_pars, vax_phases,
       if(visitors){
         visits_today <- visitors_list[[date_num]]
         agents_visit <- visitors_to_agents(visits_today, visitor_mult_testing, visitor_mult_sfgrph)
-        
+          agents_visit[, c("hhid", "work") := 0]
+          
         agents <- rbindlist(list(agents, agents_visit), fill = TRUE)
         
         if(verbose){
@@ -579,7 +580,7 @@ covid_abm_v4_debug <- function(data_inputs, input_pars, vax_phases,
       
       # Remove visiting agents
       if(visitors){
-        agents <- agents[!is.na(hhid),]
+        agents <- agents[!is.na(id),]
       }  
       
       

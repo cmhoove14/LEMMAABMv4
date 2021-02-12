@@ -457,6 +457,7 @@ covid_abm_v4 <- function(data_inputs, input_pars, vax_phases,
       if(visitors){
         visits_today <- visitors_list[[date_num]]
         agents_visit <- visitors_to_agents(visits_today, visitor_mult_testing, visitor_mult_sfgrph)
+          agents_visit[, c("hhid", "work"):=0]
         
         agents <- rbindlist(list(agents, agents_visit), fill = TRUE)
         
@@ -510,6 +511,7 @@ covid_abm_v4 <- function(data_inputs, input_pars, vax_phases,
       agents[infect == 1, state:="E"]
       agents[infect == 1, nextstate:=next_state(state, age, sex, mort_mult_now)]
       agents[infect == 1, tnext:=t_til_nxt(state)]
+      agents[infect == 1, inf_date:=date_now]
       
       # document contacts in proportion to infection risk   
       agents[FOI > 0 & state == "S", contact_prob:=FOI*known_contact_prob]
@@ -584,7 +586,7 @@ covid_abm_v4 <- function(data_inputs, input_pars, vax_phases,
       
       # Remove visiting agents
       if(visitors){
-        agents <- agents[!is.na(hhid),]
+        agents <- agents[!is.na(id),]
       }  
       
       

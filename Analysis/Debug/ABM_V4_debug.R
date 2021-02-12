@@ -11,6 +11,10 @@ vax_phases  <- readRDS(here::here("data/processed/vax65p_scenario.rds"))
 input_pars$time_pars$t.end <- as.Date("2020-04-01")
 input_pars$time_pars$t.tot <- input_pars$time_pars$t.end - input_pars$time_pars$t0
 
+# If want to stop execuation at particular time to look at agents
+time_day_stop <- "M"
+date_stop <- as.Date("2020-03-30")
+
 visitors <- TRUE 
 testing <- "S" 
 vaccination <- FALSE 
@@ -446,7 +450,8 @@ for(t in 2:(t.tot/dt)){
     if(visitors){
       visits_today <- visitors_list[[date_num]]
       agents_visit <- visitors_to_agents(visits_today, visitor_mult_testing, visitor_mult_sfgrph)
-      
+        agents_visit[, c("hhid", "work"):=0]
+        
       agents <- rbindlist(list(agents, agents_visit), fill = TRUE)
       
       if(verbose){
@@ -545,6 +550,9 @@ for(t in 2:(t.tot/dt)){
            q_duration:=q_dur_fx(.N, q_dur_mean)]
     agents[choose_quar == 1, q_bta_red:=(1-1/hhsize)**q_bta_red_exp]
     
+    if(as.Date(as.character(date_now)) == date_stop & time_day == time_day_stop){
+      stop("Time to investigate")
+    }
     
     if(verbose){
       
@@ -563,7 +571,7 @@ for(t in 2:(t.tot/dt)){
     
     # Remove visiting agents
     if(visitors){
-      agents <- agents[!is.na(hhid),]
+      agents <- agents[!is.na(id),]
     }  
     
     #saveRDS(agents, here::here("Scratch/April_agents_samp_run.rds"))
