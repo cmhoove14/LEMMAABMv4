@@ -55,7 +55,8 @@ if(nrow(sim_hosp) == 0){
     summarise(n_d_obs = sum(Deaths))
   
   comp_dths <- merge(sim_dths_wk, obs_dths_wk, by = "wod")
-  comp_dths_vec[is.infinite(comp_dths_vec)] <- comp_dths$n_d_sim[is.infinite(comp_dths_vec)]*-1
+    comp_dths_vec <- dpois(comp_dths$n_d_sim, comp_dths$n_d_obs, log = T)
+    comp_dths_vec[is.infinite(comp_dths_vec)] <- comp_dths$n_d_sim[is.infinite(comp_dths_vec)]*-1
   
   dths_nll <- -sum(comp_dths_vec)
   
