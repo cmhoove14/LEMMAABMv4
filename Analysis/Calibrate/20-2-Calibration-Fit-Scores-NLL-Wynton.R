@@ -23,14 +23,6 @@ load(here::here("data","get","got","CA_SF_data2021-02-10.Rdata"))
 sim_hosp <- as_tibble(sim$epi_curve[state == "Ih",])
 sim_hosp$Date <- as.Date(as.character(sim_hosp$date)) # Date formate from sim messed up because of sub-daily time step
 
-# Some sims result in 0 hospitalizations (and therefore 0 deaths), so skip over those
-if(nrow(sim_hosp) == 0){
-  
-  hosp_nll      <- NA_real_
-  dths_nll      <- NA_real_
-  dths_race_nll <- NA_real_
-  
-} else {
   comp_hosp <- merge(sim_hosp, sf_hosp, by = "Date")
   
   hosp_nll <- -sum(dpois(comp_hosp$N, comp_hosp$HOSP_CONF, log = T))
@@ -72,8 +64,19 @@ if(nrow(sim_hosp) == 0){
   
   comp_dths_race <- merge(sim_dths_race, obs_dths_race, by = "race2")
   
-  dths_race_nll <- -sum(dpois(comp_dths_race$n_dths, comp_dths_race$deaths, log = T))
   
+# Some sims result in 0 hospitalizations (and therefore 0 deaths), so skip over those
+  if(nrow(sim_hosp) == 0){
+    
+    hosp_nll      <- NA_real_
+    dths_nll      <- NA_real_
+    dths_race_nll <- NA_real_
+    
+  } else {
+    
+    hosp_nll <- -sum(dpois(comp_hosp$N, comp_hosp$HOSP_CONF, log = T))
+    dths_nll <- -sum(comp_dths_vec)
+    dths_race_nll <- -sum(dpois(comp_dths_race$n_dths, comp_dths_race$deaths, log = T))
 }
 
 # Compare Monthly census tract confirmed cases -------------------
