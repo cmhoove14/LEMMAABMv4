@@ -17,7 +17,7 @@ sim_folder <- here::here(root, taskID)
 sim <- readRDS(paste0(sim_folder,"/",list.files(sim_folder)[1]))
 
 # Get observed
-load(here::here("data","get","got","CA_SF_data2021-02-04.Rdata"))
+load(here::here("data","get","got","CA_SF_data2021-02-10.Rdata"))
 
 # Compare daily hospitalizations ----------------
 sim_hosp <- as_tibble(sim$epi_curve[state == "Ih",])
