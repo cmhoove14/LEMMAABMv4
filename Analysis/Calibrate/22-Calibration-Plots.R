@@ -7,6 +7,9 @@ library(data.table)
 
 fits <- readRDS(here::here("data", "processed", "LHS_Fits1_summary.rds"))
 
+# Remove fits that resulted in 0 Hospitalizations
+  fits <- fits[fits$hosp_fit >0,]
+
 # Sims with best fits to individual categories and best overall
 best_hosp           <- fits$sim[which.min(fits$hosp_fit)]
 best_dths           <- fits$sim[which.min(fits$dths_fit)]
@@ -15,10 +18,10 @@ best_ct_cases       <- fits$sim[which.min(fits$ct_cases_fit)]
 best_case_race      <- fits$sim[which.min(fits$case_race_fit)]
 best_overall        <- fits$sim[which.min(fits$overall_fit)]
 best_overall_norm   <- fits$sim[which.min(fits$overall_fit_norm)]
-best10              <- fits$sim[which(fits$overall_fit <= quantile(fits$overall_fit, 10/nrow(fits)))]
-best10_no_ct        <- fits$sim[which(fits$hosp_dths_race_fit <= quantile(fits$hosp_dths_race_fit, 10/nrow(fits)))]
-best10_norm         <- fits$sim[which(fits$overall_fit_norm <= quantile(fits$overall_fit_norm, 10/nrow(fits)))]
-best10_no_ct_norm   <- fits$sim[which(fits$hosp_dths_race_fit_norm <= quantile(fits$hosp_dths_race_fit_norm, 10/nrow(fits)))]
+best10              <- fits$sim[which(fits$overall_fit <= quantile(fits$overall_fit, 10/nrow(fits), na.rm = T))]
+best10_no_ct        <- fits$sim[which(fits$hosp_dths_race_fit <= quantile(fits$hosp_dths_race_fit, 10/nrow(fits), na.rm = T))]
+best10_norm         <- fits$sim[which(fits$overall_fit_norm <= quantile(fits$overall_fit_norm, 10/nrow(fits), na.rm = T))]
+best10_no_ct_norm   <- fits$sim[which(fits$hosp_dths_race_fit_norm <= quantile(fits$hosp_dths_race_fit_norm, 10/nrow(fits), na.rm = T))]
 
 # Get CA & SF data
 load(here::here("data", "get", "got", "CA_SF_data2021-02-10.Rdata"))
@@ -50,14 +53,14 @@ input_pars  <- best_overall_sim$input_pars
 LEMMAABMv4::unpack_list(input_pars)
 
 # Plot vars
-par(mar = c(3,2,2,0.1),
-    mgp = c(1.5,0.5,0))
 
 # Compare daily hospitalizations ----------------
 best_hosp_sim <- get_fit(best_hosp)$hosp
 
 jpeg(here::here("Plots", "LHS_Calibration", "Fits1", "hosp_sims_best.jpg"),
      height = 4, width = 7, units = "in", res = 100)
+par(mar = c(3,2,2,0.1),
+    mgp = c(1.5,0.5,0))
 
 plot(x    = sf_hosp$Date[which(sf_hosp$Date <= t.end)], 
      y    = sf_hosp$HOSP_tot[which(sf_hosp$Date <= t.end)], 
@@ -91,6 +94,8 @@ best_dths_sim <- as_tibble(get_sim(best_dths)$agents[state == "D", c("id", "sex"
 
 jpeg(here::here("Plots", "LHS_Calibration", "Fits1", "dths_sims_best.jpg"),
      height = 4, width = 7, units = "in", res = 100)
+par(mar = c(3,2,2,0.1),
+    mgp = c(1.5,0.5,0))
 
 plot(x    = sf_case$Date[which(sf_case$Date <= t.end)], 
      y    = sf_case$cum_death[which(sf_case$Date <= t.end)], 
