@@ -26,8 +26,8 @@ lhs_reruns_expand <- rbind(lhs_reruns[rep(1:nrow(lhs_reruns),each=10),])
 
 
 # Load data and files from paths ---------------------
-  input_pars  <- readRDS(here::here("data/processed/data_inputs_calibrate.rds"))
-  data_inputs <- readRDS(here::here("data/processed/input_pars_calibrate.rds"))
+  input_pars  <- readRDS(here::here("data/processed/input_pars_calibrate.rds"))
+  data_inputs <- readRDS(here::here("data/processed/data_inputs_calibrate.rds"))
   vax_phases  <- readRDS(here::here("data/processed/vax65p_scenario.rds"))
   
   visitors    <- TRUE 
