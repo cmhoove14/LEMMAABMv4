@@ -132,13 +132,18 @@ gc()
 
 out_list <- list()
 
-out_list$fits <- list("sim"           = taskID, 
-                      "status"        = 1,
-                      "hosp_mse"      = hosp_nll,
-                      "dths_mse"      = dths_nll,
-                      "dths_race_mse" = dths_race_nll,
-                      "ct_cases_mse"  = ct_cases_nll,
-                      "case_race_mse" = case_race_nll)
+out_list$fits <- list("sim"                = taskID, 
+                      "status"             = 1,
+                      "hosp_fit"           = hosp_nll,
+                      "dths_fit"           = dths_nll,
+                      "dths_race_fit"      = dths_race_nll,
+                      "ct_cases_fit"       = ct_cases_nll,
+                      "case_race_fit"      = case_race_nll,
+                      "hosp_fit_norm"      = hosp_nll/nrow(comp_hosp),
+                      "dths_fit_norm"      = dths_nll/nrow(comp_dths),
+                      "dths_race_fit_norm" = dths_race_nll/nrow(comp_dths_race),
+                      "ct_cases_fit_norm"  = ct_cases_nll/nrow(comp_ct_cases),
+                      "case_race_fit_norm" = case_race_nll/nrow(comp_case_race))
 
 out_list$comp_dfs <- list("hosp"      = comp_hosp,
                           "dths"      = comp_dths,
