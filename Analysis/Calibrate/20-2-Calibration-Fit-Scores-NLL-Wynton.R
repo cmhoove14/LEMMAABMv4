@@ -23,47 +23,57 @@ load(here::here("data","get","got","CA_SF_data2021-02-10.Rdata"))
 sim_hosp <- as_tibble(sim$epi_curve[state == "Ih",])
 sim_hosp$Date <- as.Date(as.character(sim_hosp$date)) # Date formate from sim messed up because of sub-daily time step
 
-comp_hosp <- merge(sim_hosp, sf_hosp, by = "Date")
-
-hosp_nll <- -sum(dpois(comp_hosp$N, comp_hosp$HOSP_CONF, log = T))
-
+# Some sims result in 0 hospitalizations (and therefore 0 deaths), so skip over those
+if(nrow(sim_hosp) == 0){
+  
+  hosp_nll      <- NA_real_
+  dths_nll      <- NA_real_
+  dths_race_nll <- NA_real_
+  
+} else {
+  comp_hosp <- merge(sim_hosp, sf_hosp, by = "Date")
+  
+  hosp_nll <- -sum(dpois(comp_hosp$N, comp_hosp$HOSP_CONF, log = T))
+  
 # Compare weekly deaths -------------------------
-sim_dths <- as_tibble(sim$agents[state == "D", c("id", "sex", "age", "race", "t_death")]) %>% 
-  mutate(
-    tod = zoo::as.Date.numeric(t_death),
-    wod =paste0(lubridate::epiweek(tod), "_",
-                lubridate::year(tod))
-  )
-
-sim_dths_wk <- sim_dths %>% 
-  group_by(wod) %>% 
-  summarise(n_d_sim = n())
-
-obs_dths_wk <- sf_case %>% 
-  dplyr::select(Date, Deaths) %>% 
-  mutate(wod = paste0(lubridate::epiweek(Date), "_",
-                      lubridate::year(Date))) %>% 
-  group_by(wod) %>% 
-  summarise(n_d_obs = sum(Deaths))
-
-comp_dths <- merge(sim_dths_wk, obs_dths_wk, by = "wod")
+  sim_dths <- as_tibble(sim$agents[state == "D", c("id", "sex", "age", "race", "t_death")]) %>% 
+    mutate(
+      tod = zoo::as.Date.numeric(t_death),
+      wod =paste0(lubridate::epiweek(tod), "_",
+                  lubridate::year(tod))
+    )
+  
+  sim_dths_wk <- sim_dths %>% 
+    group_by(wod) %>% 
+    summarise(n_d_sim = n())
+  
+  obs_dths_wk <- sf_case %>% 
+    dplyr::select(Date, Deaths) %>% 
+    mutate(wod = paste0(lubridate::epiweek(Date), "_",
+                        lubridate::year(Date))) %>% 
+    group_by(wod) %>% 
+    summarise(n_d_obs = sum(Deaths))
+  
+  comp_dths <- merge(sim_dths_wk, obs_dths_wk, by = "wod")
   comp_dths_vec[is.infinite(comp_dths_vec)] <- comp_dths$n_d_sim[is.infinite(comp_dths_vec)]*-1
-
-dths_nll <- -sum(comp_dths_vec)
-
+  
+  dths_nll <- -sum(comp_dths_vec)
+  
 # Compare cumulative Dec 1 deaths by race ---------------------
-# State database only has non-hispanic white, non-hispanic black, hispanic, and other, so condense to match
-sim_dths_race <- sim_dths %>% 
-  mutate(race2 = if_else(race %in% c(1,2,8), race, 9)) %>% 
-  group_by(race2) %>% 
-  summarise(n_dths = n())
-
-obs_dths_race <- data.frame(race2 = c(1, 2, 8, 9),
-                            deaths = c(55,9,44,78))
-
-comp_dths_race <- merge(sim_dths_race, obs_dths_race, by = "race2")
-
-dths_race_nll <- -sum(dpois(comp_dths_race$n_dths, comp_dths_race$deaths, log = T))
+  # State database only has non-hispanic white, non-hispanic black, hispanic, and other, so condense to match
+  sim_dths_race <- sim_dths %>% 
+    mutate(race2 = if_else(race %in% c(1,2,8), race, 9)) %>% 
+    group_by(race2) %>% 
+    summarise(n_dths = n())
+  
+  obs_dths_race <- data.frame(race2 = c(1, 2, 8, 9),
+                              deaths = c(55,9,44,78))
+  
+  comp_dths_race <- merge(sim_dths_race, obs_dths_race, by = "race2")
+  
+  dths_race_nll <- -sum(dpois(comp_dths_race$n_dths, comp_dths_race$deaths, log = T))
+  
+}
 
 # Compare Monthly census tract confirmed cases -------------------
 sim_cases <- sim$linelist_tests %>% 
