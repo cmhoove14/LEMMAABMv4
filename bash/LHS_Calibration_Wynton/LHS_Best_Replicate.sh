@@ -11,4 +11,4 @@
 #$ -t 1-110                        #-- array job
                                    #-- tasks if desired (see Tips section on this page)
 module load CBI r
-Rscript Analysis/Calibrate/24-Best-Sims-Replicates.R $SGE_TASK_ID 
+Rscript Analysis/Calibrate/24-Best-Sims-Replicates.R $SGE_TASK_ID "data/outputs/Calibration_Reruns/"
