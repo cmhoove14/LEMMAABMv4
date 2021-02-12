@@ -6,10 +6,10 @@
 library(lhs)
 
 set.seed(430)
-n_theta <- 1440 # Number of parameter sets = 72*20 (20 jobs each with 72 cores (3 24 core nodes))
+n_theta <- 2000 
 
 # Parameter samples -----------------
-bta_base     <- runif(n_theta, 0.15, 0.45)
+bta_base     <- runif(n_theta, 0.2, 0.3)
 bta_hh       <- runif(n_theta, 1.0, 1.5)
 bta_work     <- runif(n_theta, 1.0, 1.2)
 bta_sip_red  <- runif(n_theta, 0.1, 0.9)
@@ -46,7 +46,7 @@ essential_prob    <- runif(n_theta,0.5,2)                    # Multiplier on tes
 # Miscellaneous
 mask_red             <- runif(n_theta,0.2,0.8)         
 visitor_mult_testing <- runif(n_theta,1,5)           
-visitor_mult_sfgrph  <- runif(n_theta,5,12)          
+visitor_mult_sfgrph  <- runif(n_theta,10,100)          
 mort_mult            <- runif(n_theta,0.1,1)         
 
 # Initial states
