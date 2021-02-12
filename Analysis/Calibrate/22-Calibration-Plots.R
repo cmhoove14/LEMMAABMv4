@@ -152,7 +152,7 @@ best_dths_race_sim %>%
 ggsave(here::here("Plots", "LHS_Calibration", "Fits1", "dths_race_sims_best.jpg"),
        units="in", width = 5, height = 3)
 
-# Compare cumulative Dec 1 confirmed cases by race ----------------------
+# Compare confirmed cumulative Dec 1 confirmed cases by race ----------------------
 best_case_race_sim <- get_fit(best_case_race)$case_race %>% 
   rename("Sim" = n_sim,
          "Obs" = n_obs) %>% 
@@ -177,9 +177,59 @@ best_case_race_sim %>%
   labs(x = "Race/Ethnicity",
        y = "Dec1 Cases",
        fill = "",
-       title = "Cumulative Cases by Race fit")
+       title = "Cumulative Confirmed Cases by Race fit")
 
-ggsave(here::here("Plots", "LHS_Calibration", "Fits1", "case_race_sims_best.jpg"),
+ggsave(here::here("Plots", "LHS_Calibration", "Fits1", "conf_case_race_sims_best.jpg"),
+       units="in", width = 7, height = 5)
+
+# Compare true cumulative number of cases by month --------------------------
+best_case_race_sim_true <- as_tibble(get_sim(best_case_race)$agents[state != "S", c("id", "sex", "age", "race", "t_death")]) %>% 
+  group_by(race) %>% 
+  summarise(n_sim = n())
+
+obs_case_race <- sf_case_race %>% 
+  filter(Date == as.Date("2020-12-01")) %>% 
+  dplyr::select(Race,Cum_Cases) %>% 
+  rename("n_obs" = Cum_Cases)
+
+# Quite a few NAs, so allocate them in proportion to cases with known race
+# This assumes there aren't systematic biases in reporting of race among known cases, which, probably not true, but best we can do
+case_race_non_na <- obs_case_race$n_obs[which(!is.na(obs_case_race$Race))]
+case_race_na     <- obs_case_race$n_obs[which(is.na(obs_case_race$Race))]
+obs_total        <- sum(case_race_non_na)
+obs_ratios       <- case_race_non_na / obs_total
+obs_add          <- round(case_race_na*obs_ratios)
+
+obs_case_race2 <- obs_case_race[!is.na(obs_case_race$Race),]
+obs_case_race2$n_obs <- obs_case_race2$n_obs + obs_add
+
+comp_case_race_true <- merge(best_case_race_sim_true, obs_case_race2, by.x = "race", by.y = "Race") %>% 
+rename("Sim" = n_sim,
+       "Obs" = n_obs) %>% 
+  pivot_longer(Sim:Obs) %>% 
+  mutate(Race_Eth = case_when(race == 1 ~ "White only",
+                              race == 2 ~ "Black only",
+                              race == 3 ~ "Am. Indian/AK Native",
+                              race == 4 ~ "Asian only",
+                              race == 5 ~ "HI/Pac Islander",
+                              race == 6 ~ "Other",
+                              race == 7 ~ "Two or more",
+                              race == 8 ~ "Hispanic/Latinx"))
+
+comp_case_race_true %>% 
+  ggplot() +
+  theme_classic() +
+  theme(axis.text = element_text(size = 14),
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.title = element_text(size = 16)) +
+  geom_bar(aes(x = Race_Eth, y = value, fill = name),
+           stat = "identity", position = "dodge") +
+  labs(x = "Race/Ethnicity",
+       y = "Dec1 Cases",
+       fill = "",
+       title = "Cumulative True Cases by Race fit")
+
+ggsave(here::here("Plots", "LHS_Calibration", "Fits1", "true_case_race_sims_best.jpg"),
        units="in", width = 7, height = 5)
 
 # Compare CT Cases by month ----------------------
