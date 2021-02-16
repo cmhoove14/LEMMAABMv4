@@ -20,9 +20,6 @@ dths_dates <- sf_case %>% filter(Date <= as.Date("2020-12-01")) %>% dplyr::selec
 # Get observed summaries to ensure matching of simulated to observed -----------
 load("data/processed/obs_summaries_for_ABC.Rdata")
 
-# Below creates matrix to fill with simulation observations, only need to do once
-#matrix(data = NA, nrow = 2000, ncol = length(obs_sums)) -> sim_sum_fill ; saveRDS(sim_sum_fill, here::here("data/processed/sim_summaries_for_ABC.rds"))
-
 # Get sim file   --------------------
 sim_folder <- here::here(root, taskID)
 sim <- readRDS(paste0(sim_folder,"/",list.files(sim_folder)[1]))
@@ -82,8 +79,6 @@ sim <- readRDS(paste0(sim_folder,"/",list.files(sim_folder)[1]))
     warning("Differing number of cases by race observations between sim and observed")
   }
   
-# add these summaries to matrix holding all summary values (probably not most efficient way to do this but it works)
-  sim_sum_fill <- readRDS(here::here("data/processed/sim_summaries_for_ABC.rds"))
-  sim_sum_fill[taskID,] <- c(hosp_sim, sim_dths, sim_dths_race,sim_case_race)
-  saveRDS(sim_sum_fill, here::here("data/processed/sim_summaries_for_ABC.rds"))
+  saveRDS(c(taskID, hosp_sim, sim_dths, sim_dths_race,sim_case_race), 
+          here::here("data/outputs/Calibration_ABC_Sums", paste0("ABC_Sums_", taskID)))
   
