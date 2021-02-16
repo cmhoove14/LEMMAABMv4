@@ -85,5 +85,5 @@ sim <- readRDS(paste0(sim_folder,"/",list.files(sim_folder)[1]))
 # add these summaries to matrix holding all summary values (probably not most efficient way to do this but it works)
   sim_sum_fill <- readRDS(here::here("data/processed/sim_summaries_for_ABC.rds"))
   sim_sum_fill[taskID,] <- c(hosp_sim, sim_dths, sim_dths_race,sim_case_race)
-  sim_sum_fill <- saveRDS(here::here("data/processed/sim_summaries_for_ABC.rds"))
+  saveRDS(sim_sum_fill, here::here("data/processed/sim_summaries_for_ABC.rds"))
   
