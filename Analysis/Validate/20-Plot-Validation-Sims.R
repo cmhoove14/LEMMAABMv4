@@ -7,7 +7,7 @@ library(ggplot2)
 library(data.table)
 
 # Get CA & SF data
-load(here::here("data", "get", "got", "CA_SF_data2021-02-10.Rdata"))
+load(here::here("data", "get", "got", "CA_SF_data2021-02-16.Rdata"))
 
 # Utils to grab simulation/fit files
 # Calibration runs
