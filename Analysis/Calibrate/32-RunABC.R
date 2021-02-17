@@ -40,6 +40,6 @@ sim_sums <- sim_sums[-bad_fits,]
 abc_est <- abc(target = obs_sums,
                param = lhs_filt,  
                sumstat = sim_sums,  
-               tol = round(nrow(lhs_fits*0.01)),
+               tol = round(nrow(fits)*0.01),
                transf = "log",
-               method = "ridge")
+               method = "neuralnet")
