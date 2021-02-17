@@ -15,6 +15,8 @@ hosp_obs <- sf_hosp %>%
   mutate(Hosp_point = round(HOSP_CONF + 0.3*(HOSP_PUI+ICU_PUI))) %>% 
   pull(Hosp_point)
 
+names(hosp_obs) <- paste0("H", 1:length(hosp_obs))
+
 # Observed weekly deaths
 dths_dates <- sf_case %>% filter(Date <= as.Date("2020-12-01")) %>% dplyr::select(Date) # For merging with sims to get dates right
 
@@ -27,9 +29,13 @@ dths_obs <- sf_case %>%
   summarise(n_d_obs = sum(Deaths)) %>% 
   pull(n_d_obs)
 
+names(dths_obs) <- paste0("Dw", 1:length(dths_obs))
+
 #Observed deaths by race by Dec 1
 dths_race_obs <- data.frame(race2 = c(1, 2, 8, 9),
                             deaths = c(55,9,44,78)) %>% pull(deaths)
+
+names(dths_race_obs) <- paste0("Dr", c(1,2,8,9))
 
 # Observed cumulative Dec 1 cases by race
 obs_case_race <- sf_case_race %>% 
@@ -37,6 +43,7 @@ obs_case_race <- sf_case_race %>%
   dplyr::select(Race,Cum_Cases) %>% 
   rename("n_obs" = Cum_Cases) %>% 
   arrange(Race)
+
 
 # Quite a few NAs, so allocate them in proportion to cases with known race
 # This assumes there aren't systematic biases in reporting of race among known cases, which, probably not true, but best we can do
@@ -49,6 +56,8 @@ obs_add          <- round(case_race_na*obs_ratios)
 obs_case_race2 <- obs_case_race[!is.na(obs_case_race$Race),] 
 
 case_race_obs <- obs_case_race2$n_obs + obs_add
+
+names(case_race_obs) <- paste0("Cr", c(1:8))
 
 # Combine in same vector
 obs_sums <- c(hosp_obs, dths_obs, dths_race_obs, case_race_obs)
