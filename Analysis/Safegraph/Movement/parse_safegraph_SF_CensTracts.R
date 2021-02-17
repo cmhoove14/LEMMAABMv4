@@ -7,6 +7,7 @@ opts <- commandArgs(TRUE)
 
 # Assign variables from BASH
 year    <- as.character(opts[1])
+dat_dir <- as.character(opts[2])
 
 GetCT <- function(block_group) substr(block_group, start = 1, stop = 11)
 
@@ -52,7 +53,7 @@ CountyConnects <- function(csv){
 
 }
 
-files <- list.files(year)
+files <- list.files(paste0(dat_dir, "/", year))
 csvs <- files[grepl(".csv", files)]
 
 dates <- as.Date(substr(csvs, 1, 10))
@@ -67,7 +68,7 @@ fill <- array(data = NA, dim = c(197,197,days))
 for(i in 1:days){
   idate <- dates[i]
   
-  ifile <- paste0(year, "/", files[grepl(idate, files)])
+  ifile <- paste0(dat_dir, "/", year, "/", files[grepl(idate, files)])
     
   if(length(ifile) == 1){
     fill[,,i] <- CountyConnects(ifile)
