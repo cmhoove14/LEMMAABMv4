@@ -1,6 +1,6 @@
 # ---------------------
 # Prep data inputs for LEMMAABM
-# Chris Hoover Jan 2021
+# Chris Hoover Feb 2021
 # ---------------------
 
 library(tidyverse)
@@ -8,7 +8,7 @@ library(lubridate)
 library(data.table)
 
 # Load par inputs to get timeframe ------------------
-input_pars <- readRDS(here::here("data", "processed", "input_pars_calibrate.rds"))
+input_pars <- readRDS(here::here("data", "processed", "calibrated_pars.rds"))
 
 t0        <- input_pars$time_pars$t0
 t.end     <- input_pars$time_pars$t.end
