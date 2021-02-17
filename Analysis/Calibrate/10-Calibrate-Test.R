@@ -8,11 +8,12 @@ input_pars  <- readRDS(here::here("data/processed/input_pars_calibrate.rds"))
 data_inputs <- readRDS(here::here("data/processed/data_inputs_calibrate.rds"))
 vax_phases  <- readRDS(here::here("data/processed/vax65p_scenario.rds"))
 
-visitors <- TRUE 
-testing <- "S" 
+visitors    <- TRUE 
+testing     <- "S" 
 vaccination <- FALSE 
-verbose <- TRUE 
+verbose     <- TRUE 
 store_extra <- FALSE 
+initial     <- TRUE
 
 set.seed(430)
 
@@ -26,6 +27,7 @@ time_run <- LEMMAABMv4::covid_abm_v4(data_inputs = data_inputs,
                                      vaccination = vaccination,
                                      verbose     = verbose, 
                                      store_extra = store_extra,
+                                     initial     = initial,
                                      output_path = paste0(here::here("data", "outputs"), "/"))
 
 toc()

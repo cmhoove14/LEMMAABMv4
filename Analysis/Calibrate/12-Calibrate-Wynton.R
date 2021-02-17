@@ -16,12 +16,14 @@ if(length(opts) > 5){
   vaccination <- as.logical(opts[8])
   verbose     <- as.logical(opts[9])  
   store_extra <- as.logical(opts[10])  
+  initial     <- as.logical(opts[11])  
 } else {
   visitors    <- TRUE 
   testing     <- "S" 
   vaccination <- FALSE 
   verbose     <- FALSE 
   store_extra <- TRUE 
+  initial     <- TRUE
 }
 
 cat("\n", opts, "\n")
@@ -77,4 +79,5 @@ LEMMAABMv4::covid_abm_v4(data_inputs = data_inputs,
                          vaccination = vaccination,
                          verbose     = verbose, 
                          store_extra = store_extra,
+                         initial     = initial,
                          output_path = paste0(output_path,taskID,"/"))

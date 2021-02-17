@@ -30,6 +30,7 @@ testing     <- "S"
 vaccination <- FALSE 
 verbose     <- FALSE 
 store_extra <- TRUE 
+initial     <- TRUE
 
 # Replace pars in list with best pars from lhs -------------------
 # Some of these manual entries as placeholders until calibration finalized
@@ -76,4 +77,5 @@ LEMMAABMv4::covid_abm_v4(data_inputs = data_inputs,
                          vaccination = vaccination,
                          verbose     = verbose, 
                          store_extra = store_extra,
+                         initial     = initial,
                          output_path = paste0(output_path,taskID,"/"))

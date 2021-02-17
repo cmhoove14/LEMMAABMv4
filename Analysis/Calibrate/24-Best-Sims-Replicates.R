@@ -35,6 +35,7 @@ lhs_reruns_expand <- rbind(lhs_reruns[rep(1:nrow(lhs_reruns),each=10),])
   vaccination <- FALSE 
   verbose     <- FALSE 
   store_extra <- TRUE 
+  initial     <- TRUE
   
 # Replace pars in list with pars from lhs -------------------
   this_parset <- lhs_reruns_expand[taskID,]
@@ -81,5 +82,6 @@ library(LEMMAABMv4)
                            vaccination = vaccination,
                            verbose     = verbose, 
                            store_extra = store_extra,
+                           initial     = initial,
                            output_path = paste0(output_path,taskID,"/"))
   
