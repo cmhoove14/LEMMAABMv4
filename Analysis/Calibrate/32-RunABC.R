@@ -6,47 +6,39 @@ library(tidyverse)
 library(data.table)
 library(abc)
 
-opts <- commandArgs(TRUE)
+# Get fits and lhs to reference fits and pars
+fits <- readRDS(here::here("data", "processed", "LHS_Fits1_summary.rds"))
+lhs  <- readRDS(here::here("data/processed/Calibration_LHS_Wynton.rds")) 
 
-taskID <- as.numeric(opts[1])
-
-root <- here::here("data","outputs","Calibration_Outputs")
-
-# Get sim file  
-sim_folder <- here::here(root, taskID)
-sim <- readRDS(paste0(sim_folder,"/",list.files(sim_folder)[1]))
+# Remove fits that resulted in 0 Hospitalizations
+bad_fits <- which(fits$hosp_fit <= 0)
+fits     <- fits[-bad_fits,]
+lhs_filt <- lhs[-bad_fits,]
 
 # Get obs summaries
 load(here::here("data/processed/obs_summaries_for_ABC.Rdata"))
 
-# Process sim to get sim smmaries
-sim_dths <- as_tibble(sim$agents[state == "D", c("id", "sex", "age", "race", "t_death")]) %>% 
-  mutate(
-    tod = zoo::as.Date.numeric(t_death)
-  ) %>% 
-  arrange(tod) %>%
-  right_join(dths_dates, by = c("tod" = "Date")) %>% 
-  mutate(wod =paste0(lubridate::epiweek(tod), "_",
-                     lubridate::year(tod))) %>% 
-  group_by(wod) %>% 
-  summarise(n_d_sim = sum(!is.na(id))) %>% 
-  pull(n_d_sim)
+# Get sim summaries
+# Only have to do this once to process individual summaries into matrix, then can load from below
+# sim_sums <- do.call(rbind,lapply(1:2000, function(i){
+#   readRDS(here::here("data/outputs/Calibration_ABC_Sums", paste0("ABC_Sums_", i)))
+# }))
+# 
+# saveRDS(sim_sums, here::here("data/processed/sim_summaries_for_ABC.rds"))
 
+# Load if after runnig above
+sim_sums <- readRDS(here::here("data/processed/sim_summaries_for_ABC.rds"))
 
+# Make sure in right order
+sim_sums <- sim_sums[order(sim_sums[,1]),]
 
-
-
-
-
-sim_hosp <- as_tibble(sim$epi_curve[state == "Ih",])
-sim_hosp$Date <- as.Date(as.character(sim_hosp$date)) # Date formate from sim messed up because of sub-daily time step
-
-comp_hosp <- merge(sim_hosp, sf_hosp, by = "Date")
-
+# Get rid of column with sim number and columns with "bad sims" id'ed above
+sim_sums <- sim_sums[,-1]
+sim_sums <- sim_sums[-bad_fits,]
 
 # ABC do your thang -----------------
 abc_est <- abc(target = obs_sums,
-               param = lhs_fits[,which(colnames(lhs_fits)=="bta_base"):which(colnames(lhs_fits) == "E0")],  
+               param = lhs_filt,  
                sumstat = sim_sums,  
                tol = round(nrow(lhs_fits*0.01)),
                transf = "log",
