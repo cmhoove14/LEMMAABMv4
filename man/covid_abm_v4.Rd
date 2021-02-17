@@ -13,6 +13,7 @@ covid_abm_v4(
   vaccination,
   verbose,
   store_extra,
+  initial,
   output_path
 )
 }
@@ -33,9 +34,9 @@ covid_abm_v4(
 
 \item{store_extra}{TRUE/FALSE should extra metrics including % staying home and % isolating be stored and returned? Good for debugging}
 
-\item{output_path}{file path relative to `here::here` root to save outputs}
-
 \item{initial}{TRUE/FALSE of whether initial run or run picking up from where another left off. If `TRUE`, will initialize infections from `input_pars` and commence from beginning of pandemic. If `FALSE`, `data_inputs$agents` should contain an agents data.table produced from previous model run and input_pars$time_pars should encode parameters for when previous simulation ended and this one began}
+
+\item{output_path}{file path relative to `here::here` root to save outputs}
 }
 \value{
 list with two objects: an epi curve with counts of agents in each state through time and a dataframe with infection reports for every new infection (e.g. entry created whenever agent transitions from S to E)

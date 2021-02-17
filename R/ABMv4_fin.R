@@ -25,7 +25,7 @@
 
 covid_abm_v4 <- function(data_inputs, input_pars, vax_phases,
                          visitors, testing, vaccination,
-                         verbose, store_extra, output_path){
+                         verbose, store_extra, initial, output_path){
   # Stop messages for invalid inputs -----------------
   if(!testing %in% c("N", "S", "A")){
     stop("Invalid testing scenario, testing must be 'S', 'A', or 'N'")
