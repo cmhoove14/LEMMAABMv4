@@ -11,6 +11,7 @@
 #' @param vaccination TRUE/FALSE of whether to model vaccination using inputs in `input_pars` and `vax_phases`
 #' @param verbose TRUE/FALSE should detailed info at each time step be printed?
 #' @param store_extra TRUE/FALSE should extra metrics including % staying home and % isolating be stored and returned? Good for debugging
+#' @param initial TRUE/FALSE of whether initial run or run picking up from where another left off. If `TRUE`, will initialize infections from `input_pars` and commence from beginning of pandemic. If `FALSE`, `data_inputs$agents` should contain an agents data.table produced from previous model run and input_pars$time_pars should encode parameters for when previous simulation ended and this one began
 #' @param output_path file path relative to `here::here` root to save outputs
 #' 
 #' @details 
@@ -62,6 +63,7 @@ covid_abm_v4 <- function(data_inputs, input_pars, vax_phases,
   # Extract Initial conditions ----------------
   N <- nrow(agents)
   
+if(initial){
   e.seed   <- input_pars$init_states$E0     #Exposed
   ip.seed  <- input_pars$init_states$Ip0    #infected pre-symptomatic
   ia.seed  <- input_pars$init_states$Ia0    #infected asymptomatic
@@ -72,7 +74,6 @@ covid_abm_v4 <- function(data_inputs, input_pars, vax_phases,
   r.seed   <- input_pars$init_states$R0     #removed
   non.s    <- e.seed + ip.seed + ia.seed + im.seed + imh.seed + ih.seed + d.seed + r.seed
   s.seed   <- N - non.s
-  
   
   # Initial infection allocated randomly among non-children/non-retirees
   set.seed(430)
@@ -93,7 +94,8 @@ covid_abm_v4 <- function(data_inputs, input_pars, vax_phases,
   agents[id %in% init.Ihs, state:="Ih"]
   agents[id %in% init.Ds, state:="D"]
   agents[id %in% init.Rs, state:="R"]
-  
+
+}  
   # Keep track of everyone's infection status through time   
   #epi_curve <- matrix(NA, nrow = t.tot/dt, ncol = 9)
   #epi_curve[1,] <- agents[,.N, by = state]$N
@@ -131,6 +133,7 @@ covid_abm_v4 <- function(data_inputs, input_pars, vax_phases,
     geo_pops <- agents[, .(pop = .N), by = adapt_site_geo]
   }
   
+if(initial){
   # Update characteristics of initial infections  
   # Transition time
   agents[state %in% c("E", "Ip", "Ia", "Im", "Imh", "Ih"), tnext:=t_til_nxt(state)]
@@ -139,9 +142,6 @@ covid_abm_v4 <- function(data_inputs, input_pars, vax_phases,
   agents[state %in% c("E", "Ip", "Ia", "Im", "Imh", "Ih"), nextstate:=next_state(state, age, sex, mort_mult_init)]
   #Time initial infections occurred
   agents[state %in% c("E", "Ip", "Ia", "Im", "Imh", "Ih"), t_infection:=dt]
-  
-  # Make sure ct is numeric for matching
-  agents[, ct:=as.numeric(ct)] 
   
   # Add compliance and sociality metrics, start people with no known contacts, etc. -----------------------------
   agents[, mask := mask_fx(.N)] # Probability of wearing a mask
@@ -163,6 +163,10 @@ covid_abm_v4 <- function(data_inputs, input_pars, vax_phases,
   agents[, t_til_dose2 := 0] # Nobody waiting on dose 2 to start
   agents[, vax1 := 0] # Received vaccination dose 1?
   agents[, vax2 := 0] # Received vaccination dose 2?
+}  
+  
+  # Make sure ct is numeric for matching
+  agents[, ct:=as.numeric(ct)] 
   
 # Progress bar  
   if(!verbose){
@@ -175,7 +179,9 @@ covid_abm_v4 <- function(data_inputs, input_pars, vax_phases,
   }
 
   # Run simulation     ---------------------
-  for(t in 2:(t.tot/dt)){
+  t_start <- ifelse(initial, 2, 1)
+  
+  for(t in t_start:(t.tot/dt)){
 
     # Time step characteristics
     date_now      <- t0+t*dt
