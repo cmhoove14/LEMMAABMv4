@@ -157,7 +157,8 @@ covid_abm_v4 <- function(data_inputs, input_pars, vax_phases,
     agents[, test_pos := 0] # Start everyone off with no postive test status
     agents[, init_test := 0] # Start everyone off eligible for testing
     agents[, t_til_test_note:=0] #nobody tested to start, so nobody waiting on notification
-    agents[, t_death := 0]  # Time of death record
+    agents[, t_death := NA_Date_]  # Time of death record
+    agents[, t_hosp := NA_Date_]  # Time of hospitalization record
     agents[, adapt_site := 0]   # No adaptive testing sites to start
     agents[, vax_eligible := 0] # Nobody vaccine eligible to start
     agents[, t_til_dose2 := 0] # Nobody waiting on dose 2 to start
@@ -214,6 +215,7 @@ covid_abm_v4 <- function(data_inputs, input_pars, vax_phases,
     # Advance expired states to next state, determine new nextstate and time til next state, reset expired quarantines, test notifications, vaccine second dose
     agents[tnext < 0, state:=nextstate]
     agents[tnext < 0 & state == "D", t_death := date_now]  # Record death events
+    agents[tnext < 0 & state == "Ih", t_hosp := date_now]  # Record hospitalization events
     agents[tnext < 0 & state %in% c("R", "D"), t_symptoms:=0]
     agents[tnext < 0 & state %in% c("E", "Ip", "Ia", "Im", "Imh", "Ih"), nextstate:=next_state(state, age, sex, mort_mult_now)]
     agents[tnext < 0 & state %in% c("E", "Ip", "Ia", "Im", "Imh", "Ih"), tnext:=t_til_nxt(state)]
@@ -367,22 +369,43 @@ covid_abm_v4 <- function(data_inputs, input_pars, vax_phases,
           vax_eligible_occps <- vax_phases$occps[[v]]
           vax_phase_type     <- vax_phases$type[[v]]
           
-          #If adapive vaccination targeting essential workers  
+          #If adaptive vaccination 
           if(vax_phase_type == "A"){
             
-            # Examine past month's testing data to determine where to place site
-            start <- as.numeric(date_now-t0)-30
-            end <- as.numeric(date_now-t0)
+            adapt_type = vax_phases$metric[[v]]
             
-            test_data <- rbindlist(lapply(start:end, function(d) test_reports[[d]]))
-            test_data_sum <- test_data[, 
-                                       .(n_tests = .N, n_pos = sum(test_pos), per_pos = sum(test_pos)/.N),
-                                       by = ct]
+            if(adapt_type == "CASE"){
+              # Examine past month's testing data to determine where to place site
+              start <- as.numeric(date_now-t0)-30
+              end <- as.numeric(date_now-t0)
+              
+              test_data <- rbindlist(lapply(start:end, function(d) test_reports[[d]]))
+              test_data_sum <- test_data[, 
+                                         .(n_tests = .N, n_pos = sum(test_pos), per_pos = sum(test_pos)/.N),
+                                         by = ct]
+              
+              # Make agents in 20 CTs (basically 10% of all cts) with highest test percent positive eligible
+              vax_eligible_cts <- test_data_sum$ct[order(-test_data_sum$per_pos)][1:20]
+              
+              vax_phases$cts[[v]] <- vax_eligible_cts
+              
+            } else if(adapt_type == "HOSP"){
+              # Examine past 2 month's hospitalizations data to determine where to place site
+              start <- as.Date(date_now-60)
+              end <- as.Date(date_now)
+              
+              hosp_data <- agents[t_hosp <= end & t_hosp >= start,]
+              hosp_data_sum <- hosp_data[, .(n_hosp = .N), by = ct]
+              
+              # Make agents in 20 CTs (basically 10% of all cts) with highest test percent positive eligible
+              vax_eligible_cts <- hosp_data_sum$ct[order(-hosp_data_sum$n_hosp)][1:20]
+              
+              vax_phases$cts[[v]] <- vax_eligible_cts
+              
+            } else {
+              stop("Vaccination phase", v, "is adaptive, but must be either CASE or HOSP")
+            }
             
-            # Make agents in 20 CTs (basically 10% of all cts) with highest test percent positive eligible
-            vax_eligible_cts <- test_data_sum$ct[order(-test_data_sum$per_pos)][1:20]
-            
-            vax_phases$cts[[v]] <- vax_eligible_cts
           } else {
             
             vax_eligible_cts <- vax_phases$cts[[v]]
@@ -395,7 +418,7 @@ covid_abm_v4 <- function(data_inputs, input_pars, vax_phases,
         
       } 
       # randomly sample from available agents to vaccinate
-      vax_eligible_ids <- agents[vax_eligible == 1, id]
+      vax_eligible_ids <- agents[vax_eligible == 1 & vax1 == 0, id]
       vax_ids <- vax_eligible_ids[wrswoR::sample_int_crank(length(vax_eligible_ids),
                                                            vax_avail,
                                                            rep(1, length(vax_eligible_ids)))]
