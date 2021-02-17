@@ -35,7 +35,7 @@ initial     <- TRUE
 # Replace pars in list with best pars from lhs -------------------
 # Some of these manual entries as placeholders until calibration finalized
 
-input_pars$trans_pars$bta_base             <- 0.29 # best_pars[1]
+input_pars$trans_pars$bta_base             <- 0.3 # best_pars[1]
 input_pars$trans_pars$bta_hh               <- 1.25 #best_pars[2]
 input_pars$trans_pars$bta_work             <- 1.10 #best_pars[3]
 input_pars$trans_pars$bta_sip_rd           <- 0.5 #best_pars[4]
@@ -60,7 +60,7 @@ input_pars$test_pars$symp_state_mult       <- best_pars[20]
 input_pars$test_pars$hosp_mult             <- best_pars[21]
 input_pars$test_pars$essential_prob        <- best_pars[22]
 
-input_pars$other_pars$mask_red             <- 0.75 #best_pars[23]
+input_pars$other_pars$mask_red             <- 0.6 #best_pars[23]
 input_pars$other_pars$visitor_mult_testing <- 4 #best_pars[24]
 input_pars$other_pars$visitor_mult_sfgrph  <- 50 #best_pars[25]
 input_pars$other_pars$mort_mult            <- 0.33 #best_pars[26]
