@@ -28,12 +28,18 @@ save(list = c("vax_scens_reps", "vax_phase_dates"),
 
 
 # Comprehensive accounting of vaccination scenarios --------------------
-# vax_scens <- as_tibble(expand.grid(LOC  = c("CT", "ZIP"),
-#                                    MVMT = c("OCT", "DEC"),
-#                                    VAX  = c("RISE", "PLAT"),
-#                                    MET  = c("HOSP", "CASE"),
-#                                    SCEN = c("65p", "ESS", "PLACE", "ALL")))
+vax_scens_long <- as_tibble(expand.grid(LOC  = c("CT", "ZIP"),
+                                        MVMT = c("OPT", "PES"),
+                                        VAX  = c("OPT", "PES"),
+                                        MET  = c("HPI","HOSP", "CASE"),
+                                        SCEN = c("65p", "PLACE")))
 
+n_runs_per_scen <- 25
+
+vax_scens_long_reps <- vax_scens_long %>% slice(rep(1:n(), each = n_runs_per_scen))
+
+save(list = c("vax_scens_long_reps", "vax_phase_dates"),
+     file = here::here("data/processed/vax_scenarios_long.Rdata"))
 
 # Since eligibility placement metrics (hospitalizations or cases) don't matter for non-place based scenarios (all 65p and all essential workers), can remove those scenarios
 # vax_scens_distinct <- vax_scens %>% 
