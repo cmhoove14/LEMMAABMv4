@@ -36,7 +36,7 @@ csvs <- files[grepl(".csv", files)]
 n_cores <- detectCores()
 
 cl <- makeCluster(n_cores)
-clusterExport(cl, c("csvs", "sumDevices", "keep_cols", "year"))
+clusterExport(cl, c("csvs", "sumDevices", "keep_cols", "year", "dat_dir"))
 invisible(clusterEvalQ(cl, lapply(c("data.table", "readr", "dplyr"), 
                         library, character.only = T)))
 
