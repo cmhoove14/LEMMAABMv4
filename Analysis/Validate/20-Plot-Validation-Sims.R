@@ -76,7 +76,7 @@ hosp_val_sum <- hosp_val %>%
 hosp_calval_plot <- ggplot() +
   geom_col(data = sf_hosp,
            aes(x = Date, y = HOSP_max),
-           col = "darkblue", fill = "lightblue", alpha = 0.4) +
+           col = NA, fill = "lightblue", alpha = 0.4) +
   geom_col(data = sf_hosp,
            aes(x = Date, y = HOSP_tot),
            col = "darkblue", fill = "blue", alpha = 0.6) +
