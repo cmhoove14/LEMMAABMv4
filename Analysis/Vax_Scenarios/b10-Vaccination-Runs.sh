@@ -11,4 +11,4 @@
 #$ -t 1-200                        #-- array job
                                    #-- tasks if desired (see Tips section on this page)
 module load CBI r
-Rscript Analysis/Validate/10-Vaccination-Runs.R $SGE_TASK_ID "data/processed/input_pars_vax.rds" "data/processed/vax_scenarios_short.Rdata" "data/outputs/Vax_Scenario_Runs/"
+Rscript Analysis/Vax_Scenarios/10-Vaccination-Runs.R $SGE_TASK_ID "data/processed/input_pars_vax.rds" "data/processed/vax_scenarios_short.Rdata" "data/outputs/Vax_Scenario_Runs/"
