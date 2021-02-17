@@ -26,14 +26,14 @@ lhs_fits_long <- lhs_fits %>%
 lhs_fits_long %>% 
   filter(outcomes == "hosp_fit") %>% 
   ggplot(aes(x = vars_value, y = outcome_value)) +
-    geom_point(pch = 16, size = 0.5) +
-    facet_wrap("vars", ncol = 4, nrow = 7,
-               scales = "free") +
-    geom_smooth() +
-    labs(y = "Hospitalization fit score",
-         x = "Var value",
-         title = "Hospitalizations nll to par vals")
-  
+  geom_point(pch = 16, size = 0.5) +
+  facet_wrap("vars", ncol = 4, nrow = 7,
+             scales = "free") +
+  geom_smooth() +
+  labs(y = "Hospitalization fit score",
+       x = "Var value",
+       title = "Hospitalizations nll to par vals")
+
 ggsave(here::here("Plots", "LHS_Calibration", "Fits1", "hosp_fit_scatter.jpg"),
        width = 8, height = 8, units = "in")
 
@@ -133,10 +133,10 @@ dths_pcc <- pcc(X = lhs_fits %>% dplyr::select(bta_base:E0),
          Outcome = "Deaths")
 
 dths_race_pcc <- pcc(X = lhs_fits %>% dplyr::select(bta_base:E0),
-                y = lhs_fits$dths_race_fit,
-                rank = T,
-                nboot = 100,
-                conf = 0.95)$PRCC %>% 
+                     y = lhs_fits$dths_race_fit,
+                     rank = T,
+                     nboot = 100,
+                     conf = 0.95)$PRCC %>% 
   mutate(Vars = row.names(.),
          Outcome = "Deaths by race")
 
@@ -149,10 +149,10 @@ case_race_pcc <- pcc(X = lhs_fits %>% dplyr::select(bta_base:E0),
          Outcome = "Cases by race")
 
 case_ct_pcc <- pcc(X = lhs_fits %>% dplyr::select(bta_base:E0),
-                     y = lhs_fits$ct_cases_fit,
-                     rank = T,
-                     nboot = 100,
-                     conf = 0.95)$PRCC %>% 
+                   y = lhs_fits$ct_cases_fit,
+                   rank = T,
+                   nboot = 100,
+                   conf = 0.95)$PRCC %>% 
   mutate(Vars = row.names(.),
          Outcome = "Cases by ct")
 
@@ -169,10 +169,10 @@ all_pccs <- bind_rows(hosp_pcc, dths_pcc, dths_race_pcc, case_race_pcc, case_ct_
 
 all_pccs %>% 
   ggplot(aes(x = Vars, y = original, fill = Outcome)) +
-    theme_classic() +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-    geom_bar(stat = "identity", position = "dodge", width = 0.7) +
-    labs(y = "PRCC")
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  labs(y = "PRCC")
 
 ggsave(here::here("Plots", "LHS_Calibration", "Fits1", "Outcome_fits_PRCC.jpg"),
        width = 8, height = 5, units = "in")
