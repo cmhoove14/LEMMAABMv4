@@ -8,6 +8,7 @@ opts <- commandArgs(TRUE)
 
 # Assign variables from BASH
 year    <- as.character(opts[1])
+dat_dir <- as.character(opts[2])
 
 # Get cbg ids and define a couple util functions (thanks, Josh)
 sf_cbgs <- read_csv(here::here("data/raw/Census_2010_CBGs_SF.csv"))
@@ -47,7 +48,7 @@ SF_CBG_Visitors <- function(csv){
 
 }
 
-files <- list.files(year)
+files <- list.files(paste0(dat_dir, "/", year))
 csvs <- files[grepl(".csv", files)]
 
 dates <- as.Date(substr(csvs, 1, 10))
@@ -59,7 +60,7 @@ ndays <- as.integer(end-start)
 
 cl <- makeCluster(detectCores())
 
-  clusterExport(cl, c("start", "end", "dates", "csvs", "files", "ndays", "year",
+  clusterExport(cl, c("start", "end", "dates", "csvs", "files", "ndays", "year", "dat_dir",
                       "SF_CBG_Visitors", "ToCounty", "ToCounty1", "sf_cbgs_dt"))
 
   invisible(clusterEvalQ(cl, lapply(c("data.table", "readr", "jsonlite"), 
@@ -69,7 +70,7 @@ cl <- makeCluster(detectCores())
                            function(t){
                              idate <- dates[t]
                              
-                             ifile <- paste0(year, "/", files[grepl(idate, files)])
+                             ifile <- paste0(dat_dir, "/", year, "/", files[grepl(idate, files)])
                              
                              if(length(ifile) == 1){
                                out <- SF_CBG_Visitors(ifile)
