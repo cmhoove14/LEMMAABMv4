@@ -63,44 +63,44 @@ covid_abm_v4 <- function(data_inputs, input_pars, vax_phases,
   # Extract Initial conditions ----------------
   N <- nrow(agents)
   
-if(initial){
-  e.seed   <- input_pars$init_states$E0     #Exposed
-  ip.seed  <- input_pars$init_states$Ip0    #infected pre-symptomatic
-  ia.seed  <- input_pars$init_states$Ia0    #infected asymptomatic
-  im.seed  <- input_pars$init_states$Im0    #infected mildly symptomatic
-  imh.seed <- input_pars$init_states$Imh0   #infected mildly symptomatic, will become severe
-  ih.seed  <- input_pars$init_states$Ih0    #infected severely symptomatic
-  d.seed   <- input_pars$init_states$D0     #dead
-  r.seed   <- input_pars$init_states$R0     #removed
-  non.s    <- e.seed + ip.seed + ia.seed + im.seed + imh.seed + ih.seed + d.seed + r.seed
-  s.seed   <- N - non.s
-  
-  # Initial infection allocated randomly among non-children/non-retirees
-  set.seed(430)
-  init.Es   <- sample(agents[!age %in% c(5,15,75,85), id], e.seed)   
-  init.Ips  <- sample(agents[!age %in% c(5,15,75,85), id], ip.seed)   
-  init.Ias  <- sample(agents[!age %in% c(5,15,75,85), id], ia.seed)   
-  init.Ims  <- sample(agents[!age %in% c(5,15,75,85), id], im.seed)   
-  init.Imhs <- sample(agents[!age %in% c(5,15,75,85), id], imh.seed)   
-  init.Ihs  <- sample(agents[!age %in% c(5,15,75,85), id], ih.seed)   
-  init.Ds   <- sample(agents[!age %in% c(5,15,75,85), id], d.seed)   
-  init.Rs   <- sample(agents[!age %in% c(5,15,75,85), id], r.seed)   
-  
-  agents[id %in% init.Es, state:="E"]
-  agents[id %in% init.Ips, state:="Ip"]
-  agents[id %in% init.Ias, state:="Ia"]
-  agents[id %in% init.Ims, state:="Im"]
-  agents[id %in% init.Imhs, state:="Imh"]
-  agents[id %in% init.Ihs, state:="Ih"]
-  agents[id %in% init.Ds, state:="D"]
-  agents[id %in% init.Rs, state:="R"]
-
-}  
+  if(initial){
+    e.seed   <- input_pars$init_states$E0     #Exposed
+    ip.seed  <- input_pars$init_states$Ip0    #infected pre-symptomatic
+    ia.seed  <- input_pars$init_states$Ia0    #infected asymptomatic
+    im.seed  <- input_pars$init_states$Im0    #infected mildly symptomatic
+    imh.seed <- input_pars$init_states$Imh0   #infected mildly symptomatic, will become severe
+    ih.seed  <- input_pars$init_states$Ih0    #infected severely symptomatic
+    d.seed   <- input_pars$init_states$D0     #dead
+    r.seed   <- input_pars$init_states$R0     #removed
+    non.s    <- e.seed + ip.seed + ia.seed + im.seed + imh.seed + ih.seed + d.seed + r.seed
+    s.seed   <- N - non.s
+    
+    # Initial infection allocated randomly among non-children/non-retirees
+    set.seed(430)
+    init.Es   <- sample(agents[!age %in% c(5,15,75,85), id], e.seed)   
+    init.Ips  <- sample(agents[!age %in% c(5,15,75,85), id], ip.seed)   
+    init.Ias  <- sample(agents[!age %in% c(5,15,75,85), id], ia.seed)   
+    init.Ims  <- sample(agents[!age %in% c(5,15,75,85), id], im.seed)   
+    init.Imhs <- sample(agents[!age %in% c(5,15,75,85), id], imh.seed)   
+    init.Ihs  <- sample(agents[!age %in% c(5,15,75,85), id], ih.seed)   
+    init.Ds   <- sample(agents[!age %in% c(5,15,75,85), id], d.seed)   
+    init.Rs   <- sample(agents[!age %in% c(5,15,75,85), id], r.seed)   
+    
+    agents[id %in% init.Es, state:="E"]
+    agents[id %in% init.Ips, state:="Ip"]
+    agents[id %in% init.Ias, state:="Ia"]
+    agents[id %in% init.Ims, state:="Im"]
+    agents[id %in% init.Imhs, state:="Imh"]
+    agents[id %in% init.Ihs, state:="Ih"]
+    agents[id %in% init.Ds, state:="D"]
+    agents[id %in% init.Rs, state:="R"]
+    
+  }  
   # Keep track of everyone's infection status through time   
   #epi_curve <- matrix(NA, nrow = t.tot/dt, ncol = 9)
   #epi_curve[1,] <- agents[,.N, by = state]$N
   epi_curve <- list()
-    epi_curve[[1]] <- agents[,.N, by = state] -> epicurve ; epicurve[,date:=t0]
+  epi_curve[[1]] <- agents[,.N, by = state] -> epicurve ; epicurve[,date:=t0]
   
   # Keep track of test data through time
   test_reports <- list()
@@ -133,42 +133,42 @@ if(initial){
     geo_pops <- agents[, .(pop = .N), by = adapt_site_geo]
   }
   
-if(initial){
-  # Update characteristics of initial infections  
-  # Transition time
-  agents[state %in% c("E", "Ip", "Ia", "Im", "Imh", "Ih"), tnext:=t_til_nxt(state)]
-  # State entering once transition time expires
-  mort_mult_init <- 1
-  agents[state %in% c("E", "Ip", "Ia", "Im", "Imh", "Ih"), nextstate:=next_state(state, age, sex, mort_mult_init)]
-  #Time initial infections occurred
-  agents[state %in% c("E", "Ip", "Ia", "Im", "Imh", "Ih"), t_infection:=dt]
-  
-  # Add compliance and sociality metrics, start people with no known contacts, etc. -----------------------------
-  agents[, mask := mask_fx(.N)] # Probability of wearing a mask
-  agents[, sociality := social_fx(.N)] # Sociality metric
-  agents[, q_prob := 0]
-  agents[, q_duration := 0]
-  agents[, q_bta_red:=1]
-  agents[, contact := 0]
-  agents[, t_since_contact := 0]
-  agents[, t_symptoms := 0]
-  agents[, tested := 0] # Nobody tested to start
-  agents[, t_since_test := 14.1] # Start everyone off eligible for testing
-  agents[, test_pos := 0] # Start everyone off with no postive test status
-  agents[, init_test := 0] # Start everyone off eligible for testing
-  agents[, t_til_test_note:=0] #nobody tested to start, so nobody waiting on notification
-  agents[, t_death := 0]  # Time of death record
-  agents[, adapt_site := 0]   # No adaptive testing sites to start
-  agents[, vax_eligible := 0] # Nobody vaccine eligible to start
-  agents[, t_til_dose2 := 0] # Nobody waiting on dose 2 to start
-  agents[, vax1 := 0] # Received vaccination dose 1?
-  agents[, vax2 := 0] # Received vaccination dose 2?
-}  
+  if(initial){
+    # Update characteristics of initial infections  
+    # Transition time
+    agents[state %in% c("E", "Ip", "Ia", "Im", "Imh", "Ih"), tnext:=t_til_nxt(state)]
+    # State entering once transition time expires
+    mort_mult_init <- 1
+    agents[state %in% c("E", "Ip", "Ia", "Im", "Imh", "Ih"), nextstate:=next_state(state, age, sex, mort_mult_init)]
+    #Time initial infections occurred
+    agents[state %in% c("E", "Ip", "Ia", "Im", "Imh", "Ih"), t_infection:=dt]
+    
+    # Add compliance and sociality metrics, start people with no known contacts, etc. -----------------------------
+    agents[, mask := mask_fx(.N)] # Probability of wearing a mask
+    agents[, sociality := social_fx(.N)] # Sociality metric
+    agents[, q_prob := 0]
+    agents[, q_duration := 0]
+    agents[, q_bta_red:=1]
+    agents[, contact := 0]
+    agents[, t_since_contact := 0]
+    agents[, t_symptoms := 0]
+    agents[, tested := 0] # Nobody tested to start
+    agents[, t_since_test := 14.1] # Start everyone off eligible for testing
+    agents[, test_pos := 0] # Start everyone off with no postive test status
+    agents[, init_test := 0] # Start everyone off eligible for testing
+    agents[, t_til_test_note:=0] #nobody tested to start, so nobody waiting on notification
+    agents[, t_death := 0]  # Time of death record
+    agents[, adapt_site := 0]   # No adaptive testing sites to start
+    agents[, vax_eligible := 0] # Nobody vaccine eligible to start
+    agents[, t_til_dose2 := 0] # Nobody waiting on dose 2 to start
+    agents[, vax1 := 0] # Received vaccination dose 1?
+    agents[, vax2 := 0] # Received vaccination dose 2?
+  }  
   
   # Make sure ct is numeric for matching
   agents[, ct:=as.numeric(ct)] 
   
-# Progress bar  
+  # Progress bar  
   if(!verbose){
     pb <- progress_bar$new(
       format = "  Running simulation [:bar] :percent in :elapsed",
@@ -177,15 +177,15 @@ if(initial){
       width  = 100
     )  
   }
-
+  
   # Run simulation     ---------------------
   t_start <- ifelse(initial, 2, 1)
   
   for(t in t_start:(t.tot/dt)){
-
+    
     # Time step characteristics
     date_now      <- t0+t*dt
-      agents[, Date:=date_now]
+    agents[, Date:=date_now]
     date_num      <- as.numeric(floor(date_now-ref_date))
     day_week      <- day_of_week_fx[t]
     time_day      <- time_of_day_fx[t]
@@ -282,9 +282,9 @@ if(initial){
         eligible_ids <- eligible_agents[, id]
         eligible_probs <- eligible_agents[, test_prob]
         
-        if(length(eligible_ids) < n_tests){ # Remove t_since_test criteria to create more eleigible agents
+        if(length(eligible_ids) < n_tests){ # Remove t_since_test criteria to create more eligible agents
           warning(cat("\nOnly",length(eligible_ids), "eligible agents for testing and",
-                  (n_tests_pub + n_tests_pvt), "tests available\n"))
+                      n_tests, "tests available\n"))
           
           eligible_agents <- agents[init_test == 0 & state!= "D", ]
           
@@ -331,14 +331,14 @@ if(initial){
         # Tested agents
         # Test results and reset time since last test for those who were tested
         # agents[id %in% testeds, tested:=test_sens(state, t_infection)]
-        test_reports[[as.numeric(date_now-t0)]] <- agents[id %in% test_ids,
-                                                          c("id", "age", "sex", "race", "occp", "essential", "work", "state", "nextstate",
-                                                            "t_infection", "t_symptoms", "t_since_contact", "res_inf", 
-                                                            "hhid", "hhincome", "ct", "hpi_quartile", 
-                                                            "adapt_site", "Date", "test_pos", "t_til_test_note")]
+        test_reports[[as.numeric(date_now-ref_date)]] <- agents[id %in% test_ids,
+                                                                c("id", "age", "sex", "race", "occp", "essential", "work", "state", "nextstate",
+                                                                  "t_infection", "t_symptoms", "t_since_contact", "res_inf", 
+                                                                  "hhid", "hhincome", "ct", "hpi_quartile", 
+                                                                  "adapt_site", "Date", "test_pos", "t_til_test_note")]
         
         agents[id %in% test_ids, t_since_test:=0]
-
+        
         if(verbose){ cat(n_tests, "tests conducted,",
                          nrow(agents[id %in% test_ids & test_pos==1,]), "(",
                          nrow(agents[id %in% test_ids & test_pos==1,])/n_tests*100, 
@@ -367,22 +367,22 @@ if(initial){
           vax_eligible_occps <- vax_phases$occps[[v]]
           vax_phase_type     <- vax_phases$type[[v]]
           
-        #If adapive vaccination targeting essential workers  
+          #If adapive vaccination targeting essential workers  
           if(vax_phase_type == "A"){
             
             # Examine past month's testing data to determine where to place site
-              start <- as.numeric(date_now-t0)-30
-              end <- as.numeric(date_now-t0)
+            start <- as.numeric(date_now-t0)-30
+            end <- as.numeric(date_now-t0)
             
-              test_data <- rbindlist(lapply(start:end, function(d) test_reports[[d]]))
-              test_data_sum <- test_data[, 
-                                         .(n_tests = .N, n_pos = sum(test_pos), per_pos = sum(test_pos)/.N),
-                                         by = ct]
+            test_data <- rbindlist(lapply(start:end, function(d) test_reports[[d]]))
+            test_data_sum <- test_data[, 
+                                       .(n_tests = .N, n_pos = sum(test_pos), per_pos = sum(test_pos)/.N),
+                                       by = ct]
             
             # Make agents in 20 CTs (basically 10% of all cts) with highest test percent positive eligible
-              vax_eligible_cts <- test_data_sum$ct[order(-test_data_sum$per_pos)][1:20]
-              
-              vax_phases$cts[[v]] <- vax_eligible_cts
+            vax_eligible_cts <- test_data_sum$ct[order(-test_data_sum$per_pos)][1:20]
+            
+            vax_phases$cts[[v]] <- vax_eligible_cts
           } else {
             
             vax_eligible_cts <- vax_phases$cts[[v]]
@@ -414,9 +414,9 @@ if(initial){
       # Determine locations ---------------
       # Reset residence infection and pct_home then get Get CT-based stay at home compliance 
       
-      if(time_day == "M" | t==2){ # Update daily stay-at home if new day
-      agents[, "pct_home":=NULL]
-      
+      if(time_day == "M" | t %in% c(1:2)){ # Update daily stay-at home if new day
+        agents[, "pct_home":=NULL]
+        
         home.today <- stay_home_dt[Date == as.character(date_now),]
         home.today[,ct:=as.numeric(CT)]
         home.today[,pct_home:=pct_home^(1/4)] # Correct stay at home all day percentage for four possible time steps
@@ -463,7 +463,7 @@ if(initial){
       if(visitors){
         visits_today <- visitors_list[[date_num]]
         agents_visit <- visitors_to_agents(visits_today, visitor_mult_testing, visitor_mult_sfgrph)
-          agents_visit[, c("hhid", "work"):=0]
+        agents_visit[, c("hhid", "work"):=0]
         
         agents <- rbindlist(list(agents, agents_visit), fill = TRUE)
         
@@ -525,7 +525,7 @@ if(initial){
       agents[contact_prob > 0 & contact_prob < 1 & FOI > 0, contact := rbinom(.N, 1, contact_prob)]
       agents[contact == 1, t_since_contact:=dt] # Assumes most recent contact overwrites any old contact
       
-       if(verbose){cat(nrow(agents[infect == 1,]), "new infections generated,",
+      if(verbose){cat(nrow(agents[infect == 1,]), "new infections generated,",
                       nrow(agents[state == "Ih",]), "agents currently hospitalized,",
                       nrow(agents[state == "D",]), "cumulative COVID deaths\n\n")}
       
@@ -621,7 +621,7 @@ if(initial){
   
   gc()  
   
-# Export sim outputs
+  # Export sim outputs
   fin_out                           <- list()
   fin_out[["epi_curve"]]            <- rbindlist(epi_curve, fill=TRUE)
   fin_out[["linelist_tests"]]       <- rbindlist(test_reports,fill = TRUE)
