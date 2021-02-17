@@ -8,12 +8,13 @@ opts <- commandArgs(TRUE)
 
 # Assign variables from BASH
 year    <- as.character(opts[1])
+dat_dir <- as.character(opts[2])
 
 keep_cols <- c("origin_census_block_group", "device_count",
                "completely_home_device_count", "part_time_work_behavior_devices", "full_time_work_behavior_devices")
 
 sumDevices <- function(csv, YEAR = year){
-  sfgrph <- data.table(readr::read_csv(paste0(YEAR, "/", csv)))
+  sfgrph <- data.table(readr::read_csv(paste0(dat_dir, "/", YEAR, "/", csv)))
   sfgrph[, state_cnty_fips:=substr(origin_census_block_group, start = 1, stop = 5)]
 
   sfgrph_sf <- sfgrph[state_cnty_fips == "06075"]
@@ -29,7 +30,7 @@ sumDevices <- function(csv, YEAR = year){
   return(as.data.frame(out))
 }
 
-files <- list.files(year)
+files <- list.files(paste0(dat_dir,"/",year))
 csvs <- files[grepl(".csv", files)]
 
 n_cores <- detectCores()
