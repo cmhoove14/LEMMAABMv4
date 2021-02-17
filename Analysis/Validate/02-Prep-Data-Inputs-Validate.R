@@ -8,7 +8,7 @@ library(lubridate)
 library(data.table)
 
 # Load par inputs to get timeframe ------------------
-input_pars <- readRDS(here::here("data", "processed", "calibrated_pars.rds"))
+input_pars <- readRDS(here::here("data", "processed", "input_pars_validate.rds"))
 
 t0        <- input_pars$time_pars$t0
 t.end     <- input_pars$time_pars$t.end
@@ -17,28 +17,11 @@ ref_date  <- input_pars$time_pars$ref_date
 # referece for safegraph which starts on Jan 1 2020
 start.num <- as.numeric(t0 - as.Date("2019-12-31"))
 
-# synthetic agents from Census/IPUMS data ------------
-agents <- readRDS(here::here("data", "processed", "SF_agents_processed.rds"))
-  data.table::setkey(agents, id, hhid)
-
-# Add column for use in model
-agents[, state := "S"]
-agents[, nextstate := NA_character_]
-agents[, tnext := 0]
-agents[, t_symptoms := 0]
-
-
-# UNCOMMENT BELOW/change size of sample TO Subset for development for faster runs/lower memory
-# agents <- agents[agents$hhid %in% sample(agents$hhid, 2e4, replace = F)]  
-
-N <- nrow(agents)
-
-#Plot tests through time
-#ggplot(data = sf_test) + geom_line(aes(x = Date, y = (tests/9e5)*1e5)) + theme_bw() +scale_x_date(date_breaks = "14 day") +theme(axis.text.x = element_text(angle = 45,hjust = 1))+labs(x="",y="SF Tests per 100k")
+# NO AGENTS as they will be drawn from previous sim
 
 # Testing data for sims ----------------------
 # source(here::here("data", "get","COVID_CA_get_latest.R"))
-load(here::here("data", "get", "got", "CA_SF_data2021-02-02.Rdata"))
+load(here::here("data", "get", "got", "CA_SF_data2021-02-10.Rdata"))
 # sf_test is observed testing completed in SF county
 # Must contain columns date_num and tests_pp to convert to testing function in model
 sf_test_smooth <- sf_test %>% 
@@ -172,7 +155,6 @@ if(t.end > last_sfgrph){
 
 # Final object to export
 data_inputs                 <- list()
-data_inputs$agents          <- agents
 data_inputs$ct_cdf_list     <- sf_ct_cdf_ls
 data_inputs$ct_ids          <- sf_ct_ids
 data_inputs$stay_home_dt    <- sf_sfgrph_pct_home
@@ -180,4 +162,4 @@ data_inputs$visitors_list   <- sf_visitors
 data_inputs$tests_avail     <- tests_avail
 data_inputs$vax_per_day     <- vax_per_day
 
-saveRDS(data_inputs, here::here("data", "processed", "data_inputs_calibrate.rds"))
+saveRDS(data_inputs, here::here("data", "processed", "data_inputs_validate.rds"))
