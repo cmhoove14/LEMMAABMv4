@@ -38,7 +38,7 @@ pops <- readxl::read_excel(temp.file2, skip = 3)
   
 # Get case data ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~---------------------------
   #source(here::here("data", "get", "COVID_CA_get_latest.R"))
-  load(here::here("data/get/got/CA_SF_data2021-02-10.Rdata"))
+  load(here::here("data/get/got/CA_SF_data2021-02-16.Rdata"))
   CA_cases_dt <- as.data.table(CA_cases)
   CA_cases_dt[, County := paste0(county, " County")]
 
