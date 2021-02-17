@@ -19,7 +19,7 @@ ToCounty <- function(row, dt) {
   ToCounty1(dt[row, origin_census_block_group], dt[row, destination_cbgs])
 }
 
-sf_cts <- read_csv("Census_2010_Tracts.csv")
+sf_cts <- read_csv(here::here("data/raw/Census_2010_Tracts.csv"))
 sf_ct_dt <- as.data.table(expand.grid(origin_cts = sf_cts$GEOID10,
                                       visit_cts = sf_cts$GEOID10))
 
@@ -79,4 +79,4 @@ for(i in 1:days){
   
 }
 
-saveRDS(fill, paste0("SFCensTractsMvmt", start, "to", end, ".rds"))
+saveRDS(fill, here::here("data/processed/Safegraph",paste0("SFCensTractsMvmt", start, "to", end, ".rds")))

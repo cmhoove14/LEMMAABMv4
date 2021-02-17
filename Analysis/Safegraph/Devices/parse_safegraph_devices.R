@@ -49,4 +49,5 @@ dates <- as.Date(substr(csvs, 1, 10))
 start <- min(dates)
 end <- max(dates)
 
-saveRDS(sfgrph_device_sums, paste0("SF_devices_sum", start, "to", end, ".rds"))
+saveRDS(sfgrph_device_sums, here::here("data/processed/Safegraph",
+                                       paste0("SF_devices_sum", start, "to", end, ".rds")))

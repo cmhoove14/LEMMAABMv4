@@ -8,4 +8,4 @@
 #$ -m beas
 # 
  
-mpirun -n 1 Rscript parse_safegraph_SF_CensTracts.R 2021
+mpirun -n 1 Rscript Analysis/Safegraph/Movement/parse_safegraph_SF_CensTracts.R 2021

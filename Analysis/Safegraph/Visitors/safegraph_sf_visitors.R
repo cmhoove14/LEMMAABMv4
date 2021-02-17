@@ -10,7 +10,7 @@ opts <- commandArgs(TRUE)
 year    <- as.character(opts[1])
 
 # Get cbg ids and define a couple util functions (thanks, Josh)
-sf_cbgs <- read_csv(here::here("Census_2010_CBGs_SF.csv"))
+sf_cbgs <- read_csv(here::here("data/raw/Census_2010_CBGs_SF.csv"))
   sf_cbgs_dt <- as.data.table(sf_cbgs$GEOID10)
   colnames(sf_cbgs_dt) <- "visits"
 
@@ -83,4 +83,5 @@ cl <- makeCluster(detectCores())
   
   parallel::stopCluster(cl)
 
-saveRDS(fill_list, paste0("SF_Visitors", start, "to", end, ".rds"))
+saveRDS(fill_list, here::here("data/processed/Safegraph"), 
+                              paste0("SF_Visitors", start, "to", end, ".rds"))
