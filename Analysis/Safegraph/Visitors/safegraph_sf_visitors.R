@@ -84,5 +84,5 @@ cl <- makeCluster(detectCores())
   
   parallel::stopCluster(cl)
 
-saveRDS(fill_list, here::here("data/processed/Safegraph"), 
-                              paste0("SF_Visitors", start, "to", end, ".rds"))
+saveRDS(fill_list, here::here("data/processed/Safegraph", 
+                              paste0("SF_Visitors", start, "to", end, ".rds")))
