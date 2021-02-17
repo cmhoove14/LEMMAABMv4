@@ -7,19 +7,10 @@ library(tidyverse)
 library(lubridate)
 library(data.table)
 
-# Load par inputs to get timeframe ------------------
-input_pars <- readRDS(here::here("data", "processed", "input_pars_validate.rds"))
-
-t0        <- input_pars$time_pars$t0
-t.end     <- input_pars$time_pars$t.end
-ref_date  <- input_pars$time_pars$ref_date
-
-# referece for safegraph which starts on Jan 1 2020
-start.num <- as.numeric(t0 - as.Date("2019-12-31"))
-
-# Don't use these agents as agents from previous sim will be used in sim, but need to know N for tests_pp below
-agents <- readRDS(here::here("data/processed/SF_agents_processed.rds"))
-  N <- nrow(agents)
+t0 <- as.Date("2020-12-02")
+ref_date <- t0-1
+t.end <- as.Date("2021-04-10")
+N <- 9e5 # Approx pop of SF 900,000 
 
 # Testing data for sims ----------------------
 # source(here::here("data", "get","COVID_CA_get_latest.R"))
@@ -37,11 +28,18 @@ sf_test_smooth <- sf_test %>%
                               is.na(tests_pp_7day_avg) & Date > as.Date("2020-03-10") ~ 5000/N,
                               !is.na(tests_pp_7day_avg) ~ tests_pp_7day_avg))
 
-last_sf_test <- max(sf_test_smooth$Date)
+# Add testing data based on recent average
+avg_past <- sf_test_smooth %>% filter(date_num > 0) %>% pull(tests_pp) %>% mean()
 
-tests_avail <- sf_test_smooth %>% 
-  filter(date_num >= 0) %>% 
-  dplyr::select(date_num, tests_pp)
+# Repeat the past then add obs onto the end for the future
+n_add <- 70
+tests_pp_pad <- c(sf_test_smooth$tests_pp_7day_avg[which(sf_test_smooth$date_num >0 & !is.na(sf_test_smooth$tests_pp_7day_avg))], 
+                  rep(avg_past, n_add))
+dates_pad <- c(sf_test_smooth$date_num[which(sf_test_smooth$date_num >0)], 
+               max(sf_test_smooth$date_num, na.rm = T)+c(1:(n_add-3)))
+
+tests_avail <- data.frame(date_num = dates_pad,
+                          tests_pp = tests_pp_pad)
 
 # sf_test_smooth %>%  ggplot() + geom_line(aes(x = Date, y = tests_pp)) + geom_line(aes(x = Date, y = tests_pp_7day_avg), col = "red") + theme_classic()
 
@@ -53,115 +51,133 @@ sf_sfgrph_pcts21 <- readRDS(here::here("data", "processed","Safegraph", "sfgrph_
 
 sf_sfgrph_pcts <- rbind(sf_sfgrph_pcts20, sf_sfgrph_pcts21)
 
-sf_sfgrph_pcts <- sf_sfgrph_pcts %>% filter(Date >= t0)
-
-last_sfgrph <- max(sf_sfgrph_pcts$Date)
-
-# sf_sfgrph_pcts %>% 
-#   group_by(Date) %>% 
-#   summarise(n_devices     = sum(device_count), 
-#             n_home        = sum(completely_home_device_count), 
-#             n_part_work   = sum(part_time_work_behavior_devices), 
-#             n_full_work   = sum(full_time_work_behavior_devices), 
-#             per_home      = n_home/n_devices, 
-#             per_part_work = n_part_work/n_devices, 
-#             per_full_work = n_full_work/n_devices) %>% 
-#   ggplot() +
-#   geom_line(aes(x = Date, y = per_home), col = "green") +
-#   geom_line(aes(x = Date, y = per_part_work), col = "orange") +
-#   geom_line(aes(x = Date, y = per_full_work), col = "red") +
-#   theme_bw() +
-#   labs(y = "Pct device behavior",
-#        title = "Safegraph home/work metrics SF County")
-
 sf_sfgrph_pct_home <- sf_sfgrph_pcts %>% 
   dplyr::select(CT, Date, pct_home) %>% 
   data.table::as.data.table()
+
+# Add data for optimistic scenario
+sf_sfgrph_pct_home_add_opt <- sf_sfgrph_pct_home %>% 
+  filter(Date >= as.Date("2020-10-01") & Date <= as.Date("2020-12-01")) %>%
+  group_by(CT) %>% 
+  mutate(Date = max(sf_sfgrph_pct_home$Date) + row_number()) %>% 
+  ungroup()
+
+sf_sfgrph_pct_home_opt <- rbindlist(list(sf_sfgrph_pct_home,
+                                         sf_sfgrph_pct_home_add_opt))
+
+
+# Add data for pessimistic scenario
+sf_sfgrph_pct_home_add_pes <- sf_sfgrph_pct_home %>% 
+  filter(Date >= as.Date("2020-12-01") & Date <= as.Date("2021-02-01")) %>%
+  group_by(CT) %>% 
+  mutate(Date = max(sf_sfgrph_pct_home$Date) + row_number()) %>% 
+  ungroup()
+
+sf_sfgrph_pct_home_pes <- rbindlist(list(sf_sfgrph_pct_home,
+                                         sf_sfgrph_pct_home_add_pes))
+
+
+
 
 #San Francisco ct mvmt list derived from sfgrph data
 sf_ct_cdf_ls20 <- readRDS(here::here("data", "processed", "Safegraph", "safegraph_ct_mvmt_cdf_list_2020processed.rds"))
 sf_ct_cdf_ls21 <- readRDS(here::here("data", "processed", "Safegraph", "safegraph_ct_mvmt_cdf_list_2021processed.rds"))
 sf_ct_cdf_ls <- c(sf_ct_cdf_ls20, sf_ct_cdf_ls21)
 
-sf_ct_cdf_ls <- sf_ct_cdf_ls[start.num:length(sf_ct_cdf_ls)] 
-
 sf_ct_ids <- read_csv(here::here("data", "raw", "Census_2010_Tracts.csv")) %>% pull(GEOID10) %>% as.numeric()
 
+# Add data for optimistic scenario
+which_add_opt <- seq.Date(as.Date("2020-10-01"), as.Date("2020-12-01"), by = "day") - as.Date("2019-12-31")
+
+sf_ct_cdf_ls_opt <- c(sf_ct_cdf_ls, sf_ct_cdf_ls[which_add_opt])
+
+# Add data for pessimistic scenario
+which_add_pes <- seq.Date(as.Date("2020-12-01"), as.Date("2021-02-01"), by = "day") - as.Date("2019-12-31")
+
+sf_ct_cdf_ls_pes <- c(sf_ct_cdf_ls, sf_ct_cdf_ls[which_add_pes])
 
 # Visitors to SF county from other CA counties ------------
 sf_visitors20 <- readRDS(here::here("data", "processed", "Safegraph", "SF_visitors_CTs_2020Processed.rds"))
 sf_visitors21 <- readRDS(here::here("data", "processed", "Safegraph", "SF_visitors_CTs_2021Processed.rds"))
 
 sf_visitors <- c(sf_visitors20, sf_visitors21)
+sf_visitors[(length(sf_visitors)-2):length(sf_visitors)] <- NULL
 
-sf_visitors <- sf_visitors[start.num:length(sf_visitors)]
+
+# Add for optimistic scenario (indices from above)
+sf_visitors_opt <- c(sf_visitors, sf_visitors[which_add_opt])
+
+
+# Add for pessimistic scenario (indices from above)
+sf_visitors_pes <- c(sf_visitors, sf_visitors[which_add_pes])
+
+
+
+# Final optimistic and pessimistic objects to export
+data_inputs_opt                 <- list()
+data_inputs_opt$ct_cdf_list     <- sf_ct_cdf_ls_opt
+data_inputs_opt$ct_ids          <- sf_ct_ids
+data_inputs_opt$stay_home_dt    <- sf_sfgrph_pct_home_opt
+data_inputs_opt$visitors_list   <- sf_visitors_opt
+data_inputs_opt$tests_avail     <- tests_avail
+
+saveRDS(data_inputs_opt, here::here("data", "processed", "data_inputs_forecast_opt.rds"))
+
+# Final pessimistic and pessimistic objects to export
+data_inputs_pes                 <- list()
+data_inputs_pes$ct_cdf_list     <- sf_ct_cdf_ls_pes
+data_inputs_pes$ct_ids          <- sf_ct_ids
+data_inputs_pes$stay_home_dt    <- sf_sfgrph_pct_home_pes
+data_inputs_pes$visitors_list   <- sf_visitors_pes
+data_inputs_pes$tests_avail     <- tests_avail
+
+saveRDS(data_inputs_pes, here::here("data", "processed", "data_inputs_forecast_pes.rds"))
+
+
+
+
+
+
+
+
+
+
 
 # Vaccination data ------------------
 # Data here but not downloadable yet https://data.sfgov.org/stories/s/a49y-jeyc
 # Hack to get approximation of vaccines per day so far
 vax_start <- as.Date("2020-12-15")
-vax_last_obs <- as.Date("2021-02-01")
+vax_last_obs <- as.Date("2021-02-15")
 vax_last  <- t.end
 vax_days <- as.numeric(vax_start-ref_date):as.numeric(vax_last-ref_date)
 
-nvax_last_obs <- 4000
-nvax_trend <- nvax_last_obs/as.numeric(vax_last_obs-vax_start)
+nvax_last_obs <- 6000
 
-nvax_last   <- round(nvax_last_obs+nvax_trend*as.numeric(vax_last-vax_last_obs)) # max vaccines per day assuming linear trend continues
+# max vaccines per day assuming linear trend continues (optimistic)
+nvax_trend <- nvax_last_obs/as.numeric(vax_last_obs-vax_start)
+nvax_last   <- round(nvax_last_obs+nvax_trend*as.numeric(vax_last-vax_last_obs)) 
 nvax <- rep(NA_real_, length(vax_days))
 nvax[1] <- 1
 nvax[length(vax_days)] <- nvax_last
 nvax <- round(zoo::na.approx(nvax))
 
-vax_per_day <- data.frame(days = vax_days ,
-                          vax  = nvax)
+vax_per_day_opt <- data.frame(days = vax_days ,
+                              vax  = nvax)
 
-# Predict/impute into the future if simulation beyond present is desired
-if(t.end > last_sf_test){
-  # Determine number of days necessary to "impute" then assign average of same number of days in the past into the future  
-  n_add <- as.numeric(t.end - last_sf_test)
-  lookback <- last_sf_test-n_add-7
-  avg_past <- sf_test_smooth %>% filter(Date > lookback) %>% pull(tests_pp) %>% mean()
-  tests_pp_pad <- c(sf_test_smooth$tests_pp_7day_avg[which(sf_test_smooth$date_num >0)], 
-                    rep(avg_past, n_add))
-  dates_pad <- c(sf_test_smooth$date_num[which(sf_test_smooth$date_num >0)], 
-                 max(sf_test_smooth$date_num, na.rm = T)+c(1:n_add))
-  
-  tests_avail <- data.frame(date_num = dates_pad,
-                            tests_pp = tests_pp_pad)
-}
-
-if(t.end > last_sfgrph){
-  #Need the simulation to run beyond when we have safegraph movement data to inform movement, so repeat older safegraph data to project in the future 
-  last_sf_day <- wday(last_sfgrph)
-  n_add <- as.numeric(t.end - last_sfgrph)
-  lookback <- last_sfgrph-n_add
-  lookback_day <- ifelse(last_sf_day == 7, 1, last_sf_day+1)
-  lookback_week <- lookback-c(1:7)
-  lookback_start <- lookback_week[which(wday(lookback_week) == lookback_day)]
-  
-  sf_sfgrph_pct_home <- rbindlist(list(sf_sfgrph_pct_home,
-                                       sf_sfgrph_pct_home %>% 
-                                         filter(Date >= lookback_start) %>% 
-                                         mutate(Date = Date + 1 + (last_sfgrph-lookback_start))))
-  
-  sf_ct_cdf_ls <- c(sf_ct_cdf_ls, 
-                    sf_ct_cdf_ls[(length(sf_ct_cdf_ls)-as.numeric(last_sfgrph-lookback_start)):length(sf_ct_cdf_ls)]) 
-  
-  sf_visitors <- c(sf_visitors,
-                   sf_visitors[(length(sf_visitors)-as.numeric(last_sfgrph-lookback_start)):length(sf_visitors)])
-  
-  
-}
+saveRDS(vax_per_day_opt, here::here("data", "processed", "vax_forecast_opt.rds"))
 
 
-# Final object to export
-data_inputs                 <- list()
-data_inputs$ct_cdf_list     <- sf_ct_cdf_ls
-data_inputs$ct_ids          <- sf_ct_ids
-data_inputs$stay_home_dt    <- sf_sfgrph_pct_home
-data_inputs$visitors_list   <- sf_visitors
-data_inputs$tests_avail     <- tests_avail
-data_inputs$vax_per_day     <- vax_per_day
 
-saveRDS(data_inputs, here::here("data", "processed", "data_inputs_validate.rds"))
+# vaccines per day assuming availability plateaus (pessimistic)
+nvax_pes <- rep(NA_real_, length(vax_days))
+nvax_pes[1] <- 1
+nvax_pes[vax_last_obs-vax_start] <- nvax_last_obs
+nvax_pes[length(vax_days)] <- nvax_last_obs
+nvax_pes <- round(zoo::na.approx(nvax_pes))
+
+vax_per_day_pes <- data.frame(days = vax_days ,
+                              vax  = nvax_pes)
+
+
+
+saveRDS(vax_per_day_pes, here::here("data", "processed", "vax_forecast_pes.rds"))
