@@ -38,7 +38,7 @@ initial     <- TRUE
 input_pars$trans_pars$bta_base             <- 0.3 # best_pars[1]
 input_pars$trans_pars$bta_hh               <- 1.25 #best_pars[2]
 input_pars$trans_pars$bta_work             <- 1.10 #best_pars[3]
-input_pars$trans_pars$bta_sip_rd           <- 0.5 #best_pars[4]
+input_pars$trans_pars$bta_sip_rd           <- 0.7 #best_pars[4]
 input_pars$trans_pars$hpi_bta_mult         <- best_pars[5]
 
 input_pars$quar_pars$q_prob_contact        <- best_pars[6]
