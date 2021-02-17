@@ -45,7 +45,6 @@ got_rep    <- readRDS(paste0(use_file, "/", list.files(use_file)[1]))
 
 # Get agents and pars used in simulation run
 data_inputs$agents     <- got_rep$agents
-data_inputs$agents     <- got_rep$agents
 input_pars$trans_pars  <- got_rep$input_pars$trans_pars
 input_pars$test_pars   <- got_rep$input_pars$test_pars
 input_pars$quar_pars   <- got_rep$input_pars$quar_pars
