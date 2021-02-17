@@ -18,14 +18,14 @@ reopen.start  <- as.Date("2020-05-17")  # Start of reopening initiatives in SF
 SiP2.start    <- as.Date("2020-12-06")  # Start of second shelter in place
 reopen2.start <- as.Date("2021-01-26")  # Start of second reopeninig in SF
 holidays      <- c(seq.Date(as.Date("2020-05-23"), as.Date("2020-05-25"), by = "day"), # Memorial Day
-                  seq.Date(as.Date("2020-07-03"), as.Date("2020-07-05"), by = "day"), # 4th of July
-                  seq.Date(as.Date("2020-09-05"), as.Date("2020-09-07"), by = "day"), # Labor day
-                  seq.Date(as.Date("2020-11-26"), as.Date("2020-11-29"), by = "day"), # Thanksgiving
-                  seq.Date(as.Date("2020-12-24"), as.Date("2020-12-26"), by = "day"), # Christmas 
-                  seq.Date(as.Date("2020-12-31"), as.Date("2021-01-01"), by = "day")) # New Years
+                   seq.Date(as.Date("2020-07-03"), as.Date("2020-07-05"), by = "day"), # 4th of July
+                   seq.Date(as.Date("2020-09-05"), as.Date("2020-09-07"), by = "day"), # Labor day
+                   seq.Date(as.Date("2020-11-26"), as.Date("2020-11-29"), by = "day"), # Thanksgiving
+                   seq.Date(as.Date("2020-12-24"), as.Date("2020-12-26"), by = "day"), # Christmas 
+                   seq.Date(as.Date("2020-12-31"), as.Date("2021-01-01"), by = "day")) # New Years
 mort_red_date <- as.Date("2020-07-01")       # Date to mark change in mortality rate
 ref_date      <- as.Date(t0-1)
-t.end         <- as.Date("2021-01-24")       # Simulation end date
+t.end         <- as.Date("2021-02-01")       # Simulation end date
 
 t.tot         <- as.numeric(t.end - t0)
 

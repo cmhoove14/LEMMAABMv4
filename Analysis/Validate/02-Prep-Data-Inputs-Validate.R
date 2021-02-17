@@ -17,11 +17,13 @@ ref_date  <- input_pars$time_pars$ref_date
 # referece for safegraph which starts on Jan 1 2020
 start.num <- as.numeric(t0 - as.Date("2019-12-31"))
 
-# NO AGENTS as they will be drawn from previous sim
+# Don't use these agents as agents from previous sim will be used in sim, but need to know N for tests_pp below
+agents <- readRDS(here::here("data/processed/SF_agents_processed.rds"))
+  N <- nrow(agents)
 
 # Testing data for sims ----------------------
 # source(here::here("data", "get","COVID_CA_get_latest.R"))
-load(here::here("data", "get", "got", "CA_SF_data2021-02-10.Rdata"))
+load(here::here("data", "get", "got", "CA_SF_data2021-02-16.Rdata"))
 # sf_test is observed testing completed in SF county
 # Must contain columns date_num and tests_pp to convert to testing function in model
 sf_test_smooth <- sf_test %>% 
@@ -51,7 +53,7 @@ sf_sfgrph_pcts21 <- readRDS(here::here("data", "processed","Safegraph", "sfgrph_
 
 sf_sfgrph_pcts <- rbind(sf_sfgrph_pcts20, sf_sfgrph_pcts21)
 
-  sf_sfgrph_pcts <- sf_sfgrph_pcts %>% filter(Date >= t0)
+sf_sfgrph_pcts <- sf_sfgrph_pcts %>% filter(Date >= t0)
 
 last_sfgrph <- max(sf_sfgrph_pcts$Date)
 
@@ -80,8 +82,8 @@ sf_sfgrph_pct_home <- sf_sfgrph_pcts %>%
 sf_ct_cdf_ls20 <- readRDS(here::here("data", "processed", "Safegraph", "safegraph_ct_mvmt_cdf_list_2020processed.rds"))
 sf_ct_cdf_ls21 <- readRDS(here::here("data", "processed", "Safegraph", "safegraph_ct_mvmt_cdf_list_2021processed.rds"))
 sf_ct_cdf_ls <- c(sf_ct_cdf_ls20, sf_ct_cdf_ls21)
-  
-  sf_ct_cdf_ls <- sf_ct_cdf_ls[start.num:length(sf_ct_cdf_ls)] 
+
+sf_ct_cdf_ls <- sf_ct_cdf_ls[start.num:length(sf_ct_cdf_ls)] 
 
 sf_ct_ids <- read_csv(here::here("data", "raw", "Census_2010_Tracts.csv")) %>% pull(GEOID10) %>% as.numeric()
 
@@ -92,31 +94,31 @@ sf_visitors21 <- readRDS(here::here("data", "processed", "Safegraph", "SF_visito
 
 sf_visitors <- c(sf_visitors20, sf_visitors21)
 
-  sf_visitors <- sf_visitors[start.num:length(sf_visitors)]
+sf_visitors <- sf_visitors[start.num:length(sf_visitors)]
 
 # Vaccination data ------------------
 # Data here but not downloadable yet https://data.sfgov.org/stories/s/a49y-jeyc
 # Hack to get approximation of vaccines per day so far
 vax_start <- as.Date("2020-12-15")
-  vax_last_obs <- as.Date("2021-01-26")
-  vax_last  <- t.end
-  vax_days <- as.numeric(vax_start-ref_date):as.numeric(vax_last-ref_date)
-  
-nvax_last_obs <- 3000
+vax_last_obs <- as.Date("2021-02-01")
+vax_last  <- t.end
+vax_days <- as.numeric(vax_start-ref_date):as.numeric(vax_last-ref_date)
+
+nvax_last_obs <- 4000
 nvax_trend <- nvax_last_obs/as.numeric(vax_last_obs-vax_start)
-  
+
 nvax_last   <- round(nvax_last_obs+nvax_trend*as.numeric(vax_last-vax_last_obs)) # max vaccines per day assuming linear trend continues
-  nvax <- rep(NA_real_, length(vax_days))
-  nvax[1] <- 1
-  nvax[length(vax_days)] <- nvax_last
-  nvax <- round(zoo::na.approx(nvax))
-  
-  vax_per_day <- data.frame(days = vax_days ,
-                            vax  = nvax)
-  
+nvax <- rep(NA_real_, length(vax_days))
+nvax[1] <- 1
+nvax[length(vax_days)] <- nvax_last
+nvax <- round(zoo::na.approx(nvax))
+
+vax_per_day <- data.frame(days = vax_days ,
+                          vax  = nvax)
+
 # Predict/impute into the future if simulation beyond present is desired
 if(t.end > last_sf_test){
-# Determine number of days necessary to "impute" then assign average of same number of days in the past into the future  
+  # Determine number of days necessary to "impute" then assign average of same number of days in the past into the future  
   n_add <- as.numeric(t.end - last_sf_test)
   lookback <- last_sf_test-n_add-7
   avg_past <- sf_test_smooth %>% filter(Date > lookback) %>% pull(tests_pp) %>% mean()
@@ -144,7 +146,7 @@ if(t.end > last_sfgrph){
                                          mutate(Date = Date + 1 + (last_sfgrph-lookback_start))))
   
   sf_ct_cdf_ls <- c(sf_ct_cdf_ls, 
-                     sf_ct_cdf_ls[(length(sf_ct_cdf_ls)-as.numeric(last_sfgrph-lookback_start)):length(sf_ct_cdf_ls)]) 
+                    sf_ct_cdf_ls[(length(sf_ct_cdf_ls)-as.numeric(last_sfgrph-lookback_start)):length(sf_ct_cdf_ls)]) 
   
   sf_visitors <- c(sf_visitors,
                    sf_visitors[(length(sf_visitors)-as.numeric(last_sfgrph-lookback_start)):length(sf_visitors)])
