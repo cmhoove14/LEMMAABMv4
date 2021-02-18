@@ -97,7 +97,7 @@ hosp_calval_plot <- ggplot() +
   labs(title = "Calibration & Validation to Hospitalizations3")
 
   ggsave(plot = hosp_calval_plot, 
-         filename = here::here("Plots/Hosps_CalVal.jpg"),
+         filename = here::here("Plots/Hosps_CalVal3.jpg"),
          width = 8, height = 6)
   
   
