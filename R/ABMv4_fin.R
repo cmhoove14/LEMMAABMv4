@@ -157,8 +157,8 @@ covid_abm_v4 <- function(data_inputs, input_pars, vax_phases,
     agents[, test_pos := 0] # Start everyone off with no postive test status
     agents[, init_test := 0] # Start everyone off eligible for testing
     agents[, t_til_test_note:=0] #nobody tested to start, so nobody waiting on notification
-    agents[, t_death := NA_Date_]  # Time of death record
-    agents[, t_hosp := NA_Date_]  # Time of hospitalization record
+    agents[, t_death := NA_character_]  # Time of death record
+    agents[, t_hosp := NA_character_]  # Time of hospitalization record
     agents[, adapt_site := 0]   # No adaptive testing sites to start
     agents[, vax_eligible := 0] # Nobody vaccine eligible to start
     agents[, t_til_dose2 := 0] # Nobody waiting on dose 2 to start
