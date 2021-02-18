@@ -521,28 +521,46 @@ covid_abm_v4 <- function(data_inputs, input_pars, vax_phases,
       # Higher transmission in lower hpi CTs, scaled such that highest quartile unaffected
       agents[location == ct, trans_prob:=trans_prob*(1+hpi_bta_mult*(hpi_quartile-1))] 
       
-      # Get FOI for all agents  
+      # Get primary FOI for all agents  
       agents[, FOIi:=0]
       agents[infector==1, FOIi:=trans_prob*infector/n_present]
       agents[, FOI:=sum(FOIi), by = location]
+      
+      # Get secondary FOI for workers (workers can be infected at work or by community members)  
+      agents[location != hhid, location2 := location] # 
+      agents[location2 == work, location2 := work_ct]
+      agents[, n_present2:=.N, by = location2]
+      
+      agents[infector == 1 & !is.na(location2), 
+             trans_prob2 := beta_today*(1-mask_red*wear.mask)*(1+hpi_bta_mult*(hpi_quartile-1))*(1-test.red*tested)]
+      
+      agents[, FOIi2:=0]
+      agents[infector==1, FOIi2:=trans_prob2*infector/n_present2]
+      agents[, FOI2:=sum(FOIi2), by = location2]
+      
       
       # Reduce probability of infection for vaccinated agents
       if(vaccination & date_now >= vax_start){
         agents[vax1 == 1 & vax2 == 0, 
                FOI:=FOI*(1-vax1_bta_red)]
+        agents[vax1 == 1 & vax2 == 0, 
+               FOI2:=FOI2*(1-vax1_bta_red)]
         
         agents[vax2 == 1, 
                FOI:=FOI*(1-vax2_bta_red)]
+        agents[vax2 == 1, 
+               FOI2:=FOI2*(1-vax2_bta_red)]
       }
       
       # Generate infections, update their state, sample for their nextstate and time until reaching it, 
       agents[FOI > 0 & state == "S", infect:=foi_infect(FOI)]
-      agents[infect == 1, state:="E"]
-      agents[infect == 1, nextstate:=next_state(state, age, sex, mort_mult_now)]
-      agents[infect == 1, tnext:=t_til_nxt(state)]
-      agents[infect == 1, inf_date:=date_now]
+      agents[FOI2 > 0 & state == "S", infect:=foi_infect(FOI2) + infect]
+      agents[infect >= 1, state:="E"]
+      agents[infect >= 1, nextstate:=next_state(state, age, sex, mort_mult_now)]
+      agents[infect >= 1, tnext:=t_til_nxt(state)]
+      agents[infect >= 1, inf_date:=date_now]
       
-      # document contacts in proportion to infection risk   
+      # document contacts in proportion to infection risk (assume community/work contacts are unknown)
       agents[FOI > 0 & state == "S", contact_prob:=FOI*known_contact_prob]
       agents[contact_prob > 1, contact := 1] # Agents with very high FOI end up with very high contact prob, assume they're contact is known
       agents[contact_prob > 0 & contact_prob < 1 & FOI > 0, contact := rbinom(.N, 1, contact_prob)]
@@ -620,9 +638,10 @@ covid_abm_v4 <- function(data_inputs, input_pars, vax_phases,
       
       
       # Reset infection & location columns and remove temp quarantine objects
-      agents[, c("location", "mobile", "infector", "res_infector",
-                 "contact_prob", "contact", "n_present", "wear.mask",
-                 "trans_prob", "FOIi", "FOI", "infect", "choose_quar"):=NULL]
+      agents[, c("location", "location2", "mobile", "infector", "res_infector",
+                 "contact_prob", "contact", "wear.mask",
+                 "trans_prob", "FOIi", "FOI", "n_present", "infect", 
+                 "trans_prob2", "FOIi2", "FOI2","n_present2","choose_quar"):=NULL]
       
     }
     
