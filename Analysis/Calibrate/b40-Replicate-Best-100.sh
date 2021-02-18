@@ -11,4 +11,4 @@
 #$ -t 1-100                        #-- array job
                                    #-- tasks if desired (see Tips section on this page)
 module load CBI r
-Rscript Analysis/Calibrate/40-Best-Replicates.R $SGE_TASK_ID "data/outputs/Best_Replicates2/"
+Rscript Analysis/Calibrate/40-Best-Replicates.R $SGE_TASK_ID "data/outputs/Best_Replicates3/"

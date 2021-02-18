@@ -36,10 +36,10 @@ if(length(opts) > 5){
 }
 
 # Randomly sample a simulation from replicates to use in this simulation ---------------
-n_rep_runs <- length(list.files(here::here("data/outputs/Best_Replicates2")))
+n_rep_runs <- length(list.files(here::here("data/outputs/Best_Replicates3")))
 
 use_rep    <- sample(1:n_rep_runs, 1)
-use_file   <- here::here("data/outputs/Best_Replicates2", use_rep)
+use_file   <- here::here("data/outputs/Best_Replicates3", use_rep)
 
 got_rep    <- readRDS(paste0(use_file, "/", list.files(use_file)[1]))
 

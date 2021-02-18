@@ -11,4 +11,4 @@
 #$ -t 1-200                        #-- array job
                                    #-- tasks if desired (see Tips section on this page)
 module load CBI r
-Rscript Analysis/Validate/10-Validation-Runs.R $SGE_TASK_ID "data/processed/data_inputs_validate.rds" "data/processed/input_pars_validate.rds" "data/processed/vax65p_scenario.rds" "data/outputs/Validation_Runs2/"
+Rscript Analysis/Validate/10-Validation-Runs.R $SGE_TASK_ID "data/processed/data_inputs_validate.rds" "data/processed/input_pars_validate.rds" "data/processed/vax65p_scenario.rds" "data/outputs/Validation_Runs3/"

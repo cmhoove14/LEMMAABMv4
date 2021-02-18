@@ -11,7 +11,7 @@ load(here::here("data", "get", "got", "CA_SF_data2021-02-16.Rdata"))
 
 # Utils to grab simulation/fit files
 # Calibration runs
-cal_root <- here::here("data","outputs","Best_Replicates")
+cal_root <- here::here("data","outputs","Best_Replicates3")
   ncal_sims <- length(list.files(cal_root))
     
 get_cal_sim <- function(sim){
@@ -23,7 +23,7 @@ get_cal_sim <- function(sim){
 }
 
 # Validation runs
-val_root <- here::here("data","outputs","Validation_Runs")
+val_root <- here::here("data","outputs","Validation_Runs3")
   nval_sims <- length(list.files(val_root))
 
 get_val_sim <- function(sim){
@@ -94,7 +94,7 @@ hosp_calval_plot <- ggplot() +
               col = "darkred", fill = "red", alpha = 0.3) +
   theme_classic() +
   #  ylim(c(0,200)) +
-  labs(title = "Calibration & Validation to Hospitalizations")
+  labs(title = "Calibration & Validation to Hospitalizations3")
 
   ggsave(plot = hosp_calval_plot, 
          filename = here::here("Plots/Hosps_CalVal.jpg"),
