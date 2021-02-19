@@ -84,7 +84,7 @@ dths_cal <- bind_rows(lapply(1:ncal_sims, function(i){
     sim <- get_cal_sim(i)
     sim_dths <- as_tibble(sim$agents[state == "D", c("id", "sex", "age", "race", "t_death")]) %>% 
         mutate(
-          tod = as.Date(as.character(zoo::as.Date.numeric(t_death))),
+          tod = as.Date(as.character(zoo::as.Date.numeric(as.numeric(t_death)))),
           sim = i,
           dths = 1
         ) %>% 
