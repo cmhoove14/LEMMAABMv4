@@ -168,7 +168,7 @@ sim_obs_dths_race %>%
         axis.title = element_text(size = 16)) +
   geom_bar(stat = "identity", position = position_dodge()) +
   geom_errorbar(aes(ymin=Dr_q25, ymax=Dr_q75), width=.2,
-                 position=position_dodge(.9))
+                 position=position_dodge(.9)) +
   labs(x = "Race/Ethnicity",
        y = "Dec1 Deaths",
        fill = "",
@@ -242,7 +242,7 @@ case_race_sum %>%
         axis.title = element_text(size = 16)) +
   geom_bar(stat = "identity", position = position_dodge()) +
   geom_errorbar(aes(ymin=C_q25, ymax=C_q75), width=.2,
-                 position=position_dodge(.9))
+                 position=position_dodge()) +
   labs(x = "Race/Ethnicity",
        y = "Dec1 Cum Cases",
        fill = "",
