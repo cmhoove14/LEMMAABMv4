@@ -195,7 +195,8 @@ obs_case_race2$n_obs <- obs_case_race2$n_obs + obs_add
 
 # Make compatible for rbind below
 obs_case_race_mrg <- obs_case_race2 %>% 
-  rename("C_mean" = n_obs) %>% 
+  rename("race" = Race,
+         "C_mean" = n_obs) %>% 
   mutate(C_med = NA,
          C_q25 = NA,
          C_q75 = NA,
