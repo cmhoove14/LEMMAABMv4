@@ -232,15 +232,7 @@ case_race_sum_conf <- bind_rows(lapply(1:ncal_sims, function(i){
             C_q25 = quantile(N, 0.25),
             C_q75 = quantile(N, 0.75),
             C_sd = sd(N),
-            Val = "Sim_Confirmed") %>% 
-  mutate(Race_Eth = case_when(race == 1 ~ "White only",
-                              race == 2 ~ "Black only",
-                              race == 3 ~ "Am. Indian/AK Native",
-                              race == 4 ~ "Asian only",
-                              race == 5 ~ "HI/Pac Islander",
-                              race == 6 ~ "Other",
-                              race == 7 ~ "Two or more",
-                              race == 8 ~ "Hispanic/Latinx"))
+            Val = "Sim_Confirmed")
 
 case_race_sum_true <- bind_rows(lapply(1:ncal_sims, function(i){
   case_race_cal[[i]]$true
@@ -251,7 +243,10 @@ case_race_sum_true <- bind_rows(lapply(1:ncal_sims, function(i){
             C_q25 = quantile(N, 0.25),
             C_q75 = quantile(N, 0.75),
             C_sd = sd(N),
-            Val = "Sim_True") %>% 
+            Val = "Sim_True")
+
+case_race_sum <- case_race_sum_conf %>% 
+  bind_rows(case_race_sum_true, obs_case_race_mrg) %>% 
   mutate(Race_Eth = case_when(race == 1 ~ "White only",
                               race == 2 ~ "Black only",
                               race == 3 ~ "Am. Indian/AK Native",
@@ -260,9 +255,6 @@ case_race_sum_true <- bind_rows(lapply(1:ncal_sims, function(i){
                               race == 6 ~ "Other",
                               race == 7 ~ "Two or more",
                               race == 8 ~ "Hispanic/Latinx"))
-
-case_race_sum <- case_race_sum_conf %>% 
-  bind_rows(case_race_sum_true, obs_case_race_mrg)
 
 case_race_sum %>% 
   ggplot(aes(x = Race_Eth, y = C_med, fill = Val)) +
