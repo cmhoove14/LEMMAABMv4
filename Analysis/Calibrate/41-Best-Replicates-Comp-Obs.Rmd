@@ -88,7 +88,7 @@ dths_cal <- bind_rows(lapply(1:ncal_sims, function(i){
           sim = i,
           dths = 1
         ) %>% 
-        padr::pad() %>% 
+        padr::pad(interval = "day") %>% 
         mutate(dths = replace_na(dths, 0),
                cum_dths = cumsum(dths))
     
@@ -148,7 +148,7 @@ dths_race_sum <- sim_dths_race %>%
 # Observed deaths by race
 obs_dths_race <- data.frame(race2 = c(1, 2, 8, 9),
                             Dr_mean = c(55,9,44,78),
-                            Dr_med = NA,
+                            Dr_med = c(55,9,44,78),
                             Dr_q25 = NA,
                             Dr_q75 = NA,
                             Dr_sd = NA,
@@ -197,7 +197,7 @@ obs_case_race2$n_obs <- obs_case_race2$n_obs + obs_add
 obs_case_race_mrg <- obs_case_race2 %>% 
   rename("race" = Race,
          "C_mean" = n_obs) %>% 
-  mutate(C_med = NA,
+  mutate(C_med = C_mean,
          C_q25 = NA,
          C_q75 = NA,
          C_sd  = NA,
@@ -262,8 +262,7 @@ case_race_sum_true <- bind_rows(lapply(1:ncal_sims, function(i){
                               race == 8 ~ "Hispanic/Latinx"))
 
 case_race_sum <- case_race_sum_conf %>% 
-  bind_rows(case_race_sum_true) %>% 
-  bind_rows(obs_case_race_mrg)
+  bind_rows(case_race_sum_true, obs_case_race_mrg)
 
 case_race_sum %>% 
   ggplot(aes(x = Race_Eth, y = C_med, fill = Val)) +
