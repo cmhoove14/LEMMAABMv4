@@ -1,0 +1,246 @@
+---
+title: "Calibration Replicates Fit Assessment"
+author: "Chris Hoover"
+date: "2/18/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+library(tidyverse)
+library(ggplot2)
+library(data.table)
+```
+
+```{r setup}
+# Get CA & SF data
+load(here::here("data", "get", "got", "CA_SF_data2021-02-16.Rdata"))
+
+# Utils to grab simulation/fit files
+# Calibration runs
+cal_root <- here::here("data/outputs/Best_Replicates4")
+  ncal_sims <- length(list.files(cal_root))
+    
+get_cal_sim <- function(sim){
+  # Get sim file  
+  sim_folder <- here::here(cal_root, sim)
+  sim <- readRDS(paste0(sim_folder,"/",list.files(sim_folder)[1]))
+  
+  return(sim)
+}
+```
+
+## Hospitalizations  
+```{r plot_hosp, fig.height=6, fig.width=8}
+# Plot hospitalizations -------------------
+# First get data from calibration runs
+hosp_cal <- bind_rows(lapply(1:ncal_sims, function(i){
+    sim <- get_cal_sim(i)
+    sim_hosp <- as_tibble(sim$epi_curve[state == "Ih",]) %>% 
+      mutate(Date = as.Date(as.character(date)))
+  
+  return(sim_hosp)
+}))
+
+#Summarise calibration simulations 
+hosp_cal_sum <- hosp_cal %>% 
+  group_by(Date) %>% 
+  summarise(H_mean = mean(N),
+            H_med = median(N),
+            H_q25 = quantile(N, 0.25),
+            H_q75 = quantile(N, 0.75),
+            H_sd = sd(N))
+
+# Finally, plot
+hosp_calval_plot <- ggplot() +
+  geom_col(data = sf_hosp,
+           aes(x = Date, y = HOSP_max),
+           col = NA, fill = "lightblue", alpha = 0.4) +
+  geom_col(data = sf_hosp,
+           aes(x = Date, y = HOSP_tot),
+           col = "darkblue", fill = "blue", alpha = 0.6) +
+  geom_line(data = hosp_cal_sum,
+            aes(x = Date, y = H_med), 
+            col = "goldenrod", size = 1.2) +
+  geom_ribbon(data = hosp_cal_sum,
+              aes(x = Date, ymin = H_q25, ymax = H_q75),
+              col = "goldenrod", fill = "goldenrod", alpha = 0.3) +
+  theme_classic() +
+  theme(axis.text = element_text(size = 14),
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.title = element_text(size = 16)) +
+  labs(title = "Calibration to Hospitalizations")
+
+hosp_calval_plot
+```
+
+# Deaths  
+```{r plot_deaths, fig.height=6, fig.width=8}
+# Plot deaths -------------------
+dths_cal <- bind_rows(lapply(1:ncal_sims, function(i){
+    sim <- get_cal_sim(i)
+    sim_dths <- as_tibble(sim$agents[state == "D", c("id", "sex", "age", "race", "t_death")]) %>% 
+        mutate(
+          tod = as.Date(as.character(zoo::as.Date.numeric(t_death))),
+          sim = i,
+          dths = 1
+        ) %>% 
+        padr::pad() %>% 
+        mutate(dths = replace_na(dths, 0),
+               cum_dths = cumsum(dths))
+  
+  return(sim_dths)
+}))
+
+#Summarise calibration simulations 
+dths_cal_sum <- dths_cal %>% 
+  group_by(tod) %>% 
+  summarise(D_mean = mean(cum_dths),
+            D_med = median(cum_dths),
+            D_q25 = quantile(cum_dths, 0.25),
+            D_q75 = quantile(cum_dths, 0.75),
+            D_sd = sd(cum_dths))
+
+
+dths_reps_plot <- ggplot() +
+    geom_col(data = sf_case,
+             aes(x = Date, y = cum_death),
+             col = "black", fill = "grey50", alpha = 0.5) +
+    geom_line(data = dths_cal_sum,
+              aes(x = tod, y = D_med), 
+              col = "darkred", size = 1.2) +
+    geom_ribbon(data = dths_cal_sum,
+                aes(x = tod, ymin = D_q25, ymax = D_q75),
+                col = "red", fill = "red", alpha = 0.3) +
+    theme_classic() +
+    theme(axis.text = element_text(size = 14),
+          axis.text.x = element_text(angle = 45, hjust = 1),
+          axis.title = element_text(size = 16)) +
+    labs(title = "Cumulative deaths fits")
+  
+dths_reps_plot
+```
+
+## Dec 1 cumulative deaths by race  
+```{r plot_dths_race, fig.height=6, fig.width=6}
+# Compare cumulative Dec 1 deaths by race ---------------------
+  sim_dths_race <- dths_cal %>% 
+    mutate(race2 = if_else(race %in% c(1,2,8), race, 9)) %>% 
+    group_by(race2, sim) %>% 
+    summarise(n_dths = n())
+
+# Summarise simulated deaths by race
+# State database only has non-hispanic white, non-hispanic black, hispanic, and other, so condense to match
+dths_race_sum <- sim_dths_race %>% 
+  group_by(race2) %>% 
+  summarise(Dr_mean = mean(n_dths),
+            Dr_med = median(n_dths),
+            Dr_q25 = quantile(n_dths, 0.25),
+            Dr_q75 = quantile(n_dths, 0.75),
+            Dr_sd = sd(n_dths),
+            Val = "Sim")
+
+# Observed deaths by race
+obs_dths_race <- data.frame(race2 = c(1, 2, 8, 9),
+                            Dr_mean = c(55,9,44,78),
+                            Dr_med = NA,
+                            Dr_q25 = NA,
+                            Dr_q75 = NA,
+                            Dr_sd = NA,
+                            Val = "Obs")
+
+sim_obs_dths_race <- rbind(dths_race_sum, obs_dths_race) %>% 
+  mutate(Race_Eth = case_when(race2 == 1 ~ "White only",
+                              race2 == 2 ~ "Black only",
+                              race2 == 8 ~ "Hispanic_Latinx",
+                              race2 == 9 ~ "Other"))
+
+sim_obs_dths_race %>% 
+  ggplot(aes(x = Race_Eth, y = Dr_Mean, fill = Val)) +
+  theme_classic() +
+  theme(axis.text = element_text(size = 14),
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.title = element_text(size = 16)) +
+  geom_bar(stat = "identity", position = position_dodge()) +
+  geom_errorbar(aes(ymin=Dr_q25, ymax=Dr_q75), width=.2,
+                 position=position_dodge(.9))
+  labs(x = "Race/Ethnicity",
+       y = "Dec1 Deaths",
+       fill = "",
+       title = "Cumulative Deaths by Race")
+
+```
+
+```{r obs_case_race}
+obs_case_race <- sf_case_race %>% 
+  filter(Date == as.Date("2020-12-01")) %>% 
+  dplyr::select(Race,Cum_Cases) %>% 
+  rename("n_obs" = Cum_Cases)
+
+# Quite a few NAs, so allocate them in proportion to cases with known race
+# This assumes there aren't systematic biases in reporting of race among known cases, which, probably not true, but best we can do
+case_race_non_na <- obs_case_race$n_obs[which(!is.na(obs_case_race$Race))]
+case_race_na     <- obs_case_race$n_obs[which(is.na(obs_case_race$Race))]
+obs_total        <- sum(case_race_non_na)
+obs_ratios       <- case_race_non_na / obs_total
+obs_add          <- round(case_race_na*obs_ratios)
+
+obs_case_race2 <- obs_case_race[!is.na(obs_case_race$Race),]
+obs_case_race2$n_obs <- obs_case_race2$n_obs + obs_add
+
+# Make compatible for rbind below
+obs_case_race_mrg <- obs_case_race2 %>% 
+  rename("C_mean" = n_obs) %>% 
+  mutate(C_med = NA,
+         C_q25 = NA,
+         C_q75 = NA,
+         C_sd  = NA,
+         Val   = "Obs")
+```
+
+## Dec 1 cumulative cases by race
+```{r case_race_plot, fig.height=6, fig.width=6}
+case_race_cal <- bind_rows(lapply(1:ncal_sims, function(i){
+  sim <- get_cal_sim(i)
+  sim_case_race <- sim$linelist_tests[test_pos == 1 & Date <= as.Date("2020-12-01"), .N, by = race]
+  sim_case_race[, sim := i]
+  
+  return(sim_case_race)
+}))
+
+case_race_sum <- case_race_cal %>% 
+  group_by(race) %>% 
+  summarise(C_mean = mean(N),
+            C_med = median(N),
+            C_q25 = quantile(N, 0.25),
+            C_q75 = quantile(N, 0.75),
+            C_sd = sd(N),
+            Val = "Sim") %>% 
+  bind_rows(obs_case_race_mrg) %>% 
+  mutate(Race_Eth = case_when(race == 1 ~ "White only",
+                              race == 2 ~ "Black only",
+                              race == 3 ~ "Am. Indian/AK Native",
+                              race == 4 ~ "Asian only",
+                              race == 5 ~ "HI/Pac Islander",
+                              race == 6 ~ "Other",
+                              race == 7 ~ "Two or more",
+                              race == 8 ~ "Hispanic/Latinx"))
+
+
+case_race_sum %>% 
+  ggplot(aes(x = Race_Eth, y = C_mean, fill = Val)) +
+  theme_classic() +
+  theme(axis.text = element_text(size = 14),
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.title = element_text(size = 16)) +
+  geom_bar(stat = "identity", position = position_dodge()) +
+  geom_errorbar(aes(ymin=C_q25, ymax=C_q75), width=.2,
+                 position=position_dodge(.9))
+  labs(x = "Race/Ethnicity",
+       y = "Dec1 Cum Cases",
+       fill = "",
+       title = "Cumulative Cases by Race")
+
+```
+
