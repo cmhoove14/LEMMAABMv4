@@ -161,7 +161,7 @@ sim_obs_dths_race <- rbind(dths_race_sum, obs_dths_race) %>%
                               race2 == 9 ~ "Other"))
 
 sim_obs_dths_race %>% 
-  ggplot(aes(x = Race_Eth, y = Dr_mean, fill = Val)) +
+  ggplot(aes(x = Race_Eth, y = Dr_med, fill = Val)) +
   theme_classic() +
   theme(axis.text = element_text(size = 14),
         axis.text.x = element_text(angle = 45, hjust = 1),
@@ -206,25 +206,33 @@ obs_case_race_mrg <- obs_case_race2 %>%
 
 ## Dec 1 cumulative cases by race
 ```{r case_race_plot, fig.height=6, fig.width=6}
-case_race_cal <- bind_rows(lapply(1:ncal_sims, function(i){
+case_race_cal <- lapply(1:ncal_sims, function(i){
   sim <- get_cal_sim(i)
-  sim_case_race <- sim$linelist_tests[test_pos == 1 & Date <= as.Date("2020-12-01"), .N, by = race]
-  sim_case_race[, sim := i]
+  sim_case_race_conf <- sim$linelist_tests[test_pos == 1 & Date <= as.Date("2020-12-01"), .N, by = race]
+  sim_case_race_conf[, sim := i]
+  
+  sim_case_race_true <- sim$agents[state != "S" & Date <= as.Date("2020-12-01"), .N, by = race]
+  sim_case_race_true[, sim := i]
+  
+  out <- list()
+  out$conf <- sim_case_race_conf
+  out$true <- sim_case_race_true
   
   rm(sim) ; gc()
 
-  return(sim_case_race)
-}))
+  return(out)
+})
 
-case_race_sum <- case_race_cal %>% 
+case_race_sum_conf <- bind_rows(lapply(1:ncal_sims, function(i){
+  case_race_cal[[i]]$conf
+}))  %>% 
   group_by(race) %>% 
   summarise(C_mean = mean(N),
             C_med = median(N),
             C_q25 = quantile(N, 0.25),
             C_q75 = quantile(N, 0.75),
             C_sd = sd(N),
-            Val = "Sim") %>% 
-  bind_rows(obs_case_race_mrg) %>% 
+            Val = "Sim_Confirmed") %>% 
   mutate(Race_Eth = case_when(race == 1 ~ "White only",
                               race == 2 ~ "Black only",
                               race == 3 ~ "Am. Indian/AK Native",
@@ -234,16 +242,38 @@ case_race_sum <- case_race_cal %>%
                               race == 7 ~ "Two or more",
                               race == 8 ~ "Hispanic/Latinx"))
 
+case_race_sum_true <- bind_rows(lapply(1:ncal_sims, function(i){
+  case_race_cal[[i]]$true
+}))  %>% 
+  group_by(race) %>% 
+  summarise(C_mean = mean(N),
+            C_med = median(N),
+            C_q25 = quantile(N, 0.25),
+            C_q75 = quantile(N, 0.75),
+            C_sd = sd(N),
+            Val = "Sim_True") %>% 
+  mutate(Race_Eth = case_when(race == 1 ~ "White only",
+                              race == 2 ~ "Black only",
+                              race == 3 ~ "Am. Indian/AK Native",
+                              race == 4 ~ "Asian only",
+                              race == 5 ~ "HI/Pac Islander",
+                              race == 6 ~ "Other",
+                              race == 7 ~ "Two or more",
+                              race == 8 ~ "Hispanic/Latinx"))
+
+case_race_sum <- case_race_sum_conf %>% 
+  bind_rows(case_race_sum_true) %>% 
+  bind_rows(obs_case_race_mrg)
 
 case_race_sum %>% 
-  ggplot(aes(x = Race_Eth, y = C_mean, fill = Val)) +
+  ggplot(aes(x = Race_Eth, y = C_med, fill = Val)) +
   theme_classic() +
   theme(axis.text = element_text(size = 14),
         axis.text.x = element_text(angle = 45, hjust = 1),
         axis.title = element_text(size = 16)) +
   geom_bar(stat = "identity", position = position_dodge()) +
   geom_errorbar(aes(ymin=C_q25, ymax=C_q75), width=.2,
-                 position=position_dodge()) +
+                 position=position_dodge(.9)) +
   labs(x = "Race/Ethnicity",
        y = "Dec1 Cum Cases",
        fill = "",
