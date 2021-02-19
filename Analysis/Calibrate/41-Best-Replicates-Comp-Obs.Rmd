@@ -40,6 +40,8 @@ hosp_cal <- bind_rows(lapply(1:ncal_sims, function(i){
     sim_hosp <- as_tibble(sim$epi_curve[state == "Ih",]) %>% 
       mutate(Date = as.Date(as.character(date)))
   
+    rm(sim) ; gc()
+    
   return(sim_hosp)
 }))
 
@@ -89,7 +91,9 @@ dths_cal <- bind_rows(lapply(1:ncal_sims, function(i){
         padr::pad() %>% 
         mutate(dths = replace_na(dths, 0),
                cum_dths = cumsum(dths))
-  
+    
+  rm(sim) ; gc()
+
   return(sim_dths)
 }))
 
@@ -206,6 +210,8 @@ case_race_cal <- bind_rows(lapply(1:ncal_sims, function(i){
   sim_case_race <- sim$linelist_tests[test_pos == 1 & Date <= as.Date("2020-12-01"), .N, by = race]
   sim_case_race[, sim := i]
   
+  rm(sim) ; gc()
+
   return(sim_case_race)
 }))
 
