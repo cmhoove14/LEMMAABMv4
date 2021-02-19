@@ -211,7 +211,7 @@ case_race_cal <- lapply(1:ncal_sims, function(i){
   sim_case_race_conf <- sim$linelist_tests[test_pos == 1 & Date <= as.Date("2020-12-01"), .N, by = race]
   sim_case_race_conf[, sim := i]
   
-  sim_case_race_true <- sim$agents[state != "S" & Date <= as.Date("2020-12-01"), .N, by = race]
+  sim_case_race_true <- sim$agents[state != "S" & inf_date <= as.Date("2020-12-01"), .N, by = race]
   sim_case_race_true[, sim := i]
   
   out <- list()
