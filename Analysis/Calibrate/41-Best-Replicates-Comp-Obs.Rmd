@@ -13,7 +13,7 @@ library(ggplot2)
 library(data.table)
 ```
 
-```{r setup}
+```{r dat_fx}
 # Get CA & SF data
 load(here::here("data", "get", "got", "CA_SF_data2021-02-16.Rdata"))
 
