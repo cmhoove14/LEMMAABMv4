@@ -161,7 +161,7 @@ sim_obs_dths_race <- rbind(dths_race_sum, obs_dths_race) %>%
                               race2 == 9 ~ "Other"))
 
 sim_obs_dths_race %>% 
-  ggplot(aes(x = Race_Eth, y = Dr_Mean, fill = Val)) +
+  ggplot(aes(x = Race_Eth, y = Dr_mean, fill = Val)) +
   theme_classic() +
   theme(axis.text = element_text(size = 14),
         axis.text.x = element_text(angle = 45, hjust = 1),
