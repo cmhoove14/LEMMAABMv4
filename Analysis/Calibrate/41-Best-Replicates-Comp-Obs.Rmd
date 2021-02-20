@@ -19,7 +19,7 @@ load(here::here("data", "get", "got", "CA_SF_data2021-02-16.Rdata"))
 
 # Utils to grab simulation/fit files
 # Calibration runs
-cal_root <- here::here("data/outputs/Best_Replicates6")
+cal_root <- here::here("data/outputs/Best_Replicates7")
   ncal_sims <- length(list.files(cal_root))
     
 get_cal_sim <- function(sim){
