@@ -76,8 +76,8 @@ home_all_hpi_sum %>%
                names_to = "home_work",
                values_to = "percent") %>% 
   ggplot(aes(x = Date, y = percent, col = as.factor(quartiles), fill = as.factor(quartiles))) +
-  facet_wrap("home_work", nrow = 2) +
-  geom_line(size = 1.2) +
+  facet_wrap("home_work", nrow = 2, scales = "free_y") +
+  geom_line() +
   theme_classic() +
   labs(y = "Proportion device behavior",
        title = "Safegraph device behavior by HPI quartile",
@@ -85,7 +85,7 @@ home_all_hpi_sum %>%
        col = "HPI Quartile")
 
 ggsave(here::here("Plots/Inputs/safegraph_percent_home_work_behavior.jpg"),
-       width = 4, height = 6, units = "in")
+       width = 6, height = 6, units = "in")
 
 # Correlation between cumulative cases and HPI ------------------------
 load(here::here("data/get/got/CA_SF_data2021-02-10.Rdata"))
